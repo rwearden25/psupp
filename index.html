@@ -20,6 +20,14 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .stat-val{font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent)}
 .stat-label{font-size:0.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
 @media(max-width:700px){.header-stats{display:none}}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:0.75rem}
+.hamburger{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;gap:3px;position:relative}
+.hamburger span{display:block;width:18px;height:2px;background:var(--text-muted);border-radius:1px;transition:0.2s}
+.hamburger:hover span{background:var(--accent)}
+.ham-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:0 8px 24px rgba(0,0,0,0.08);z-index:200;min-width:200px}
+.ham-menu.open{display:flex;gap:1.5rem}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.75rem;font-family:var(--font-body);color:var(--text-muted);cursor:pointer;transition:0.2s;white-space:nowrap}
+.logout-btn:hover{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,0.06)}
 .input-bar{padding:0.75rem 2rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:69px;z-index:99}
 .input-wrap{max-width:820px;margin:0 auto;display:flex;gap:0.5rem}
 .input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;transition:border-color 0.2s}
@@ -156,7 +164,17 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
   <header>
     <div class="logo">P-S</div>
     <div class="header-text"><h1>P-Supp Tool</h1><span>Diagnostics, Service &amp; Reference</span></div>
-    <div class="header-stats" id="headerStats"></div>
+    <div class="header-right">
+      <div style="position:relative">
+        <button class="hamburger" onclick="document.getElementById('hamMenu').classList.toggle('open')" title="Stats">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="ham-menu" id="hamMenu">
+          <div class="header-stats" id="headerStats"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="sessionStorage.removeItem('authenticated');location.reload();">Logout</button>
+    </div>
   </header>
   <div class="input-bar"><div class="input-wrap">
     <input type="text" id="userInput" placeholder="Search models, troubleshoot issues, look up specs…" autocomplete="off"/>
@@ -276,10 +294,8 @@ function genResponse(query){const q=norm(query);let html='';let found=false;
   return html;}
 
 function showSearch(query){setActive('home');
-  const localResult = genResponse(query);
-  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="messages"><div class="msg msg-user"><div class="bubble">${esc(query)}</div></div><div class="msg msg-bot" id="localResult"><div class="bot-avatar">⚙️</div><div class="bubble">${localResult}</div></div><div class="msg msg-bot" id="aiResult"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText" style="border-color:var(--accent);opacity:0.6"><span class="ai-loading">🔍 P-Supp AI is analyzing your question…</span></div></div></div></div>`;
+  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="messages"><div class="msg msg-user"><div class="bubble">${esc(query)}</div></div><div class="msg msg-bot" id="aiResult"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText"><span class="ai-loading">🔍 Searching knowledge base…</span></div></div></div></div>`;
   C.scrollTop=0;
-  // Call AI agent
   fetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -293,25 +309,56 @@ function showSearch(query){setActive('home');
         .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
         .replace(/^/, '<p>') + '</p>';
       el.innerHTML=formatted;
-      el.style.opacity='1';
     } else if(data.error){
       el.innerHTML='<span style="color:var(--text-muted)">AI unavailable: '+esc(data.error)+'</span>';
-      el.style.opacity='1';
     }
     C.scrollTop=C.scrollHeight;
   }).catch(e=>{
     const el=document.getElementById('aiText');
-    if(el) el.innerHTML='<span style="color:var(--text-muted)">AI agent offline — showing local results above.</span>';
-    if(el) el.style.opacity='1';
+    if(el) el.innerHTML=genResponse(query);
   });
 }
 
 /* ═══ ROUTING ═══ */
 function nav(t){
   if(t==='home')return showHome();
-  if(t.startsWith('gp-')){const k=t.slice(3);if(KB.gp.troubleshooting[k])return showGPTrouble(k);if(k==='valves'||k==='plungers'||k==='vpackings')return showGPService(k);if(k==='oil')return showGPOil();if(k==='maintenance')return showGPMaint();if(k==='catalog')return showGPCatalog();if(k==='accessories')return showGPAccessories();if(k==='system')return showGPSystem();if(k==='warranty')return showGPWarranty();}
-  if(t.startsWith('alk-ts-'))return showAlkTrouble(t.slice(7));
-  if(t==='alk-maintenance')return showAlkMaint();if(t==='alk-installation')return showAlkInstall();if(t==='alk-startup')return showAlkStartup();if(t==='alk-pump-svc')return showAlkPumpSvc();if(t==='alk-unloaders')return showAlkUnloaders();if(t==='alk-electrical')return showAlkElectrical();if(t==='alk-coils')return showAlkCoils();if(t==='alk-burner-ref')return showAlkBurnerRef();if(t==='alk-nozzles')return showAlkNozzles();if(t==='alk-checklist')return showAlkChecklist();if(t==='alk-warranty')return showAlkWarranty();}
+  // Map sidebar topics to conversational prompts
+  const topicPrompts={
+    'gp-pressure':'I have a General Pump with low pressure issues. What should I check?',
+    'gp-pulsation':'My General Pump is pulsating. What are the causes and fixes?',
+    'gp-rough':'My General Pump is running rough or has very low output. Help me diagnose.',
+    'gp-noise':'My General Pump is making knocking or loud noises. What could be wrong?',
+    'gp-packing':'I have premature packing failure on my General Pump. What causes this?',
+    'gp-overheating':'My General Pump is overheating. What should I check?',
+    'gp-leak':'My General Pump is leaking. Help me find the source.',
+    'gp-valves':'How do I service the valves on a General Pump?',
+    'gp-plungers':'How do I replace the plungers on a General Pump?',
+    'gp-vpackings':'How do I replace v-packings on a General Pump?',
+    'gp-oil':'What oil does my General Pump need?',
+    'gp-maintenance':'What is the maintenance schedule for General Pump equipment?',
+    'gp-catalog':'Help me find a General Pump model. What specs are you looking for?',
+    'gp-accessories':'What General Pump accessories are available?',
+    'gp-system':'Help me with General Pump system design - motor sizing, pulleys, plumbing.',
+    'gp-warranty':'What does the General Pump warranty cover?',
+  };
+  // Alkota topics
+  if(t.startsWith('alk-ts-')){const issue=t.slice(7).replace(/-/g,' ');showSearch('Alkota troubleshooting: '+issue);return;}
+  if(t==='alk-maintenance'){showSearch('What is the Alkota maintenance schedule?');return;}
+  if(t==='alk-installation'){showSearch('How do I install Alkota equipment?');return;}
+  if(t==='alk-startup'){showSearch('What is the Alkota startup procedure?');return;}
+  if(t==='alk-pump-svc'){showSearch('How do I service an Alkota pump?');return;}
+  if(t==='alk-unloaders'){showSearch('Help me with Alkota unloaders and accessories.');return;}
+  if(t==='alk-electrical'){showSearch('Help me with Alkota electrical components.');return;}
+  if(t==='alk-coils'){showSearch('Help me with Alkota coils and heat exchangers.');return;}
+  if(t==='alk-burner-ref'){showSearch('Help me with Alkota burner issues.');return;}
+  if(t==='alk-nozzles'){showSearch('Help me with Alkota spray nozzles.');return;}
+  if(t==='alk-checklist'){showSearch('What is the Alkota pre-service checklist?');return;}
+  if(t==='alk-warranty'){showSearch('What does the Alkota warranty cover?');return;}
+  // GP topics
+  if(topicPrompts[t]){showSearch(topicPrompts[t]);return;}
+  // Fallback
+  showSearch(t.replace(/-/g,' '));
+}
 
 function handleSend(){const q=I.value.trim();if(!q)return;I.value='';showSearch(q);}
 function askQ(q){I.value=q;handleSend();}
@@ -319,6 +366,7 @@ I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 
 if(typeof KB!=='undefined'&&KB.meta){document.getElementById('headerStats').innerHTML=`<div class="stat"><div class="stat-val">${KB.meta.stats.gpPumps}</div><div class="stat-label">Pumps</div></div><div class="stat"><div class="stat-val">${KB.meta.stats.totalSources}</div><div class="stat-label">Sources</div></div><div class="stat"><div class="stat-val">2</div><div class="stat-label">Brands</div></div><div class="stat"><div class="stat-val">245</div><div class="stat-label">Svc School Pg</div></div>`;}
 buildSidebar();showHome();I.focus();
+document.addEventListener('click',function(e){const m=document.getElementById('hamMenu');if(m&&!e.target.closest('.hamburger')&&!e.target.closest('.ham-menu'))m.classList.remove('open');});
 </script>
 </div><!-- end appContent -->
 </body>
