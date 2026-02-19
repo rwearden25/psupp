@@ -144,7 +144,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   </div>
 </div>
 <script>
-const TEAM_PASSWORD = "psupp2025"; // ← CHANGE THIS
+const TEAM_PASSWORD = "generalpump2025"; // ← CHANGE THIS
 function tryLogin(){const i=document.getElementById('loginPass'),e=document.getElementById('loginError');if(i.value===TEAM_PASSWORD){sessionStorage.setItem('authenticated','true');unlockApp();}else{e.style.display='block';i.value='';i.focus();}}
 function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
@@ -275,7 +275,36 @@ function genResponse(query){const q=norm(query);let html='';let found=false;
   if(!found)html+=`<div class="info-block"><p>I can help with:</p><p>🔍 <span class="brand-label gp">GP</span> Pump lookup — model or specs</p><p>🔧 <span class="brand-label gp">GP</span> Troubleshooting — pressure, leaks, noise, packing</p><p>🛢️ <span class="brand-label gp">GP</span> Oil — "oil for TS2021"</p><p>🔥 <span class="brand-label alk">ALK</span> Troubleshooting — burner, pilot, motor, temperature</p><p>🗓️ Maintenance — schedules for both brands</p></div>`;
   return html;}
 
-function showSearch(query){setActive('home');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="messages"><div class="msg msg-user"><div class="bubble">${esc(query)}</div></div><div class="msg msg-bot"><div class="bot-avatar">⚙️</div><div class="bubble">${genResponse(query)}</div></div></div></div>`;C.scrollTop=0;}
+function showSearch(query){setActive('home');
+  const localResult = genResponse(query);
+  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="messages"><div class="msg msg-user"><div class="bubble">${esc(query)}</div></div><div class="msg msg-bot" id="localResult"><div class="bot-avatar">⚙️</div><div class="bubble">${localResult}</div></div><div class="msg msg-bot" id="aiResult"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText" style="border-color:var(--accent);opacity:0.6"><span class="ai-loading">🔍 P-Supp AI is analyzing your question…</span></div></div></div></div>`;
+  C.scrollTop=0;
+  // Call AI agent
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: query})
+  }).then(r=>r.json()).then(data=>{
+    const el=document.getElementById('aiText');
+    if(data.reply){
+      const formatted = data.reply
+        .replace(/\n\n/g,'</p><p>')
+        .replace(/\n/g,'<br>')
+        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/^/, '<p>') + '</p>';
+      el.innerHTML=formatted;
+      el.style.opacity='1';
+    } else if(data.error){
+      el.innerHTML='<span style="color:var(--text-muted)">AI unavailable: '+esc(data.error)+'</span>';
+      el.style.opacity='1';
+    }
+    C.scrollTop=C.scrollHeight;
+  }).catch(e=>{
+    const el=document.getElementById('aiText');
+    if(el) el.innerHTML='<span style="color:var(--text-muted)">AI agent offline — showing local results above.</span>';
+    if(el) el.style.opacity='1';
+  });
+}
 
 /* ═══ ROUTING ═══ */
 function nav(t){
