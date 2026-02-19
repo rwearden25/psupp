@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Equipment Service Assistant — General Pump &amp; Alkota</title>
+<title>P-Supp Tool</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0c0f14;--surface:#141820;--surface-2:#1a1f2b;--surface-3:#222838;--border:#2a3144;--text:#e4e8f1;--text-muted:#8892a8;--accent:#f59e0b;--accent-dim:rgba(245,158,11,0.12);--success:#22c55e;--blue:#3b82f6;--blue-dim:rgba(59,130,246,0.12);--radius:12px;--font-body:'DM Sans',sans-serif;--font-mono:'Space Mono',monospace}
+:root{--bg:#f5f7fa;--surface:#ffffff;--surface-2:#f0f2f5;--surface-3:#e8ebf0;--border:#d8dce5;--text:#1a1d24;--text-muted:#5f6b7a;--accent:#2563eb;--accent-dim:rgba(37,99,235,0.08);--success:#16a34a;--blue:#0ea5e9;--blue-dim:rgba(14,165,233,0.08);--radius:12px;--font-body:'DM Sans',sans-serif;--font-mono:'Space Mono',monospace}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(245,158,11,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(37,99,235,0.04) 0%,transparent 70%);pointer-events:none;z-index:0}
 .app{position:relative;z-index:1}
-header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;gap:1rem;background:rgba(20,24,32,0.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
-.logo{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:0.7rem;color:var(--bg);flex-shrink:0}
+header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;gap:1rem;background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+.logo{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:0.7rem;color:#fff;flex-shrink:0}
 .header-text h1{font-size:1.1rem;font-weight:700;letter-spacing:-0.3px}
 .header-text span{font-size:0.75rem;color:var(--text-muted);font-weight:300}
 .header-stats{margin-left:auto;display:flex;gap:1.5rem}
@@ -20,12 +20,12 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .stat-val{font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent)}
 .stat-label{font-size:0.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
 @media(max-width:700px){.header-stats{display:none}}
-.input-bar{padding:0.75rem 2rem;border-bottom:1px solid var(--border);background:rgba(20,24,32,0.92);backdrop-filter:blur(20px);position:sticky;top:69px;z-index:99}
+.input-bar{padding:0.75rem 2rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:69px;z-index:99}
 .input-wrap{max-width:820px;margin:0 auto;display:flex;gap:0.5rem}
 .input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;transition:border-color 0.2s}
 .input-wrap input:focus{border-color:var(--accent)}
 .input-wrap input::placeholder{color:var(--text-muted)}
-.send-btn{width:44px;height:44px;border-radius:12px;border:none;background:var(--accent);color:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.15s;flex-shrink:0}
+.send-btn{width:44px;height:44px;border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.15s;flex-shrink:0}
 .send-btn:hover{filter:brightness(1.15);transform:scale(1.04)}
 .layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 130px)}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
@@ -83,16 +83,16 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .step-item{display:flex;gap:0.7rem;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;line-height:1.55}
 .step-item:last-child{border-bottom:none}
 .step-num{width:26px;height:26px;border-radius:8px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;font-family:var(--font-mono)}
-.oil-result{background:var(--accent-dim);border:1px solid rgba(245,158,11,0.2);padding:0.8rem 1rem;border-radius:10px;margin:0.5rem 0;font-family:var(--font-mono);font-size:0.8rem}
+.oil-result{background:var(--accent-dim);border:1px solid rgba(37,99,235,0.15);padding:0.8rem 1rem;border-radius:10px;margin:0.5rem 0;font-family:var(--font-mono);font-size:0.8rem}
 .oil-result .model{color:var(--accent);font-weight:700}
 .oil-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:6px;font-family:var(--font-mono);font-size:0.7rem;font-weight:700}
 .oil-badge.s100{background:rgba(59,130,246,0.15);color:#60a5fa}
 .oil-badge.s220{background:rgba(34,197,94,0.15);color:#4ade80}
-.oil-badge.s8090{background:rgba(245,158,11,0.15);color:var(--accent)}
+.oil-badge.s8090{background:rgba(124,58,237,0.12);color:#7c3aed}
 .data-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:0.5rem}
 .data-table th{text-align:left;padding:0.5rem 0.6rem;background:var(--surface-3);color:var(--accent);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid var(--border);position:sticky;top:0}
 .data-table td{padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-family:var(--font-mono);font-size:0.76rem}
-.data-table tr:hover td{color:var(--text);background:rgba(245,158,11,0.03)}
+.data-table tr:hover td{color:var(--text);background:rgba(37,99,235,0.03)}
 .data-table .model-cell{color:var(--accent);font-weight:700}
 .series-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.7rem}
 .series-card,.acc-cat-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem;cursor:pointer;transition:all 0.15s}
@@ -108,19 +108,54 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .tag{display:inline-block;padding:0.13rem 0.45rem;border-radius:5px;font-size:0.68rem;font-family:var(--font-mono);background:var(--surface-3);color:var(--text-muted);margin:0.1rem}
 .msg{margin-bottom:1.5rem;animation:fadeUp 0.3s ease}
 .msg-user{display:flex;justify-content:flex-end}
-.msg-user .bubble{background:var(--accent);color:var(--bg);padding:0.65rem 1rem;border-radius:16px 16px 4px 16px;max-width:75%;font-weight:500;font-size:0.88rem}
+.msg-user .bubble{background:var(--accent);color:#fff;padding:0.65rem 1rem;border-radius:16px 16px 4px 16px;max-width:75%;font-weight:500;font-size:0.88rem}
 .msg-bot{display:flex;gap:0.7rem;align-items:flex-start}
 .bot-avatar{width:30px;height:30px;background:var(--surface-3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;margin-top:2px}
 .msg-bot .bubble{background:var(--surface);border:1px solid var(--border);padding:0.9rem 1.15rem;border-radius:4px 16px 16px 16px;max-width:85%;font-size:0.88rem;line-height:1.65}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+#loginGate{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:var(--font-body)}
+#loginGate.hidden{display:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:44px;width:380px;text-align:center}
+.login-box::before{content:'';position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:400px;height:300px;background:radial-gradient(ellipse,rgba(37,99,235,0.06) 0%,transparent 70%);pointer-events:none}
+.login-logo-box{width:64px;height:64px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:0.9rem;color:#fff;margin:0 auto 20px}
+.login-box h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-0.3px}
+.login-box p{color:var(--text-muted);font-size:0.82rem;margin-bottom:28px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:0.9rem;font-family:var(--font-body);outline:none;transition:border-color 0.2s;box-sizing:border-box;margin-bottom:14px}
+.login-box input:focus{border-color:var(--accent)}
+.login-box input::placeholder{color:var(--text-muted)}
+.login-box button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
+.login-box button:hover{filter:brightness(1.15);transform:scale(1.02)}
+.login-error{color:#f87171;font-size:0.78rem;margin-top:10px;display:none}
+#appContent{display:none}
+#appContent.visible{display:block}
 </style>
 </head>
 <body>
+<!-- Login Gate -->
+<div id="loginGate">
+  <div class="login-box">
+    <div class="login-logo-box">P-S</div>
+    <h2>P-Supp Tool</h2>
+    <p>Internal Access Only</p>
+    <input type="password" id="loginPass" placeholder="Enter team password" autocomplete="off" />
+    <button onclick="tryLogin()">Sign In</button>
+    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+<script>
+const TEAM_PASSWORD = "generalpump2025"; // ← CHANGE THIS
+function tryLogin(){const i=document.getElementById('loginPass'),e=document.getElementById('loginError');if(i.value===TEAM_PASSWORD){sessionStorage.setItem('authenticated','true');unlockApp();}else{e.style.display='block';i.value='';i.focus();}}
+function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
+if(sessionStorage.getItem('authenticated')==='true')unlockApp();
+document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+</script>
+
+<div id="appContent">
 <div class="app">
   <header>
-    <div class="logo">SVC</div>
-    <div class="header-text"><h1>Equipment Service Assistant</h1><span>General Pump &amp; Alkota — Diagnostics, Service &amp; Reference</span></div>
+    <div class="logo">P-S</div>
+    <div class="header-text"><h1>P-Supp Tool</h1><span>Diagnostics, Service &amp; Reference</span></div>
     <div class="header-stats" id="headerStats"></div>
   </header>
   <div class="input-bar"><div class="input-wrap">
@@ -256,5 +291,6 @@ I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 if(typeof KB!=='undefined'&&KB.meta){document.getElementById('headerStats').innerHTML=`<div class="stat"><div class="stat-val">${KB.meta.stats.gpPumps}</div><div class="stat-label">Pumps</div></div><div class="stat"><div class="stat-val">${KB.meta.stats.totalSources}</div><div class="stat-label">Sources</div></div><div class="stat"><div class="stat-val">2</div><div class="stat-label">Brands</div></div><div class="stat"><div class="stat-val">245</div><div class="stat-label">Svc School Pg</div></div>`;}
 buildSidebar();showHome();I.focus();
 </script>
+</div><!-- end appContent -->
 </body>
 </html>
