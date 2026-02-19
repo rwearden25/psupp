@@ -404,6 +404,21 @@ function startTopic(topic){
   const label=topicLabels[topic]||topic;
   setActive('home');
   ensureChatView();
+  // Burner/pilot — skip brand, ask to describe the issue
+  const describeFirst=['burner','pilot'];
+  if(describeFirst.includes(topic)){
+    addChatMsg('bot',`<p>I can help with <strong>${esc(label)}</strong>. Please describe the issue you're experiencing — for example:</p>
+      <div class="quick-actions" style="margin-top:0.75rem">
+        <button class="quick-btn" onclick="askQ('Burner will not fire')"><span class="qicon">🔥</span> Won't fire</button>
+        <button class="quick-btn" onclick="askQ('Pilot will not stay lit')"><span class="qicon">💨</span> Pilot won't stay lit</button>
+        <button class="quick-btn" onclick="askQ('Burner fires but shuts off')"><span class="qicon">⚠️</span> Fires then shuts off</button>
+        <button class="quick-btn" onclick="askQ('Smoke or soot from burner')"><span class="qicon">🌫️</span> Smoke / soot</button>
+      </div>
+      <p style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)">Or type your own description below.</p>`);
+    I.focus();I.placeholder='Describe the burner/pilot issue...';
+    C.scrollTop=C.scrollHeight;
+    return;
+  }
   addChatMsg('bot',`<p>I can help with <strong>${esc(label)}</strong>. Which brand is this for?</p>
     <div class="quick-actions" style="margin-top:0.75rem">
       <button class="quick-btn" onclick="pickBrand('General Pump','${esc(topic)}')"><span class="qicon">🔵</span> General Pump</button>
@@ -446,6 +461,15 @@ function nav(t){
 function handleSend(){const q=I.value.trim();if(!q&&!pendingImage)return;I.value='';I.placeholder='Search models, troubleshoot issues, look up specs...';
   const img=pendingImage;clearImage();
   if(window._pendingContext){const full=window._pendingContext+(q||'');window._pendingContext=null;showSearch(full,img);return;}
+  // If input is numbers only, ask for full model number
+  if(!img && /^\d+$/.test(q)){
+    ensureChatView();
+    addChatMsg('user', esc(q));
+    addChatMsg('bot', `<p>It looks like you entered just a number. Could you provide the <strong>full model number</strong> including letters? For example: <strong>TS2021</strong>, <strong>EZ4040G</strong>, <strong>KFMZ</strong>, etc.</p>`);
+    I.focus();I.placeholder='e.g. TS2021, EZ4040G, T1011...';
+    window._pendingContext='Look up pump model ';
+    return;
+  }
   showSearch(q||'Identify this equipment and any visible issues.',img);
 }
 function askQ(q){I.value=q;handleSend();}
