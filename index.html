@@ -144,7 +144,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   </div>
 </div>
 <script>
-const TEAM_PASSWORD = "generalpump2025"; // ← CHANGE THIS
+const TEAM_PASSWORD = "psupp2025"; // ← CHANGE THIS
 function tryLogin(){const i=document.getElementById('loginPass'),e=document.getElementById('loginError');if(i.value===TEAM_PASSWORD){sessionStorage.setItem('authenticated','true');unlockApp();}else{e.style.display='block';i.value='';i.focus();}}
 function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
