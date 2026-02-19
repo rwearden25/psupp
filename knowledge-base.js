@@ -158,7 +158,6 @@ KB.meta = {
   }
 };
 
-
 // ═══ ALKOTA SERVICE SCHOOL (245 pages) ═══
 KB.alk.serviceSchool = {};
 
@@ -254,13 +253,11 @@ KB.alk.serviceSchool.modelNumbering = {
   gasFired: "[GPM][PSI][Engine/Motor][Burner]. Example: 530ENG = 5 GPM, 3000 PSI, Electric, Natural Gas"
 };
 
-
 // ═══════════════════════════════════════════════════════════════
 // ADDITIONAL SERVICE DOCUMENTATION — Extracted from PDF manuals
 // Added to knowledge base for AI search indexing
 // ═══════════════════════════════════════════════════════════════
 KB.docs = {};
-
 
 // ─── 2018 General Pump Catalog ───
 KB.docs['2018 General Pump Catalog'] = `Reliability 
@@ -2689,7 +2686,7 @@ PUMPS
 General Pump is pleased to introduce the “HY-PACK” series of pumps and hydraulic motors. This new family of products showcases our group’s expertise by 
 combining efforts from both our water jetting and hydraulic divisions. The end 
 result is a range of compact pump and motor combinations that drastically 
-reduce assembly costs and footprint space. See www.generalpump.com or contact a sales representative for details.
+reduce assembly costs and footprint space. Contact a sales representative for details.
 KE - KT - KV 
 (25 - 35 HP)
 KF - HF - VFH 
@@ -6747,11 +6744,11 @@ customers in understanding the terms of our
 war ranty, the circumstances under which we will honor 
 claims, and the procedure for making 
 such claims. 
-GP Companies, Inc. warrants each pump 
+General Pump warrants each pump 
 manufactured by General Pump to be free of defects in 
 material or workmanship for a period of five (5) years 
 from the date of shipment, with the exception of Consumer Pumps and the hydraulic pump line. In 
-addition, GP Companies, Inc. warrants all forged brass 
+addition, General Pump warrants all forged brass 
 pump manifolds to be free of defects in material and 
 workmanship and from damage resulting from 
 freezing for the life of the pump. Liability under this 
@@ -6760,12 +6757,9 @@ repair or replacement of any pump returned to General
 Pump/US which upon inspection, is judged to be 
 defective due to workmanship or material failure. Any 
 product returned to General Pump should be shipped 
-freight prepaid to GP Companies, Inc. – 1174 
-Northland Drive – Mendota Heights, MN 55120 and 
+freight prepaid to  and 
 must display a Return Authorization Number obtained 
 from General Pump’s Inside Sales Department 
-(651) 454-6500, Fax (800) 535-1745. 
-
 Page 101
 WARRANTY INFORMATION
 In the course of marketing or 
@@ -6800,7 +6794,7 @@ expressly limited to the replacement
 or purchase price of the product. 
 The following items are not 
 warranted, due to matters beyond 
-GP Companies, Inc. control. 
+General Pump control. 
 1. Normal wear and tear to parts 
 that are considered standard 
 wear parts. 
@@ -6821,19 +6815,19 @@ dated warranties.
 POWER UNIT(S) 
 WARRANTY 
 January 1, 2019 
-GP Companies, Inc. warrants each 
+General Pump warrants each 
 power unit in whole for 90 days 
 from the date the unit is 
 purchased. After 90 days, each 
 pump manufactured by General 
-Pump carries GP Companies, Inc. 
+Pump carries General Pump 
 standard pump warranty. Each 
 individual accessory on the power 
 unit is covered by GP Companies, 
 Inc. standard accessory warranty. 
 ACCESSORY WARRANTY
 January 1, 2019 
-GP Companies, Inc. accessories 
+General Pump accessories 
 are warranted by the 
 manufacturer to the original 
 purchaser to be free from defects 
@@ -6882,7 +6876,7 @@ manufacturer
 
 TERMS & CONDITIONS RETURN POLICY
 Page 102
-GP COMPANIES, INC. 
+General Pump 
 SALES POLICIES 
 General Pump reserves the 
 right to refuse to conduct 
@@ -6896,7 +6890,7 @@ TERMS & CONDITIONS
 days, subject to credit 
 department approval 
 • All shipments are FOB, 
-Mendota Heights, MN 
+origin 
 • Pricing is subject to change 
 without notice
 RETURN POLICY
@@ -6913,8 +6907,6 @@ product. To obtain an RMA
 number, please call General 
 Pump’s Customer Service 
 Department at: 
-(888)474-5487 ext. 199. 
- 
 3. An RMA number is valid for 
 60 days from the date of issue. 
 If the product is not received 
@@ -8876,8 +8868,7 @@ Overpressure of pump. Reduce pressure.
 Running pump dry. Do not run pump without water.
 Upstream chemical injection. Use downstream chemical injection.
 TROUBLESHOOTING
-GENERAL PUMP 1174 Northland Drive • Mendota Heights, MN 55120
-Phone: (651)686-2199 • Fax: (800)535-1745 • e-mail: sales@gpcompanies.com • www.generalpump.com`;
+`;
 
 // ─── General Pump TS2021 Data Sheet ───
 KB.docs['General Pump TS2021 Data Sheet'] = `T Series 47 S
@@ -8982,8 +8973,7 @@ ITEM PART NO. DESCRIPTION KIT NO. QTY.
 54. 96738000 Washer, M17.5 1
 56. 90271000 Seal, Low Press, 20 mm 28, 69 3
 T Series 47S-20mm x 16 mm
-GENERAL PUMP 1174 Northland Drive • Mendota Heights, MN 55120
-Phone: 651.686.2199 • Fax: 800.535.1745 • e-mail: sales@gpcompanies.com • www.generalpump.com
+
 Ref 300204 Rev. N
 06-22
 GENERAL PUMP A member of the Interpump Group
@@ -9034,7 +9024,7 @@ user’s high pressure system.
 WARNING: This product can expose you to chemicals including 
 lead, which is know to the state of California to cause cancer and 
 birth defects or other reproductive harm. For more information, go 
-to www.P65Warnings.ca.gov`;
+to `;
 
 // ─── KFMZ Owner Manual ───
 KB.docs['KFMZ Owner Manual'] = `KFMZ
@@ -9810,11 +9800,8 @@ REPLACEMENT
 VALVE
 REPLACEMENT
 HOURS & DATE
-GP Companies, Inc.
-1174 Northland Drive
-Mendota Heights, MN 55120
-Phone:651.686.2199 Fax: 800.535.1745
-www.generalpump.com email: sales@gpcompanies.com`;
+General Pump
+`;
 
 // ─── MK Series Repair Manual ───
 KB.docs['MK Series Repair Manual'] = `MK
@@ -10457,11 +10444,8 @@ REPLACEMENT
 VALVE
 REPLACEMENT
 HOURS & DATE
-GP Companies, Inc.
-1174 Northland Drive
-Mendota Heights, MN 55120
-Phone:651.686.2199 Fax: 800.535.1745
-www.generalpump.com email: sales@gpcompanies.com
+General Pump
+
 GENERAL PUMP A member of the Interpump Group
 Ref 300679 Rev.F
 01-20`;
@@ -10557,7 +10541,7 @@ VS
 *All other commercial pumps, vehicle cleaning pumps and accessories (where oil is used) use
 General Pump Industial Pump Oil Series 100. For a more comprehensive list, see page 2.
 Please refer to General Pump’s Pump and Accessory Catalog,
-Price Book or www.generalpump.com for specific
+Price Book for specific
 GP Industrial Pump Oil part numbers.
 General Pump
 is a member of
@@ -10617,12 +10601,11 @@ HTF2221S
 HTF2421S
 OIL RECOMMENDATIONS
 Please refer to General Pump’s Pump and Accessory Catalog,
-Price Book, or www.generalpump.com for specific
+Price Book for specific
 GP Industrial Pump Oil Series part numbers.
 Page 2 of 2
 Ref 300584 Rev. B
-GENERAL PUMP 1174 Northland Drive • Mendota Heights, MN 55120 04-11
-Phone: 651.686.2199 • Fax: 800.535.1745 • e-mail: sales@gpcompanies.com • www.generalpump.com
+
 G
 P
 S
@@ -10809,7 +10792,7 @@ S
 1
 0
 0
-NOTE: For pumps not listed, call Customer Service at 888-474-5487`;
+NOTE: For pumps not listed, consult the product catalog`;
 
 // ─── General Pump Service Manual ───
 KB.docs['General Pump Service Manual'] = `G= Pressure Washer System
@@ -11607,9 +11590,7 @@ specifications
 TYPICAL INTERPUMP
 PACKING ASSEMBLY
 
-GENERAL PUMP 1174 NontHiano Drive * Menpota HeiGHts, MN 55120
-
-(051}454-6500 + Fax (651)454-4524 + Ena sales @genersipump com + www ganaralpume oom`;
+`;
 
 // ─── General Pump Troubleshooting Guide ───
 KB.docs['General Pump Troubleshooting Guide'] = `SERVICING
@@ -11853,12 +11834,7 @@ Use downstream chamical injection.
 
 GENERAL PUMP
 
-Phone: (651)686-2199 FAX:
-
-: (800)535-1745 e-mail:
-
-1174 Northland Drive Mendota Heights, MN 55120
-sales@gpcompanies.com www.generalpump.com
+:  e-mail:
 
 Ref 300595 Rev. A
 07-05
