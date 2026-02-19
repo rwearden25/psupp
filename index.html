@@ -185,7 +185,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
   <div class="input-bar">
     <div id="imgPreviewBar" class="img-preview-bar" style="display:none"><img id="imgThumb"/><span id="imgName"></span><button class="remove-img" onclick="clearImage()" title="Remove">✕</button></div>
     <div class="input-wrap">
-    <input type="file" id="imageUpload" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelect(event)"/>
+    <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageSelect(event)"/>
     <button class="upload-btn" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button>
     <input type="text" id="userInput" placeholder="Search models, troubleshoot issues, look up specs…" autocomplete="off"/>
     <button class="send-btn" onclick="handleSend()" title="Send">➤</button>
@@ -255,7 +255,7 @@ function getSeriesGroups(){const g={};for(const m of KB.gp.pumpModels){const s=m
 function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oilRecommendations)){for(const p of s.pumps){const pn=norm(p);if(q.includes(pn)||pn.includes(q.replace(/\s/g,'')))r.push({model:p,oil:s.label,weight:s.weight,badge:s.badge});}}return[...new Map(r.map(x=>[x.model,x])).values()];}
 
 /* ═══ PAGES ═══ */
-function showHome(){setActive('home');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Chemical issues</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('pilot')"><span class="qicon">🔥</span> Pilot light</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="document.getElementById('imageUpload').click()"><span class="qicon">📷</span> Upload a photo</button></div></div>`;}
+function showHome(){setActive('home');inChat=false;C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Chemical issues</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('pilot')"><span class="qicon">🔥</span> Pilot light</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="document.getElementById('imageUpload').click()"><span class="qicon">📷</span> Upload a photo</button></div></div>`;}
 
 function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
 
@@ -326,10 +326,45 @@ function genResponse(query){const q=norm(query);let html='';let found=false;
   if(!found)html+=`<div class="info-block"><p>I can help with:</p><p>🔍 <span class="brand-label gp">GP</span> Pump lookup — model or specs</p><p>🔧 <span class="brand-label gp">GP</span> Troubleshooting — pressure, leaks, noise, packing</p><p>🛢️ <span class="brand-label gp">GP</span> Oil — "oil for TS2021"</p><p>🔥 <span class="brand-label alk">ALK</span> Troubleshooting — burner, pilot, motor, temperature</p><p>🗓️ Maintenance — schedules for both brands</p></div>`;
   return html;}
 
+/* ═══ CHAT STATE ═══ */
+let chatMessages=[];
+let chatMsgId=0;
+let inChat=false;
+
+function ensureChatView(){
+  if(!inChat){
+    inChat=true;
+    C.innerHTML=`<div class="section-page"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem"><button class="back-btn" onclick="exitChat()">← Home</button><button class="back-btn" onclick="newChat()" style="color:var(--accent);border-color:var(--accent)">+ New Chat</button></div><div class="messages" id="chatMessages"></div></div>`;
+  }
+}
+
+function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;showHome();}
+function newChat(){chatMessages=[];chatMsgId=0;inChat=false;ensureChatView();
+  const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
+  inChat=true;
+}
+
+function addChatMsg(role, html){
+  chatMessages.push({role,html});
+  const el=document.getElementById('chatMessages');
+  if(!el)return;
+  if(role==='user'){
+    el.innerHTML+=`<div class="msg msg-user"><div class="bubble">${html}</div></div>`;
+  } else {
+    chatMsgId++;
+    el.innerHTML+=`<div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText${chatMsgId}">${html}</div></div>`;
+  }
+  C.scrollTop=C.scrollHeight;
+}
+
 function showSearch(query,img){setActive('home');
+  ensureChatView();
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
-  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="messages"><div class="msg msg-user"><div class="bubble">${imgHtml}${esc(query)}</div></div><div class="msg msg-bot" id="aiResult"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText"><span class="ai-loading">🔍 ${img?'Analyzing image…':'Searching knowledge base…'}</span></div></div></div></div>`;
-  C.scrollTop=0;
+  addChatMsg('user', imgHtml+esc(query));
+  chatMsgId++;
+  const myId=chatMsgId;
+  addChatMsg('bot', `<span class="ai-loading">🔍 ${img?'Analyzing image…':'Searching knowledge base…'}</span>`);
+  
   const body={message:query};
   if(img){body.image=img.data;body.image_type=img.mediaType;}
   fetch('/api/chat', {
@@ -337,7 +372,8 @@ function showSearch(query,img){setActive('home');
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body)
   }).then(r=>r.json()).then(data=>{
-    const el=document.getElementById('aiText');
+    const el=document.getElementById('aiText'+myId);
+    if(!el)return;
     if(data.reply){
       const formatted = data.reply
         .replace(/\n\n/g,'</p><p>')
@@ -350,7 +386,7 @@ function showSearch(query,img){setActive('home');
     }
     C.scrollTop=C.scrollHeight;
   }).catch(e=>{
-    const el=document.getElementById('aiText');
+    const el=document.getElementById('aiText'+myId);
     if(el) el.innerHTML=img?'<span style="color:var(--text-muted)">Image analysis requires AI agent. Check API key.</span>':genResponse(query);
   });
 }
@@ -360,40 +396,27 @@ function startTopic(topic){
   const topicLabels={pressure:'Low Pressure',oil:'Oil Lookup',burner:'Burner Issues',service:'Service & Repair',chemical:'Chemical Issues',find:'Find a Pump',pilot:'Pilot Light',maintenance:'Maintenance',leak:'Leaks',noise:'Noise',packing:'Packing Failure',overheating:'Overheating',rough:'Rough Running',pulsation:'Pulsation',valves:'Valve Service',plungers:'Plunger Replacement',vpackings:'V-Packing Replacement',catalog:'Product Catalog',accessories:'Accessories',system:'System Design',warranty:'Warranty',electrical:'Electrical',coils:'Coils & Heat Exchangers',nozzles:'Spray Nozzles',unloaders:'Unloaders',checklist:'Pre-Service Checklist',installation:'Installation',startup:'Start-Up Procedure'};
   const label=topicLabels[topic]||topic;
   setActive('home');
-  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
-    <div class="messages">
-      <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div>
-        <div class="bubble">
-          <p>I can help with <strong>${esc(label)}</strong>. Which brand is this for?</p>
-          <div class="quick-actions" style="margin-top:0.75rem">
-            <button class="quick-btn" onclick="pickBrand('General Pump','${esc(topic)}')"><span class="qicon">🔵</span> General Pump</button>
-            <button class="quick-btn" onclick="pickBrand('Alkota','${esc(topic)}')"><span class="qicon">🟠</span> Alkota</button>
-            <button class="quick-btn" onclick="pickBrand('Not sure','${esc(topic)}')"><span class="qicon">❓</span> Not sure</button>
-          </div>
-        </div>
-      </div>
-    </div></div>`;
-  C.scrollTop=0;
+  ensureChatView();
+  addChatMsg('bot',`<p>I can help with <strong>${esc(label)}</strong>. Which brand is this for?</p>
+    <div class="quick-actions" style="margin-top:0.75rem">
+      <button class="quick-btn" onclick="pickBrand('General Pump','${esc(topic)}')"><span class="qicon">🔵</span> General Pump</button>
+      <button class="quick-btn" onclick="pickBrand('Alkota','${esc(topic)}')"><span class="qicon">🟠</span> Alkota</button>
+      <button class="quick-btn" onclick="pickBrand('Not sure','${esc(topic)}')"><span class="qicon">❓</span> Not sure</button>
+    </div>`);
+  C.scrollTop=C.scrollHeight;
 }
 
 function pickBrand(brand, topic){
   const topicLabels={pressure:'low pressure',oil:'oil recommendation',burner:'burner issues',service:'service and repair',chemical:'chemical injection issues',find:'finding a pump',pilot:'pilot light issues',maintenance:'maintenance schedule',leak:'leaks',noise:'noise issues',packing:'packing failure',overheating:'overheating',rough:'rough running',pulsation:'pulsation',valves:'valve service',plungers:'plunger replacement',vpackings:'v-packing replacement',catalog:'product catalog',accessories:'accessories',system:'system design',warranty:'warranty',electrical:'electrical components',coils:'coils and heat exchangers',nozzles:'spray nozzles',unloaders:'unloaders',checklist:'pre-service checklist',installation:'installation',startup:'start-up procedure'};
   const label=topicLabels[topic]||topic;
+  addChatMsg('user', esc(brand));
   // Topics that need a model number
   const needsModel=['oil','find','service','valves','plungers','vpackings'];
   if(needsModel.includes(topic)){
     const modelPrompt=topic==='find'?'What specifications are you looking for? Enter GPM, PSI, or application details.':'What\'s the model number?';
-    C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
-      <div class="messages">
-        <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble"><p>I can help with <strong>${label}</strong>.</p></div></div>
-        <div class="msg msg-user"><div class="bubble">${esc(brand)}</div></div>
-        <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div>
-          <div class="bubble"><p>${modelPrompt}</p></div>
-        </div>
-      </div></div>`;
+    addChatMsg('bot', `<p>${modelPrompt}</p>`);
     I.focus();I.placeholder=topic==='find'?'e.g. 4 GPM, 3000 PSI, belt drive...':'e.g. TS2021, EZ4040G, KFMZ...';
     window._pendingContext=brand+' '+label+(topic==='find'?' matching ':' for model ');
-    C.scrollTop=C.scrollHeight;
     return;
   }
   // Default: send directly to AI with brand context
