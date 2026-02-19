@@ -222,7 +222,7 @@ function getSeriesGroups(){const g={};for(const m of KB.gp.pumpModels){const s=m
 function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oilRecommendations)){for(const p of s.pumps){const pn=norm(p);if(q.includes(pn)||pn.includes(q.replace(/\s/g,'')))r.push({model:p,oil:s.label,weight:s.weight,badge:s.badge});}}return[...new Map(r.map(x=>[x.model,x])).values()];}
 
 /* ═══ PAGES ═══ */
-function showHome(){setActive('home');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across <span class="brand-label gp">GP</span> ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data and <span class="brand-label alk">ALKOTA</span> 11 equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="askQ('My pump has low pressure')"><span class="qicon">📉</span><span class="brand-label gp">GP</span> Low pressure</button><button class="quick-btn" onclick="askQ('What oil does my TS2021 need?')"><span class="qicon">🛢️</span><span class="brand-label gp">GP</span> Oil lookup</button><button class="quick-btn" onclick="askQ('Burner will not fire')"><span class="qicon">🔥</span><span class="brand-label alk">ALK</span> Burner issues</button><button class="quick-btn" onclick="askQ('How do I replace v-packings?')"><span class="qicon">⚙️</span><span class="brand-label gp">GP</span> V-packing service</button><button class="quick-btn" onclick="askQ('Machine will not draw chemical')"><span class="qicon">🧪</span><span class="brand-label alk">ALK</span> Chemical issues</button><button class="quick-btn" onclick="askQ('Find pump 4 GPM 3000 PSI')"><span class="qicon">🔍</span><span class="brand-label gp">GP</span> Find a pump</button><button class="quick-btn" onclick="askQ('Pilot will not stay lit')"><span class="qicon">🔥</span><span class="brand-label alk">ALK</span> Pilot light</button><button class="quick-btn" onclick="askQ('Maintenance schedule')"><span class="qicon">🗓️</span> Maintenance</button></div></div>`;}
+function showHome(){setActive('home');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Chemical issues</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('pilot')"><span class="qicon">🔥</span> Pilot light</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button></div></div>`;}
 
 function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
 
@@ -319,48 +319,68 @@ function showSearch(query){setActive('home');
   });
 }
 
+/* ═══ CONVERSATIONAL FLOW ═══ */
+function startTopic(topic){
+  const topicLabels={pressure:'Low Pressure',oil:'Oil Lookup',burner:'Burner Issues',service:'Service & Repair',chemical:'Chemical Issues',find:'Find a Pump',pilot:'Pilot Light',maintenance:'Maintenance',leak:'Leaks',noise:'Noise',packing:'Packing Failure',overheating:'Overheating',rough:'Rough Running',pulsation:'Pulsation',valves:'Valve Service',plungers:'Plunger Replacement',vpackings:'V-Packing Replacement',catalog:'Product Catalog',accessories:'Accessories',system:'System Design',warranty:'Warranty',electrical:'Electrical',coils:'Coils & Heat Exchangers',nozzles:'Spray Nozzles',unloaders:'Unloaders',checklist:'Pre-Service Checklist',installation:'Installation',startup:'Start-Up Procedure'};
+  const label=topicLabels[topic]||topic;
+  setActive('home');
+  C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
+    <div class="messages">
+      <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div>
+        <div class="bubble">
+          <p>I can help with <strong>${esc(label)}</strong>. Which brand is this for?</p>
+          <div class="quick-actions" style="margin-top:0.75rem">
+            <button class="quick-btn" onclick="pickBrand('General Pump','${esc(topic)}')"><span class="qicon">🔵</span> General Pump</button>
+            <button class="quick-btn" onclick="pickBrand('Alkota','${esc(topic)}')"><span class="qicon">🟠</span> Alkota</button>
+            <button class="quick-btn" onclick="pickBrand('Not sure','${esc(topic)}')"><span class="qicon">❓</span> Not sure</button>
+          </div>
+        </div>
+      </div>
+    </div></div>`;
+  C.scrollTop=0;
+}
+
+function pickBrand(brand, topic){
+  const topicLabels={pressure:'low pressure',oil:'oil recommendation',burner:'burner issues',service:'service and repair',chemical:'chemical injection issues',find:'finding a pump',pilot:'pilot light issues',maintenance:'maintenance schedule',leak:'leaks',noise:'noise issues',packing:'packing failure',overheating:'overheating',rough:'rough running',pulsation:'pulsation',valves:'valve service',plungers:'plunger replacement',vpackings:'v-packing replacement',catalog:'product catalog',accessories:'accessories',system:'system design',warranty:'warranty',electrical:'electrical components',coils:'coils and heat exchangers',nozzles:'spray nozzles',unloaders:'unloaders',checklist:'pre-service checklist',installation:'installation',startup:'start-up procedure'};
+  const label=topicLabels[topic]||topic;
+  // Topics that need a model number
+  const needsModel=['oil','find','service','valves','plungers','vpackings'];
+  if(needsModel.includes(topic)){
+    const modelPrompt=topic==='find'?'What specifications are you looking for? Enter GPM, PSI, or application details.':'What\'s the model number?';
+    C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
+      <div class="messages">
+        <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble"><p>I can help with <strong>${label}</strong>.</p></div></div>
+        <div class="msg msg-user"><div class="bubble">${esc(brand)}</div></div>
+        <div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div>
+          <div class="bubble"><p>${modelPrompt}</p></div>
+        </div>
+      </div></div>`;
+    I.focus();I.placeholder=topic==='find'?'e.g. 4 GPM, 3000 PSI, belt drive...':'e.g. TS2021, EZ4040G, KFMZ...';
+    window._pendingContext=brand+' '+label+(topic==='find'?' matching ':' for model ');
+    C.scrollTop=C.scrollHeight;
+    return;
+  }
+  // Default: send directly to AI with brand context
+  const prompt=brand==='Not sure'
+    ? `I need help with ${label}. I'm not sure which brand. Can you help me figure it out?`
+    : `I have a ${brand} unit and need help with ${label}. What should I check?`;
+  showSearch(prompt);
+}
+
 /* ═══ ROUTING ═══ */
 function nav(t){
   if(t==='home')return showHome();
-  // Map sidebar topics to conversational prompts
-  const topicPrompts={
-    'gp-pressure':'I have a General Pump with low pressure issues. What should I check?',
-    'gp-pulsation':'My General Pump is pulsating. What are the causes and fixes?',
-    'gp-rough':'My General Pump is running rough or has very low output. Help me diagnose.',
-    'gp-noise':'My General Pump is making knocking or loud noises. What could be wrong?',
-    'gp-packing':'I have premature packing failure on my General Pump. What causes this?',
-    'gp-overheating':'My General Pump is overheating. What should I check?',
-    'gp-leak':'My General Pump is leaking. Help me find the source.',
-    'gp-valves':'How do I service the valves on a General Pump?',
-    'gp-plungers':'How do I replace the plungers on a General Pump?',
-    'gp-vpackings':'How do I replace v-packings on a General Pump?',
-    'gp-oil':'What oil does my General Pump need?',
-    'gp-maintenance':'What is the maintenance schedule for General Pump equipment?',
-    'gp-catalog':'Help me find a General Pump model. What specs are you looking for?',
-    'gp-accessories':'What General Pump accessories are available?',
-    'gp-system':'Help me with General Pump system design - motor sizing, pulleys, plumbing.',
-    'gp-warranty':'What does the General Pump warranty cover?',
-  };
-  // Alkota topics
-  if(t.startsWith('alk-ts-')){const issue=t.slice(7).replace(/-/g,' ');showSearch('Alkota troubleshooting: '+issue);return;}
-  if(t==='alk-maintenance'){showSearch('What is the Alkota maintenance schedule?');return;}
-  if(t==='alk-installation'){showSearch('How do I install Alkota equipment?');return;}
-  if(t==='alk-startup'){showSearch('What is the Alkota startup procedure?');return;}
-  if(t==='alk-pump-svc'){showSearch('How do I service an Alkota pump?');return;}
-  if(t==='alk-unloaders'){showSearch('Help me with Alkota unloaders and accessories.');return;}
-  if(t==='alk-electrical'){showSearch('Help me with Alkota electrical components.');return;}
-  if(t==='alk-coils'){showSearch('Help me with Alkota coils and heat exchangers.');return;}
-  if(t==='alk-burner-ref'){showSearch('Help me with Alkota burner issues.');return;}
-  if(t==='alk-nozzles'){showSearch('Help me with Alkota spray nozzles.');return;}
-  if(t==='alk-checklist'){showSearch('What is the Alkota pre-service checklist?');return;}
-  if(t==='alk-warranty'){showSearch('What does the Alkota warranty cover?');return;}
-  // GP topics
-  if(topicPrompts[t]){showSearch(topicPrompts[t]);return;}
-  // Fallback
-  showSearch(t.replace(/-/g,' '));
+  // Strip prefix and route through conversational flow
+  if(t.startsWith('gp-')){const topic=t.slice(3);startTopic(topic);return;}
+  if(t.startsWith('alk-ts-')){const topic=t.slice(7);startTopic(topic);return;}
+  if(t.startsWith('alk-')){const topic=t.slice(4);startTopic(topic);return;}
+  startTopic(t);
 }
 
-function handleSend(){const q=I.value.trim();if(!q)return;I.value='';showSearch(q);}
+function handleSend(){const q=I.value.trim();if(!q)return;I.value='';I.placeholder='Search models, troubleshoot issues, look up specs...';
+  if(window._pendingContext){const full=window._pendingContext+q;window._pendingContext=null;showSearch(full);return;}
+  showSearch(q);
+}
 function askQ(q){I.value=q;handleSend();}
 I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 
