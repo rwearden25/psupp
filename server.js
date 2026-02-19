@@ -223,7 +223,7 @@ const tools = [
 ];
 
 // ─── CALL ANTHROPIC API ───
-async function callAnthropic(messages, stream = false) {
+async function callAnthropic(messages) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -234,7 +234,6 @@ async function callAnthropic(messages, stream = false) {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
-      stream: stream,
       system: `You are P-Supp, an expert equipment service assistant for General Pump and Alkota pressure washer equipment. You help technicians and service personnel troubleshoot problems, look up pump specifications, find maintenance procedures, and answer technical questions.
 
 IMPORTANT RULES:
@@ -258,7 +257,6 @@ When a user uploads a photo of equipment, analyze it carefully:
     })
   });
   
-  if (stream) return response; // Return raw response for streaming
   return await response.json();
 }
 
@@ -350,7 +348,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
-  // API endpoint - streaming
+  // API endpoint
   if (req.method === 'POST' && req.url === '/api/chat') {
     let body = '';
     let bodySize = 0;
@@ -369,124 +367,17 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         
-        const userMsg = message || 'Identify this equipment and any visible issues.';
-        console.log(`[Chat] ${image ? '📷 Image + ' : ''}${userMsg.substring(0, 80)}...`);
+        console.log(`[Chat] ${image ? '📷 Image + ' : ''}${(message||'').substring(0, 80)}...`);
         const t0 = Date.now();
+        const reply = await runAgent(message || 'Identify this equipment and any visible issues.', image, image_type);
+        console.log(`[Chat] Responded in ${Date.now() - t0}ms`);
         
-        // Build user content
-        let userContent;
-        if (image) {
-          userContent = [
-            { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image }},
-            { type: 'text', text: userMsg }
-          ];
-        } else {
-          userContent = userMsg;
-        }
-        
-        let messages = [{ role: 'user', content: userContent }];
-        let maxTurns = 3;
-        
-        // Tool call phase (non-streamed, fast with Haiku)
-        while (maxTurns > 0) {
-          maxTurns--;
-          const response = await callAnthropic(messages, false);
-          
-          if (response.error) {
-            res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-            res.write(`data: ${JSON.stringify({error: response.error.message || 'API Error'})}\n\n`);
-            res.write('data: [DONE]\n\n');
-            res.end();
-            return;
-          }
-          
-          const toolUseBlocks = (response.content || []).filter(b => b.type === 'tool_use');
-          
-          if (toolUseBlocks.length === 0) {
-            // No tool calls — return text as non-streamed (already have full response)
-            const textBlocks = (response.content || []).filter(b => b.type === 'text');
-            const reply = textBlocks.map(b => b.text).join('\n');
-            console.log(`[Chat] Responded in ${Date.now() - t0}ms`);
-            res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-            res.write(`data: ${JSON.stringify({text: reply})}\n\n`);
-            res.write('data: [DONE]\n\n');
-            res.end();
-            return;
-          }
-          
-          // Process tool calls
-          messages.push({ role: 'assistant', content: response.content });
-          const toolResults = [];
-          for (const toolCall of toolUseBlocks) {
-            let result;
-            const toolT0 = Date.now();
-            switch (toolCall.name) {
-              case 'search_knowledge_base': result = searchKnowledgeBase(toolCall.input.query); break;
-              case 'lookup_pump_model': result = lookupPumpModel(toolCall.input.model); break;
-              case 'get_troubleshooting_info': result = getTroubleshootingInfo(toolCall.input.problem); break;
-              default: result = 'Unknown tool: ' + toolCall.name;
-            }
-            console.log(`  [Tool] ${toolCall.name}(${JSON.stringify(toolCall.input).substring(0,60)}) → ${Date.now()-toolT0}ms`);
-            toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: result.substring(0, 15000) });
-          }
-          messages.push({ role: 'user', content: toolResults });
-          
-          // If last turn, stream the final response
-          if (maxTurns === 0 || toolUseBlocks.length > 0) {
-            // Start SSE for the final response
-            res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-            
-            try {
-              const streamResp = await callAnthropic(messages, true);
-              const reader = streamResp.body;
-              let buffer = '';
-              
-              // Read the stream
-              for await (const chunk of reader) {
-                buffer += chunk.toString();
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-                
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    if (data === '[DONE]') continue;
-                    try {
-                      const parsed = JSON.parse(data);
-                      if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-                        res.write(`data: ${JSON.stringify({text: parsed.delta.text})}\n\n`);
-                      }
-                      // If tool_use comes back, we can't handle more turns in stream mode
-                    } catch(e) {}
-                  }
-                }
-              }
-            } catch(e) {
-              console.error('Stream error:', e.message);
-            }
-            
-            console.log(`[Chat] Streamed in ${Date.now() - t0}ms`);
-            res.write('data: [DONE]\n\n');
-            res.end();
-            return;
-          }
-        }
-        
-        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-        res.write(`data: ${JSON.stringify({text: "I searched multiple sources but couldn't compile a complete answer. Please try rephrasing."})}\n\n`);
-        res.write('data: [DONE]\n\n');
-        res.end();
-        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ reply }));
       } catch (e) {
         console.error('Chat error:', e);
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Server error: ' + e.message }));
-        } else {
-          res.write(`data: ${JSON.stringify({error: e.message})}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        }
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Server error: ' + e.message }));
       }
     });
     return;

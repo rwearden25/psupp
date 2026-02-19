@@ -375,68 +375,33 @@ function formatAIText(raw){
     .replace(/^/, '<p>') + '</p>';
 }
 
-async function showSearch(query,img){setActive('home');
+function showSearch(query,img){setActive('home');
   ensureChatView();
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
   addChatMsg('user', imgHtml+esc(query));
   chatMsgId++;
   const myId=chatMsgId;
-  addChatMsg('bot', `<span class="ai-loading">🔍 ${img?'Analyzing image…':'Searching…'}</span>`);
+  addChatMsg('bot', `<span class="ai-loading">🔍 Searching…</span>`);
   
   const body={message:query};
   if(img){body.image=img.data;body.image_type=img.mediaType;}
-  
-  try {
-    const resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body)
-    });
-    
-    const el = document.getElementById('aiText'+myId);
-    if(!el) return;
-    
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
-    let buffer = '';
-    el.innerHTML = '';
-    el.classList.add('typing-cursor');
-    
-    while(true) {
-      const {done, value} = await reader.read();
-      if(done) break;
-      
-      buffer += decoder.decode(value, {stream: true});
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-      
-      for(const line of lines) {
-        if(!line.startsWith('data: ')) continue;
-        const data = line.slice(6);
-        if(data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          if(parsed.text) {
-            fullText += parsed.text;
-            el.innerHTML = formatAIText(fullText);
-            C.scrollTop = C.scrollHeight;
-          }
-          if(parsed.error) {
-            el.innerHTML = '<span style="color:var(--text-muted)">AI error: '+esc(parsed.error)+'</span>';
-          }
-        } catch(e){}
-      }
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  }).then(r=>r.json()).then(data=>{
+    const el=document.getElementById('aiText'+myId);
+    if(!el)return;
+    if(data.reply){
+      el.innerHTML=formatAIText(data.reply);
+    } else if(data.error){
+      el.innerHTML='<span style="color:var(--text-muted)">AI unavailable: '+esc(data.error)+'</span>';
     }
-    el.classList.remove('typing-cursor');
-    
-    if(!fullText) {
-      el.innerHTML = img?'<span style="color:var(--text-muted)">Could not analyze image. Try again.</span>':genResponse(query);
-    }
-  } catch(e) {
-    const el = document.getElementById('aiText'+myId);
-    if(el) el.innerHTML = img?'<span style="color:var(--text-muted)">Image analysis requires AI agent.</span>':genResponse(query);
-  }
+    C.scrollTop=C.scrollHeight;
+  }).catch(e=>{
+    const el=document.getElementById('aiText'+myId);
+    if(el) el.innerHTML=img?'<span style="color:var(--text-muted)">Image analysis requires AI agent.</span>':genResponse(query);
+  });
 }
 
 /* ═══ CONVERSATIONAL FLOW ═══ */
