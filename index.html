@@ -44,16 +44,16 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .img-in-chat{max-width:240px;border-radius:8px;border:1px solid var(--border);margin-bottom:0.5rem}
 .typing-cursor::after{content:'▊';animation:blink 0.7s infinite;color:var(--accent);font-weight:300}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.input-bar{padding:0.75rem 2rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:69px;z-index:99}
+.input-bar{padding:0.75rem 2rem;border-top:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:fixed;bottom:0;left:0;right:0;z-index:99}
 .input-wrap{max-width:820px;margin:0 auto;display:flex;gap:0.5rem}
 .input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;transition:border-color 0.2s}
 .input-wrap input:focus{border-color:var(--accent)}
 .input-wrap input::placeholder{color:var(--text-muted)}
 .send-btn{width:44px;height:44px;border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.15s;flex-shrink:0}
 .send-btn:hover{filter:brightness(1.15);transform:scale(1.04)}
-.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 130px)}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 70px)}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 130px);position:sticky;top:130px}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 70px);position:sticky;top:70px}
 .sb-section{border-bottom:1px solid var(--border)}
 .sb-header{display:flex;align-items:center;gap:0.6rem;padding:0.65rem 1rem;cursor:pointer;user-select:none;transition:background 0.15s}
 .sb-header:hover{background:var(--surface-2)}
@@ -74,7 +74,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .home-btn{display:flex;align-items:center;gap:0.6rem;width:100%;border:none;background:transparent;color:var(--text-muted);padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-family:var(--font-body);transition:all 0.15s;border-bottom:1px solid var(--border)}
 .home-btn:hover{background:var(--surface-2);color:var(--text)}
 .home-btn.active{background:var(--accent-dim);color:var(--accent);font-weight:600}
-.main{padding:2rem;overflow-y:auto;max-height:calc(100vh - 130px)}
+.main{padding:2rem 2rem 100px 2rem;overflow-y:auto;max-height:calc(100vh - 70px)}
 .welcome{max-width:840px;margin:0 auto;animation:fadeUp 0.3s ease}
 .welcome-icon{font-size:2.5rem;margin-bottom:0.75rem}
 .welcome h2{font-size:1.5rem;margin-bottom:0.5rem;letter-spacing:-0.5px}
@@ -207,6 +207,8 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
 <script src="knowledge-base.js"></script>
 <script>
 const C=document.getElementById('contentArea'),I=document.getElementById('userInput'),SB=document.getElementById('sidebar');
+const MAIN=C.parentElement; // .main is the scrollable container
+function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
 
 /* ═══ IMAGE UPLOAD ═══ */
@@ -267,55 +269,55 @@ function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oi
 /* ═══ PAGES ═══ */
 function showHome(){setActive('home');inChat=false;C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Chemical issues</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('pilot')"><span class="qicon">🔥</span> Pilot light</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="document.getElementById('imageUpload').click()"><span class="qicon">📷</span> Upload a photo</button></div></div>`;}
 
-function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showGPService(key){const s=KB.gp.serviceProcedures[key];if(!s)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${s.icon}</div><div><h2>${s.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${s.desc}</p></div></div><div class="card"><h4>Procedure</h4>${renderSteps(s.steps)}</div>`;if(s.notes)h+=`<div class="card"><h4>Notes</h4><div class="info-block"><p>${s.notes}</p></div></div>`;h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showGPService(key){const s=KB.gp.serviceProcedures[key];if(!s)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${s.icon}</div><div><h2>${s.title}</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${s.desc}</p></div></div><div class="card"><h4>Procedure</h4>${renderSteps(s.steps)}</div>`;if(s.notes)h+=`<div class="card"><h4>Notes</h4><div class="info-block"><p>${s.notes}</p></div></div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showGPOil(){setActive('gp-oil');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🛢️</div><div><h2>Oil &amp; Lubrication</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Oil Change Schedule</h4><div class="info-block"><p>${KB.gp.maintenance.oilChange}</p></div></div><div class="card"><h4>Three Oil Series</h4><div class="info-block"><p><span class="oil-badge s100">SERIES 100</span>&nbsp; 30W Non-Detergent — T, TS, TC, TX, TT, EZ, HTC, HTF, HTS, EP, ET, ES, TP series.</p></div><div class="info-block"><p><span class="oil-badge s220">SERIES 220</span>&nbsp; 50W — HF, KE, KF, KFMB, KFMZ, KS, LK, MK, MW, SK, VF, VK series.</p></div><div class="info-block"><p><span class="oil-badge s8090">SERIES 8090</span>&nbsp; 80/90 Gear Lube — T41–T151, T1551–T4251, CW, YGR/ZGRS gear reducers.</p></div></div><div class="card"><h4>Look Up Your Model</h4><p style="font-size:0.83rem;color:var(--text-muted)">Type your pump model in the search bar for a specific recommendation.</p></div></div>`;C.scrollTop=0;}
+function showGPOil(){setActive('gp-oil');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🛢️</div><div><h2>Oil &amp; Lubrication</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Oil Change Schedule</h4><div class="info-block"><p>${KB.gp.maintenance.oilChange}</p></div></div><div class="card"><h4>Three Oil Series</h4><div class="info-block"><p><span class="oil-badge s100">SERIES 100</span>&nbsp; 30W Non-Detergent — T, TS, TC, TX, TT, EZ, HTC, HTF, HTS, EP, ET, ES, TP series.</p></div><div class="info-block"><p><span class="oil-badge s220">SERIES 220</span>&nbsp; 50W — HF, KE, KF, KFMB, KFMZ, KS, LK, MK, MW, SK, VF, VK series.</p></div><div class="info-block"><p><span class="oil-badge s8090">SERIES 8090</span>&nbsp; 80/90 Gear Lube — T41–T151, T1551–T4251, CW, YGR/ZGRS gear reducers.</p></div></div><div class="card"><h4>Look Up Your Model</h4><p style="font-size:0.83rem;color:var(--text-muted)">Type your pump model in the search bar for a specific recommendation.</p></div></div>`;MAIN.scrollTop=0;}
 
-function showGPMaint(){setActive('gp-maintenance');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🗓️</div><div><h2>Maintenance Schedule</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Oil Changes</h4><div class="info-block"><p>${KB.gp.maintenance.oilChange}</p></div></div><div class="card"><h4>Every 500 Hours</h4>${renderSteps(KB.gp.maintenance.every500)}</div><div class="card"><h4>Every 1,000 Hours</h4>${renderSteps(KB.gp.maintenance.every1000)}</div><div class="card"><h4>Start-Up Checklist</h4>${renderSteps(KB.gp.maintenance.startup)}</div><div class="card"><h4>Additional Tips</h4><div class="info-block"><p>💧 <strong>Daily Flushing:</strong> ${KB.gp.maintenance.flushing}</p></div><div class="info-block"><p>❄️ <strong>Freeze Protection:</strong> ${KB.gp.maintenance.freezing}</p></div></div></div>`;C.scrollTop=0;}
+function showGPMaint(){setActive('gp-maintenance');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🗓️</div><div><h2>Maintenance Schedule</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Oil Changes</h4><div class="info-block"><p>${KB.gp.maintenance.oilChange}</p></div></div><div class="card"><h4>Every 500 Hours</h4>${renderSteps(KB.gp.maintenance.every500)}</div><div class="card"><h4>Every 1,000 Hours</h4>${renderSteps(KB.gp.maintenance.every1000)}</div><div class="card"><h4>Start-Up Checklist</h4>${renderSteps(KB.gp.maintenance.startup)}</div><div class="card"><h4>Additional Tips</h4><div class="info-block"><p>💧 <strong>Daily Flushing:</strong> ${KB.gp.maintenance.flushing}</p></div><div class="info-block"><p>❄️ <strong>Freeze Protection:</strong> ${KB.gp.maintenance.freezing}</p></div></div></div>`;MAIN.scrollTop=0;}
 
-function showGPSystem(){setActive('gp-system');let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📋</div><div><h2>System Design</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div>`;for(const i of Object.values(KB.gp.systemDesign))h+=`<div class="card"><h4>${i.title}</h4><div class="info-block"><p>${i.text}</p></div></div>`;h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showGPSystem(){setActive('gp-system');let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📋</div><div><h2>System Design</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div>`;for(const i of Object.values(KB.gp.systemDesign))h+=`<div class="card"><h4>${i.title}</h4><div class="info-block"><p>${i.text}</p></div></div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showGPWarranty(){setActive('gp-warranty');const w=KB.gp.warranty;C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📄</div><div><h2>Warranty</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Pump — 5 Years</h4><div class="info-block"><p>${w.pumpWarranty}</p></div></div><div class="card"><h4>Manifold — Lifetime</h4><div class="info-block"><p>${w.manifoldWarranty}</p></div></div><div class="card"><h4>Consumer — 2 Years</h4><div class="info-block"><p>${w.consumerWarranty}</p></div></div><div class="card"><h4>Accessories — 1 Year</h4><div class="info-block"><p>${w.accessoryWarranty}</p></div></div><div class="card"><h4>Not Covered</h4>${w.notCovered.map(x=>`<div class="cause-item"><strong>✗ ${x}</strong></div>`).join('')}</div><div class="card"><h4>Wear Parts</h4><div class="info-block"><p>${w.wearParts.map(x=>`<span class="tag">${x}</span>`).join(' ')}</p></div></div></div>`;C.scrollTop=0;}
+function showGPWarranty(){setActive('gp-warranty');const w=KB.gp.warranty;C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📄</div><div><h2>Warranty</h2><p><span class="brand-label gp">GENERAL PUMP</span></p></div></div><div class="card"><h4>Pump — 5 Years</h4><div class="info-block"><p>${w.pumpWarranty}</p></div></div><div class="card"><h4>Manifold — Lifetime</h4><div class="info-block"><p>${w.manifoldWarranty}</p></div></div><div class="card"><h4>Consumer — 2 Years</h4><div class="info-block"><p>${w.consumerWarranty}</p></div></div><div class="card"><h4>Accessories — 1 Year</h4><div class="info-block"><p>${w.accessoryWarranty}</p></div></div><div class="card"><h4>Not Covered</h4>${w.notCovered.map(x=>`<div class="cause-item"><strong>✗ ${x}</strong></div>`).join('')}</div><div class="card"><h4>Wear Parts</h4><div class="info-block"><p>${w.wearParts.map(x=>`<span class="tag">${x}</span>`).join(' ')}</p></div></div></div>`;MAIN.scrollTop=0;}
 
-function showGPCatalog(){setActive('gp-catalog');const g=getSeriesGroups();const sorted=Object.entries(g).sort((a,b)=>b[1].models.length-a[1].models.length);let cards=sorted.map(([n,d])=>`<div class="series-card" onclick="showSeriesDetail('${esc(n)}')"><h5>${n}</h5><div class="sc-stats">${d.models.length} models</div><div class="sc-range">${d.minGPM}–${d.maxGPM} GPM · ${d.minPSI.toLocaleString()}–${d.maxPSI.toLocaleString()} PSI</div></div>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📖</div><div><h2>Product Catalog</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${KB.gp.pumpModels.length} models · ${sorted.length} series</p></div></div><div class="card"><h4>Browse by Series</h4><div class="series-grid">${cards}</div></div><div class="card"><h4>Search All Models</h4><div class="filter-bar"><input type="text" id="catSearch" placeholder="Model number…" oninput="filterCat()"/><input type="number" id="catMinGPM" placeholder="Min GPM" style="width:85px" oninput="filterCat()"/><input type="number" id="catMaxGPM" placeholder="Max GPM" style="width:85px" oninput="filterCat()"/><input type="number" id="catMinPSI" placeholder="Min PSI" style="width:85px" oninput="filterCat()"/><input type="number" id="catMaxPSI" placeholder="Max PSI" style="width:85px" oninput="filterCat()"/></div><div class="result-count" id="catCount"></div><div style="max-height:400px;overflow-y:auto"><table class="data-table"><thead><tr><th>Model</th><th>GPM</th><th>PSI</th><th>RPM</th><th>HP</th><th>Wt</th><th>Series</th></tr></thead><tbody id="catBody"></tbody></table></div></div></div>`;filterCat();C.scrollTop=0;}
+function showGPCatalog(){setActive('gp-catalog');const g=getSeriesGroups();const sorted=Object.entries(g).sort((a,b)=>b[1].models.length-a[1].models.length);let cards=sorted.map(([n,d])=>`<div class="series-card" onclick="showSeriesDetail('${esc(n)}')"><h5>${n}</h5><div class="sc-stats">${d.models.length} models</div><div class="sc-range">${d.minGPM}–${d.maxGPM} GPM · ${d.minPSI.toLocaleString()}–${d.maxPSI.toLocaleString()} PSI</div></div>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📖</div><div><h2>Product Catalog</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${KB.gp.pumpModels.length} models · ${sorted.length} series</p></div></div><div class="card"><h4>Browse by Series</h4><div class="series-grid">${cards}</div></div><div class="card"><h4>Search All Models</h4><div class="filter-bar"><input type="text" id="catSearch" placeholder="Model number…" oninput="filterCat()"/><input type="number" id="catMinGPM" placeholder="Min GPM" style="width:85px" oninput="filterCat()"/><input type="number" id="catMaxGPM" placeholder="Max GPM" style="width:85px" oninput="filterCat()"/><input type="number" id="catMinPSI" placeholder="Min PSI" style="width:85px" oninput="filterCat()"/><input type="number" id="catMaxPSI" placeholder="Max PSI" style="width:85px" oninput="filterCat()"/></div><div class="result-count" id="catCount"></div><div style="max-height:400px;overflow-y:auto"><table class="data-table"><thead><tr><th>Model</th><th>GPM</th><th>PSI</th><th>RPM</th><th>HP</th><th>Wt</th><th>Series</th></tr></thead><tbody id="catBody"></tbody></table></div></div></div>`;filterCat();MAIN.scrollTop=0;}
 
 function filterCat(){const q=norm(document.getElementById('catSearch')?.value||'');const minG=parseFloat(document.getElementById('catMinGPM')?.value)||0;const maxG=parseFloat(document.getElementById('catMaxGPM')?.value)||99999;const minP=parseInt(document.getElementById('catMinPSI')?.value)||0;const maxP=parseInt(document.getElementById('catMaxPSI')?.value)||999999;let r=KB.gp.pumpModels.filter(m=>{const g=parseFloat(m[1]),p=parseInt(m[2]);if(g<minG||g>maxG||p<minP||p>maxP)return false;if(q&&!norm(m[0]).includes(q)&&!norm(m[6]).includes(q))return false;return true;});const show=r.slice(0,100);document.getElementById('catCount').textContent=`${r.length} models${r.length>100?' (first 100)':''}`;document.getElementById('catBody').innerHTML=show.map(m=>`<tr><td class="model-cell">${m[0]}</td><td>${m[1]}</td><td>${parseInt(m[2]).toLocaleString()}</td><td>${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td><td>${m[6]}</td></tr>`).join('');}
 
-function showSeriesDetail(name){const g=getSeriesGroups();const d=g[name];if(!d)return;let rows=d.models.map(m=>`<tr><td class="model-cell">${m[0]}</td><td>${m[1]}</td><td>${parseInt(m[2]).toLocaleString()}</td><td>${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td></tr>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showGPCatalog()">← Back to Catalog</button><div class="page-header"><div class="page-header-icon">📖</div><div><h2>${name}</h2><p><span class="brand-label gp">GP</span> ${d.models.length} models · ${d.minGPM}–${d.maxGPM} GPM · ${d.minPSI.toLocaleString()}–${d.maxPSI.toLocaleString()} PSI</p></div></div><div class="card"><div style="max-height:500px;overflow-y:auto"><table class="data-table"><thead><tr><th>Model</th><th>GPM</th><th>PSI</th><th>RPM</th><th>HP</th><th>Wt</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;C.scrollTop=0;}
+function showSeriesDetail(name){const g=getSeriesGroups();const d=g[name];if(!d)return;let rows=d.models.map(m=>`<tr><td class="model-cell">${m[0]}</td><td>${m[1]}</td><td>${parseInt(m[2]).toLocaleString()}</td><td>${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td></tr>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showGPCatalog()">← Back to Catalog</button><div class="page-header"><div class="page-header-icon">📖</div><div><h2>${name}</h2><p><span class="brand-label gp">GP</span> ${d.models.length} models · ${d.minGPM}–${d.maxGPM} GPM · ${d.minPSI.toLocaleString()}–${d.maxPSI.toLocaleString()} PSI</p></div></div><div class="card"><div style="max-height:500px;overflow-y:auto"><table class="data-table"><thead><tr><th>Model</th><th>GPM</th><th>PSI</th><th>RPM</th><th>HP</th><th>Wt</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;MAIN.scrollTop=0;}
 
-function showGPAccessories(){setActive('gp-accessories');const cats=Object.entries(KB.gp.accessories);let cards=cats.map(([n,items])=>`<div class="acc-cat-card" onclick="showAccDetail('${esc(n)}')"><h5>${n}</h5><span>${items.length} items</span></div>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔗</div><div><h2>Accessories</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${cats.reduce((a,c)=>a+c[1].length,0)} items · ${cats.length} categories</p></div></div><div class="card"><h4>Browse by Category</h4><div class="acc-cat-grid">${cards}</div></div></div>`;C.scrollTop=0;}
+function showGPAccessories(){setActive('gp-accessories');const cats=Object.entries(KB.gp.accessories);let cards=cats.map(([n,items])=>`<div class="acc-cat-card" onclick="showAccDetail('${esc(n)}')"><h5>${n}</h5><span>${items.length} items</span></div>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔗</div><div><h2>Accessories</h2><p><span class="brand-label gp">GENERAL PUMP</span> ${cats.reduce((a,c)=>a+c[1].length,0)} items · ${cats.length} categories</p></div></div><div class="card"><h4>Browse by Category</h4><div class="acc-cat-grid">${cards}</div></div></div>`;MAIN.scrollTop=0;}
 
-function showAccDetail(name){const items=KB.gp.accessories[name];if(!items)return;let rows=items.map(x=>`<tr><td class="model-cell">${x[0]}</td><td style="font-family:var(--font-body);color:var(--text-muted)">${x[1]}</td></tr>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showGPAccessories()">← Back</button><div class="page-header"><div class="page-header-icon">🔗</div><div><h2>${name}</h2><p>${items.length} items</p></div></div><div class="card"><div style="max-height:600px;overflow-y:auto"><table class="data-table"><thead><tr><th>Part Number</th><th>Description</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;C.scrollTop=0;}
+function showAccDetail(name){const items=KB.gp.accessories[name];if(!items)return;let rows=items.map(x=>`<tr><td class="model-cell">${x[0]}</td><td style="font-family:var(--font-body);color:var(--text-muted)">${x[1]}</td></tr>`).join('');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showGPAccessories()">← Back</button><div class="page-header"><div class="page-header-icon">🔗</div><div><h2>${name}</h2><p>${items.length} items</p></div></div><div class="card"><div style="max-height:600px;overflow-y:auto"><table class="data-table"><thead><tr><th>Part Number</th><th>Description</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;MAIN.scrollTop=0;}
 
-function showAlkTrouble(key){const t=KB.alk.troubleshooting[key];if(!t)return;setActive('alk-ts-'+key);C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label alk">ALKOTA</span> ${t.causes.length} cause/remedy pairs</p></div></div><div class="card"><h4 class="alk-h">Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div></div>`;C.scrollTop=0;}
+function showAlkTrouble(key){const t=KB.alk.troubleshooting[key];if(!t)return;setActive('alk-ts-'+key);C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p><span class="brand-label alk">ALKOTA</span> ${t.causes.length} cause/remedy pairs</p></div></div><div class="card"><h4 class="alk-h">Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div></div>`;MAIN.scrollTop=0;}
 
-function showAlkMaint(){setActive('alk-maintenance');const m=KB.alk.maintenance;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🗓️</div><div><h2>Maintenance</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(m.general)){const title=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${title}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkMaint(){setActive('alk-maintenance');const m=KB.alk.maintenance;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🗓️</div><div><h2>Maintenance</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(m.general)){const title=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${title}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkInstall(){setActive('alk-installation');const inst=KB.alk.installation;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🏗️</div><div><h2>Installation Guide</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(inst)){const title=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${title}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkInstall(){setActive('alk-installation');const inst=KB.alk.installation;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🏗️</div><div><h2>Installation Guide</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(inst)){const title=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${title}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkStartup(){setActive('alk-startup');const m=KB.alk.maintenance;C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">▶️</div><div><h2>Start-Up &amp; Shutdown</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div><div class="card"><h4 class="alk-h">Start-Up Procedure</h4>${renderSteps(m.startup)}</div><div class="card"><h4 class="alk-h">Shutdown Procedure</h4>${renderSteps(m.shutdown)}</div></div>`;C.scrollTop=0;}
+function showAlkStartup(){setActive('alk-startup');const m=KB.alk.maintenance;C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">▶️</div><div><h2>Start-Up &amp; Shutdown</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div><div class="card"><h4 class="alk-h">Start-Up Procedure</h4>${renderSteps(m.startup)}</div><div class="card"><h4 class="alk-h">Shutdown Procedure</h4>${renderSteps(m.shutdown)}</div></div>`;MAIN.scrollTop=0;}
 
 function showAlkPumpSvc(){setActive('alk-pump-svc');const p=KB.alk.serviceSchool.pumpService;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔧</div><div><h2>Pump Service</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;h+=`<div class="card"><h4 class="alk-h">⚠️ Key Facts</h4><div class="info-block"><p><strong>Max Water Temp:</strong> ${p.maxTemp}</p></div><div class="info-block"><p><strong>Cavitation:</strong> ${p.cavitation}</p></div><div class="info-block"><p><strong>Plunger Cracking:</strong> ${p.plungerCracking}</p></div><div class="info-block"><p><strong>Pump Oil:</strong> ${p.pumpOil}</p></div></div>`;h+=`<div class="card"><h4 class="alk-h">Pump Head Removal &amp; Reassembly</h4>${renderSteps(p.headRemoval)}</div>`;h+=`<div class="card"><h4 class="alk-h">Check Valves</h4><div class="info-block"><p>${p.checkValves}</p></div></div>`;h+=`<div class="card"><h4 class="alk-h">V-Packings</h4><div class="info-block"><p>${p.vPackings}</p></div></div>`;h+=`<div class="card"><h4 class="alk-h">Tools</h4><div class="info-block"><p>${p.tools}</p></div></div>`;
-const pt=KB.alk.serviceSchool.pumpTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Pump Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(pt)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;C.scrollTop=0;}
+const pt=KB.alk.serviceSchool.pumpTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Pump Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(pt)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
 function showAlkUnloaders(){setActive('alk-unloaders');const u=KB.alk.serviceSchool.unloaders;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">⚙️</div><div><h2>Unloaders &amp; Accessories</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(u)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}
-const ut=KB.alk.serviceSchool.unloaderTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Unloader Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(ut)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;C.scrollTop=0;}
+const ut=KB.alk.serviceSchool.unloaderTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Unloader Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(ut)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkElectrical(){setActive('alk-electrical');const e=KB.alk.serviceSchool.electrical;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">⚡</div><div><h2>Electrical Components</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(e)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkElectrical(){setActive('alk-electrical');const e=KB.alk.serviceSchool.electrical;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">⚡</div><div><h2>Electrical Components</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(e)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkCoils(){setActive('alk-coils');const c=KB.alk.serviceSchool.coils;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔥</div><div><h2>Coils &amp; Heat Exchangers</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(c)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkCoils(){setActive('alk-coils');const c=KB.alk.serviceSchool.coils;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔥</div><div><h2>Coils &amp; Heat Exchangers</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(c)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
 function showAlkBurnerRef(){setActive('alk-burner-ref');const b=KB.alk.serviceSchool.burners;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">🔥</div><div><h2>Burner Reference</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(b)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}
 const obt=KB.alk.serviceSchool.oilBurnerTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Oil Burner Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(obt)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div>`;
-const ght=KB.alk.serviceSchool.gasHeaterTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Gas Heater Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(ght)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;C.scrollTop=0;}
+const ght=KB.alk.serviceSchool.gasHeaterTroubleshooting;h+=`<div class="card"><h4 class="alk-h">Gas Heater Troubleshooting</h4>`;for(const[prob,causes]of Object.entries(ght)){h+=`<div style="margin:0.7rem 0"><strong style="color:var(--blue)">${prob}</strong>${renderCauses(causes)}</div>`;}h+=`</div></div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkNozzles(){setActive('alk-nozzles');const n=KB.alk.serviceSchool.nozzles;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">💨</div><div><h2>Spray Nozzles</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(n)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkNozzles(){setActive('alk-nozzles');const n=KB.alk.serviceSchool.nozzles;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">💨</div><div><h2>Spray Nozzles</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div>`;for(const[key,val]of Object.entries(n)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
-function showAlkChecklist(){setActive('alk-checklist');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">✅</div><div><h2>Pre-Service Checklist</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div><div class="card"><h4 class="alk-h">Complete Pre-Service Inspection</h4>${renderSteps(KB.alk.serviceSchool.preServiceChecklist)}</div></div>`;C.scrollTop=0;}
+function showAlkChecklist(){setActive('alk-checklist');C.innerHTML=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">✅</div><div><h2>Pre-Service Checklist</h2><p><span class="brand-label alk">ALKOTA SERVICE SCHOOL</span></p></div></div><div class="card"><h4 class="alk-h">Complete Pre-Service Inspection</h4>${renderSteps(KB.alk.serviceSchool.preServiceChecklist)}</div></div>`;MAIN.scrollTop=0;}
 
-function showAlkWarranty(){setActive('alk-warranty');const w=KB.alk.serviceSchool.warranty;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📄</div><div><h2>Warranty</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(w)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;C.scrollTop=0;}
+function showAlkWarranty(){setActive('alk-warranty');const w=KB.alk.serviceSchool.warranty;let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📄</div><div><h2>Warranty</h2><p><span class="brand-label alk">ALKOTA</span></p></div></div>`;for(const[key,val]of Object.entries(w)){const t=key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();h+=`<div class="card"><h4 class="alk-h">${t}</h4><div class="info-block"><p>${val}</p></div></div>`;}h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
 /* ═══ SEARCH ═══ */
 function genResponse(query){const q=norm(query);let html='';let found=false;
@@ -348,8 +350,8 @@ function ensureChatView(){
   }
 }
 
-function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;showHome();}
-function newChat(){chatMessages=[];chatMsgId=0;inChat=false;ensureChatView();
+function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';showHome();}
+function newChat(){chatMessages=[];chatMsgId=0;inChat=false;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
   const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
   inChat=true;
 }
@@ -364,7 +366,7 @@ function addChatMsg(role, html){
     chatMsgId++;
     el.innerHTML+=`<div class="msg msg-bot"><div class="bot-avatar" style="background:var(--accent);color:#fff;font-size:0.6rem;font-weight:700">AI</div><div class="bubble" id="aiText${chatMsgId}">${html}</div></div>`;
   }
-  C.scrollTop=C.scrollHeight;
+  scrollBottom();
 }
 
 function formatAIText(raw){
@@ -393,10 +395,12 @@ function showSearch(query,img){setActive('home');
     if(!el)return;
     if(data.reply){
       el.innerHTML=formatAIText(data.reply);
+      I.placeholder='Type your reply or ask a follow-up question...';
+      I.focus();
     } else if(data.error){
       el.innerHTML='<span style="color:var(--text-muted)">AI unavailable: '+esc(data.error)+'</span>';
     }
-    C.scrollTop=C.scrollHeight;
+    scrollBottom();
   }).catch(e=>{
     const el=document.getElementById('aiText'+myId);
     if(el) el.innerHTML=img?'<span style="color:var(--text-muted)">Image analysis requires AI agent.</span>':genResponse(query);
@@ -409,28 +413,72 @@ function startTopic(topic){
   const label=topicLabels[topic]||topic;
   setActive('home');
   ensureChatView();
-  // Burner/pilot — skip brand, ask to describe the issue
-  const describeFirst=['burner','pilot'];
-  if(describeFirst.includes(topic)){
-    addChatMsg('bot',`<p>I can help with <strong>${esc(label)}</strong>. Please describe the issue you're experiencing — for example:</p>
-      <div class="quick-actions" style="margin-top:0.75rem">
-        <button class="quick-btn" onclick="askQ('Burner will not fire')"><span class="qicon">🔥</span> Won't fire</button>
-        <button class="quick-btn" onclick="askQ('Pilot will not stay lit')"><span class="qicon">💨</span> Pilot won't stay lit</button>
-        <button class="quick-btn" onclick="askQ('Burner fires but shuts off')"><span class="qicon">⚠️</span> Fires then shuts off</button>
-        <button class="quick-btn" onclick="askQ('Smoke or soot from burner')"><span class="qicon">🌫️</span> Smoke / soot</button>
-      </div>
+
+  const topicOptions={
+    pressure:[
+      ['📉','Pressure drops during use','My pressure drops while I am spraying'],
+      ['⛔','No pressure at all','My pump is running but I have no pressure output'],
+      ['📊','Pressure is lower than rated','My pump pressure is lower than what it should be rated for'],
+      ['💧','Pressure fluctuates up and down','My pressure is surging or fluctuating up and down']
+    ],
+    oil:[
+      ['🛢️','Need oil recommendation','What oil does my pump need? I need the model-specific recommendation'],
+      ['🔄','When to change oil','How often should I change my pump oil and what is the procedure?'],
+      ['🥛','Oil looks milky or contaminated','My pump oil looks milky or has water in it']
+    ],
+    burner:[
+      ['🔥','Won\'t fire','Burner will not fire at all'],
+      ['💨','Pilot won\'t stay lit','Pilot will not stay lit'],
+      ['⚠️','Fires then shuts off','Burner fires but shuts off after a short time'],
+      ['🌫️','Smoke / soot','There is smoke or soot coming from the burner']
+    ],
+    service:[
+      ['🔧','Pump rebuild','I need to rebuild or service my pump'],
+      ['⚙️','Replace seals or packings','I need to replace seals or v-packings on my pump'],
+      ['🔩','Replace valves','I need to replace or service the check valves'],
+      ['📋','General service steps','What are the general service procedures for my equipment?']
+    ],
+    chemical:[
+      ['🧪','Won\'t draw chemical','My machine will not draw chemical or detergent'],
+      ['💧','Chemical is too weak','Chemical is being applied but it is too diluted or weak'],
+      ['🚫','Chemical injector leaking','My chemical injector is leaking or dripping'],
+      ['❓','Injector setup help','How do I set up or adjust my chemical injection system?']
+    ],
+    find:[
+      ['📊','By GPM and PSI','I need a pump with specific GPM and PSI ratings'],
+      ['🏗️','By application','I need a pump recommendation for a specific application'],
+      ['🔄','Replacement pump','I need to find a replacement pump for my current one'],
+      ['📋','Compare models','I want to compare pump models and specifications']
+    ],
+    pilot:[
+      ['🔥','Won\'t ignite','Pilot will not ignite at all'],
+      ['💨','Won\'t stay lit','Pilot lights but will not stay lit'],
+      ['⚡','Ignitor not sparking','The ignitor is not producing a spark'],
+      ['🌬️','Blows out easily','Pilot blows out in wind or during operation']
+    ],
+    maintenance:[
+      ['🗓️','Maintenance schedule','What is the recommended maintenance schedule for my equipment?'],
+      ['❄️','Winterizing','How do I winterize or store my pressure washer for the season?'],
+      ['▶️','Start-up procedure','What is the proper start-up procedure?'],
+      ['🛑','Shutdown procedure','What is the proper shutdown procedure?']
+    ]
+  };
+
+  const options=topicOptions[topic];
+  if(options){
+    let btns=options.map(([icon,label,q])=>
+      `<button class="quick-btn" onclick="askQ('${q.replace(/'/g,"\\'")}')"><span class="qicon">${icon}</span> ${label}</button>`
+    ).join('');
+    addChatMsg('bot',`<p>I can help with <strong>${esc(topicLabels[topic])}</strong>. What's going on?</p>
+      <div class="quick-actions" style="margin-top:0.75rem">${btns}</div>
       <p style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)">Or type your own description below.</p>`);
-    I.focus();I.placeholder='Describe the burner/pilot issue...';
-    C.scrollTop=C.scrollHeight;
+    I.focus();I.placeholder='Describe your issue or ask a question...';
+    scrollBottom();
     return;
   }
-  addChatMsg('bot',`<p>I can help with <strong>${esc(label)}</strong>. Which brand is this for?</p>
-    <div class="quick-actions" style="margin-top:0.75rem">
-      <button class="quick-btn" onclick="pickBrand('General Pump','${esc(topic)}')"><span class="qicon">🔵</span> General Pump</button>
-      <button class="quick-btn" onclick="pickBrand('Alkota','${esc(topic)}')"><span class="qicon">🟠</span> Alkota</button>
-      <button class="quick-btn" onclick="pickBrand('Not sure','${esc(topic)}')"><span class="qicon">❓</span> Not sure</button>
-    </div>`);
-  C.scrollTop=C.scrollHeight;
+
+  // Fallback for sidebar topics without custom options — send straight to AI
+  showSearch('I need help with '+label+'. What should I know?');
 }
 
 function pickBrand(brand, topic){
