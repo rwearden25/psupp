@@ -42,6 +42,8 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .img-preview-bar img{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
 .img-preview-bar .remove-img{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0 4px}
 .img-in-chat{max-width:240px;border-radius:8px;border:1px solid var(--border);margin-bottom:0.5rem}
+.typing-cursor::after{content:'▊';animation:blink 0.7s infinite;color:var(--accent);font-weight:300}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .input-bar{padding:0.75rem 2rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:69px;z-index:99}
 .input-wrap{max-width:820px;margin:0 auto;display:flex;gap:0.5rem}
 .input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;transition:border-color 0.2s}
@@ -365,38 +367,76 @@ function addChatMsg(role, html){
   C.scrollTop=C.scrollHeight;
 }
 
-function showSearch(query,img){setActive('home');
+function formatAIText(raw){
+  return raw
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/\n/g,'<br>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^/, '<p>') + '</p>';
+}
+
+async function showSearch(query,img){setActive('home');
   ensureChatView();
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
   addChatMsg('user', imgHtml+esc(query));
   chatMsgId++;
   const myId=chatMsgId;
-  addChatMsg('bot', `<span class="ai-loading">🔍 ${img?'Analyzing image…':'Searching knowledge base…'}</span>`);
+  addChatMsg('bot', `<span class="ai-loading">🔍 ${img?'Analyzing image…':'Searching…'}</span>`);
   
   const body={message:query};
   if(img){body.image=img.data;body.image_type=img.mediaType;}
-  fetch('/api/chat', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  }).then(r=>r.json()).then(data=>{
-    const el=document.getElementById('aiText'+myId);
-    if(!el)return;
-    if(data.reply){
-      const formatted = data.reply
-        .replace(/\n\n/g,'</p><p>')
-        .replace(/\n/g,'<br>')
-        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-        .replace(/^/, '<p>') + '</p>';
-      el.innerHTML=formatted;
-    } else if(data.error){
-      el.innerHTML='<span style="color:var(--text-muted)">AI unavailable: '+esc(data.error)+'</span>';
+  
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    
+    const el = document.getElementById('aiText'+myId);
+    if(!el) return;
+    
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
+    el.innerHTML = '';
+    el.classList.add('typing-cursor');
+    
+    while(true) {
+      const {done, value} = await reader.read();
+      if(done) break;
+      
+      buffer += decoder.decode(value, {stream: true});
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for(const line of lines) {
+        if(!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if(data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          if(parsed.text) {
+            fullText += parsed.text;
+            el.innerHTML = formatAIText(fullText);
+            C.scrollTop = C.scrollHeight;
+          }
+          if(parsed.error) {
+            el.innerHTML = '<span style="color:var(--text-muted)">AI error: '+esc(parsed.error)+'</span>';
+          }
+        } catch(e){}
+      }
     }
-    C.scrollTop=C.scrollHeight;
-  }).catch(e=>{
-    const el=document.getElementById('aiText'+myId);
-    if(el) el.innerHTML=img?'<span style="color:var(--text-muted)">Image analysis requires AI agent. Check API key.</span>':genResponse(query);
-  });
+    el.classList.remove('typing-cursor');
+    
+    if(!fullText) {
+      el.innerHTML = img?'<span style="color:var(--text-muted)">Could not analyze image. Try again.</span>':genResponse(query);
+    }
+  } catch(e) {
+    const el = document.getElementById('aiText'+myId);
+    if(el) el.innerHTML = img?'<span style="color:var(--text-muted)">Image analysis requires AI agent.</span>':genResponse(query);
+  }
 }
 
 /* ═══ CONVERSATIONAL FLOW ═══ */
