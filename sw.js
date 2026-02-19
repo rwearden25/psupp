@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psupp-v7';
+const CACHE_NAME = 'psupp-v8';
 const ASSETS = [
   '/',
   '/index.html',
