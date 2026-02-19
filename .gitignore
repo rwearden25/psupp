@@ -1,0 +1,15 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# PDF source files (not needed in deployment)
+*.pdf
+
+# Python build artifacts
+__pycache__/
+*.pyc
+build-kb.py
