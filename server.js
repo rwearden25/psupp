@@ -17,147 +17,163 @@ const mimeTypes = {
   '.svg': 'image/svg+xml'
 };
 
-// ─── LOAD KNOWLEDGE BASE ───
-let KB = {};
-try {
-  const kbCode = fs.readFileSync(path.join(__dirname, 'knowledge-base.js'), 'utf8');
-  // Extract KB object from the JS file
-  const sandbox = {};
-  const fn = new Function('KB', kbCode.replace(/^const KB\s*=\s*/, 'Object.assign(KB, ') + ')');
-  // Simpler approach: eval in controlled scope
-  eval(kbCode);
-  console.log('Knowledge base loaded');
-} catch (e) {
-  console.log('KB load note:', e.message, '- will use file directly');
-}
+// ─── FAST IN-MEMORY SEARCH ENGINE ───
+// Pre-loads everything at startup — zero disk I/O at query time
 
-// ─── KNOWLEDGE BASE SEARCH TOOL ───
-function searchKnowledgeBase(query) {
-  // Read the raw KB file and search through it
+const searchEngine = {
+  chunks: [],        // array of { text, lower, words }
+  invertedIndex: {}, // word → Set of chunk indices
+  lines: [],         // raw lines for model lookup
+  linesUpper: [],    // uppercased lines for fast model match
+  ready: false
+};
+
+function buildSearchEngine() {
+  const t0 = Date.now();
   try {
     const kbText = fs.readFileSync(path.join(__dirname, 'knowledge-base.js'), 'utf8');
-    const q = query.toLowerCase();
-    const terms = q.split(/\s+/).filter(t => t.length > 2);
     
-    // Split into chunks and score them
-    const lines = kbText.split('\n');
-    const chunks = [];
+    // Store lines for model lookup
+    searchEngine.lines = kbText.split('\n');
+    searchEngine.linesUpper = searchEngine.lines.map(l => l.toUpperCase());
+    
+    // Build overlapping chunks (15 lines, 3 line overlap)
+    const lines = searchEngine.lines;
     let currentChunk = [];
-    
-    for (const line of lines) {
-      currentChunk.push(line);
+    for (let i = 0; i < lines.length; i++) {
+      currentChunk.push(lines[i]);
       if (currentChunk.length >= 15) {
-        chunks.push(currentChunk.join('\n'));
-        // Keep some overlap
+        const text = currentChunk.join('\n');
+        const lower = text.toLowerCase();
+        const words = new Set(lower.match(/[a-z0-9]+/g) || []);
+        const idx = searchEngine.chunks.length;
+        searchEngine.chunks.push({ text, lower, words });
+        
+        // Build inverted index
+        for (const w of words) {
+          if (w.length < 3) continue;
+          if (!searchEngine.invertedIndex[w]) searchEngine.invertedIndex[w] = new Set();
+          searchEngine.invertedIndex[w].add(idx);
+        }
+        
         currentChunk = currentChunk.slice(-3);
       }
     }
-    if (currentChunk.length > 0) chunks.push(currentChunk.join('\n'));
-    
-    // Score chunks by term matches
-    const scored = chunks.map(chunk => {
-      const lower = chunk.toLowerCase();
-      let score = 0;
-      for (const term of terms) {
-        const matches = (lower.match(new RegExp(term, 'g')) || []).length;
-        score += matches;
+    // Final chunk
+    if (currentChunk.length > 0) {
+      const text = currentChunk.join('\n');
+      const lower = text.toLowerCase();
+      const words = new Set(lower.match(/[a-z0-9]+/g) || []);
+      const idx = searchEngine.chunks.length;
+      searchEngine.chunks.push({ text, lower, words });
+      for (const w of words) {
+        if (w.length < 3) continue;
+        if (!searchEngine.invertedIndex[w]) searchEngine.invertedIndex[w] = new Set();
+        searchEngine.invertedIndex[w].add(idx);
       }
-      return { chunk, score };
-    }).filter(c => c.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8);
-    
-    if (scored.length === 0) {
-      return 'No relevant information found in the knowledge base for: ' + query;
     }
     
-    return scored.map(s => s.chunk).join('\n\n---\n\n');
+    searchEngine.ready = true;
+    const dt = Date.now() - t0;
+    const indexSize = Object.keys(searchEngine.invertedIndex).length;
+    console.log(`Search engine ready: ${searchEngine.chunks.length} chunks, ${indexSize} terms indexed in ${dt}ms`);
   } catch (e) {
-    return 'Error searching knowledge base: ' + e.message;
+    console.error('Search engine build error:', e.message);
   }
+}
+
+// Build index on startup
+buildSearchEngine();
+
+// ─── SEARCH FUNCTIONS (all in-memory, no disk I/O) ───
+
+function searchKnowledgeBase(query) {
+  if (!searchEngine.ready) return 'Search engine not ready';
+  const terms = query.toLowerCase().match(/[a-z0-9]+/g)?.filter(t => t.length > 2) || [];
+  if (terms.length === 0) return 'No search terms provided';
+  
+  // Find candidate chunks via inverted index
+  const candidates = new Map(); // chunkIdx → score
+  for (const term of terms) {
+    const exact = searchEngine.invertedIndex[term];
+    if (exact) {
+      for (const idx of exact) {
+        candidates.set(idx, (candidates.get(idx) || 0) + 3);
+      }
+    }
+    // Prefix match for partial terms (e.g. "puls" matches "pulsation")
+    if (term.length >= 4) {
+      for (const [word, idxSet] of Object.entries(searchEngine.invertedIndex)) {
+        if (word !== term && word.startsWith(term)) {
+          for (const idx of idxSet) {
+            candidates.set(idx, (candidates.get(idx) || 0) + 1);
+          }
+        }
+      }
+    }
+  }
+  
+  if (candidates.size === 0) return 'No relevant information found for: ' + query;
+  
+  // Sort by score and return top results
+  const sorted = [...candidates.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  
+  return sorted.map(([idx]) => searchEngine.chunks[idx].text).join('\n\n---\n\n');
 }
 
 function lookupPumpModel(model) {
-  try {
-    const kbText = fs.readFileSync(path.join(__dirname, 'knowledge-base.js'), 'utf8');
-    const modelUpper = model.toUpperCase();
-    const lines = kbText.split('\n');
-    const relevant = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toUpperCase().includes(modelUpper)) {
-        // Grab surrounding context
-        const start = Math.max(0, i - 3);
-        const end = Math.min(lines.length, i + 5);
-        relevant.push(lines.slice(start, end).join('\n'));
-      }
+  if (!searchEngine.ready) return 'Search engine not ready';
+  const modelUpper = model.toUpperCase().trim();
+  const relevant = [];
+  
+  for (let i = 0; i < searchEngine.linesUpper.length; i++) {
+    if (searchEngine.linesUpper[i].includes(modelUpper)) {
+      const start = Math.max(0, i - 3);
+      const end = Math.min(searchEngine.lines.length, i + 5);
+      relevant.push(searchEngine.lines.slice(start, end).join('\n'));
     }
-    
-    if (relevant.length === 0) {
-      return 'No information found for pump model: ' + model;
-    }
-    
-    return relevant.slice(0, 10).join('\n\n---\n\n');
-  } catch (e) {
-    return 'Error looking up model: ' + e.message;
   }
+  
+  if (relevant.length === 0) return 'No information found for pump model: ' + model;
+  return relevant.slice(0, 10).join('\n\n---\n\n');
 }
 
 function getTroubleshootingInfo(problem) {
-  try {
-    const kbText = fs.readFileSync(path.join(__dirname, 'knowledge-base.js'), 'utf8');
-    const q = problem.toLowerCase();
-    
-    // Search specifically in troubleshooting sections
-    const tsTerms = ['cause', 'remedy', 'troubleshoot', 'problem', 'symptom', 'solution', 'check', 'replace', 'inspect'];
-    const allTerms = [...q.split(/\s+/).filter(t => t.length > 2), ...tsTerms];
-    
-    const lines = kbText.split('\n');
-    const chunks = [];
-    let currentChunk = [];
-    
-    for (const line of lines) {
-      currentChunk.push(line);
-      if (currentChunk.length >= 20) {
-        chunks.push(currentChunk.join('\n'));
-        currentChunk = currentChunk.slice(-5);
+  if (!searchEngine.ready) return 'Search engine not ready';
+  const q = problem.toLowerCase();
+  const queryTerms = q.match(/[a-z0-9]+/g)?.filter(t => t.length > 2) || [];
+  const tsTerms = ['cause', 'remedy', 'troubleshoot', 'problem', 'symptom', 'solution', 'check', 'replace', 'inspect'];
+  
+  // Find candidates via inverted index using query terms
+  const candidates = new Map();
+  for (const term of queryTerms) {
+    const exact = searchEngine.invertedIndex[term];
+    if (exact) {
+      for (const idx of exact) {
+        candidates.set(idx, (candidates.get(idx) || 0) + 3);
       }
     }
-    if (currentChunk.length > 0) chunks.push(currentChunk.join('\n'));
-    
-    // Score with emphasis on troubleshooting content
-    const scored = chunks.map(chunk => {
-      const lower = chunk.toLowerCase();
-      let score = 0;
-      
-      // Must contain at least one query term
-      let hasQueryTerm = false;
-      for (const term of q.split(/\s+/).filter(t => t.length > 2)) {
-        if (lower.includes(term)) {
-          score += 3;
-          hasQueryTerm = true;
-        }
-      }
-      if (!hasQueryTerm) return { chunk, score: 0 };
-      
-      // Bonus for troubleshooting-specific terms
-      for (const term of tsTerms) {
-        if (lower.includes(term)) score += 1;
-      }
-      
-      return { chunk, score };
-    }).filter(c => c.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
-    
-    if (scored.length === 0) {
-      return 'No troubleshooting information found for: ' + problem;
-    }
-    
-    return scored.map(s => s.chunk).join('\n\n---\n\n');
-  } catch (e) {
-    return 'Error searching troubleshooting data: ' + e.message;
   }
+  
+  if (candidates.size === 0) return 'No troubleshooting information found for: ' + problem;
+  
+  // Boost chunks that also contain troubleshooting-specific terms
+  for (const [idx, score] of candidates) {
+    const chunk = searchEngine.chunks[idx];
+    let boost = 0;
+    for (const t of tsTerms) {
+      if (chunk.words.has(t)) boost += 1;
+    }
+    candidates.set(idx, score + boost);
+  }
+  
+  const sorted = [...candidates.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  
+  return sorted.map(([idx]) => searchEngine.chunks[idx].text).join('\n\n---\n\n');
 }
 
 // ─── ANTHROPIC API TOOL DEFINITIONS ───
@@ -288,6 +304,7 @@ async function runAgent(userMessage, imageData, imageType) {
     const toolResults = [];
     for (const toolCall of toolUseBlocks) {
       let result;
+      const toolT0 = Date.now();
       
       switch (toolCall.name) {
         case 'search_knowledge_base':
@@ -302,6 +319,8 @@ async function runAgent(userMessage, imageData, imageType) {
         default:
           result = 'Unknown tool: ' + toolCall.name;
       }
+      
+      console.log(`  [Tool] ${toolCall.name}(${JSON.stringify(toolCall.input).substring(0,60)}) → ${Date.now()-toolT0}ms`);
       
       toolResults.push({
         type: 'tool_result',
@@ -349,7 +368,9 @@ const server = http.createServer(async (req, res) => {
         }
         
         console.log(`[Chat] ${image ? '📷 Image + ' : ''}${(message||'').substring(0, 80)}...`);
+        const t0 = Date.now();
         const reply = await runAgent(message || 'Identify this equipment and any visible issues.', image, image_type);
+        console.log(`[Chat] Responded in ${Date.now() - t0}ms`);
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ reply }));
@@ -368,6 +389,7 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({ 
       status: 'ok', 
       ai: API_KEY ? 'configured' : 'not configured',
+      search: searchEngine.ready ? `${searchEngine.chunks.length} chunks, ${Object.keys(searchEngine.invertedIndex).length} terms` : 'not ready',
       timestamp: new Date().toISOString()
     }));
     return;
