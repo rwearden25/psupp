@@ -379,9 +379,8 @@ function showSearch(query,img){setActive('home');
   ensureChatView();
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
   addChatMsg('user', imgHtml+esc(query));
-  chatMsgId++;
-  const myId=chatMsgId;
   addChatMsg('bot', `<span class="ai-loading">🔍 Searching…</span>`);
+  const myId=chatMsgId; // grab the ID that addChatMsg just created
   
   const body={message:query};
   if(img){body.image=img.data;body.image_type=img.mediaType;}

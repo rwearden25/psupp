@@ -224,17 +224,23 @@ const tools = [
 
 // ─── CALL ANTHROPIC API ───
 async function callAnthropic(messages) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      system: `You are P-Supp, an expert equipment service assistant for General Pump and Alkota pressure washer equipment. You help technicians and service personnel troubleshoot problems, look up pump specifications, find maintenance procedures, and answer technical questions.
+  console.log('[API] Calling Anthropic...');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        system: `You are P-Supp, an expert equipment service assistant for General Pump and Alkota pressure washer equipment. You help technicians and service personnel troubleshoot problems, look up pump specifications, find maintenance procedures, and answer technical questions.
 
 IMPORTANT RULES:
 - Always use your tools to search the knowledge base before answering technical questions
@@ -252,12 +258,20 @@ When a user uploads a photo of equipment, analyze it carefully:
 - Note any visible damage: leaks, corrosion, worn parts, broken fittings, discoloration
 - After identifying the equipment, search the knowledge base for relevant specs and troubleshooting info
 - Provide specific maintenance or repair recommendations based on what you see`,
-      messages: messages,
-      tools: tools
-    })
-  });
-  
-  return await response.json();
+        messages: messages,
+        tools: tools
+      })
+    });
+    
+    clearTimeout(timeout);
+    console.log('[API] Response status:', response.status);
+    const data = await response.json();
+    if (data.error) console.log('[API] Error:', JSON.stringify(data.error));
+    return data;
+  } catch (e) {
+    console.error('[API] Fetch failed:', e.message);
+    return { error: { message: 'API request failed: ' + e.message } };
+  }
 }
 
 // ─── PROCESS TOOL CALLS (AGENT LOOP) ───
