@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="P-Supp">
+<meta name="description" content="Equipment diagnostics, service & reference for pressure washer equipment">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192x192.png">
 <title>P-Supp Tool</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -449,5 +456,48 @@ buildSidebar();showHome();I.focus();
 document.addEventListener('click',function(e){const m=document.getElementById('hamMenu');if(m&&!e.target.closest('.hamburger')&&!e.target.closest('.ham-menu'))m.classList.remove('open');});
 </script>
 </div><!-- end appContent -->
+<style>
+.pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;z-index:200;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
+.pwa-install-bar.show{transform:translateY(0)}
+.pwa-install-bar .install-text{font-size:0.85rem;color:var(--text)}
+.pwa-install-bar .install-text small{color:var(--text-muted);display:block;font-size:0.72rem}
+.pwa-install-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:0.82rem;font-family:var(--font-body);font-weight:600;cursor:pointer}
+.pwa-install-btn:hover{opacity:0.9}
+.pwa-dismiss{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:4px 8px}
+</style>
+<div class="pwa-install-bar" id="pwaBar">
+  <div class="install-text">Install P-Supp<small>Add to home screen for quick access</small></div>
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <button class="pwa-install-btn" id="pwaInstallBtn">Install</button>
+    <button class="pwa-dismiss" onclick="document.getElementById('pwaBar').classList.remove('show');sessionStorage.setItem('pwaDismissed','1')">✕</button>
+  </div>
+</div>
+<script>
+// Register service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(r=>console.log('[PWA] SW registered')).catch(e=>console.log('[PWA] SW error:',e));
+}
+// Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if(!sessionStorage.getItem('pwaDismissed')){
+    document.getElementById('pwaBar').classList.add('show');
+  }
+});
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  console.log('[PWA] Install:', result.outcome);
+  deferredPrompt = null;
+  document.getElementById('pwaBar').classList.remove('show');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaBar').classList.remove('show');
+  console.log('[PWA] Installed');
+});
+</script>
 </body>
 </html>

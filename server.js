@@ -12,7 +12,9 @@ const mimeTypes = {
   '.css': 'text/css',
   '.json': 'application/json',
   '.png': 'image/png',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json',
+  '.svg': 'image/svg+xml'
 };
 
 // ─── LOAD KNOWLEDGE BASE ───
