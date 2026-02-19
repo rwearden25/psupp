@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="P-Supp">
@@ -168,7 +169,6 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 const TEAM_PASSWORD = "psupp2025"; // ← CHANGE THIS
 function tryLogin(){const i=document.getElementById('loginPass'),e=document.getElementById('loginError');if(i.value===TEAM_PASSWORD){sessionStorage.setItem('authenticated','true');unlockApp();}else{e.style.display='block';i.value='';i.focus();}}
 function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
-if(sessionStorage.getItem('authenticated')==='true')unlockApp();
 document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
 </script>
 
@@ -205,6 +205,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
 <script src="knowledge-base.js"></script>
 <script>
 const C=document.getElementById('contentArea'),I=document.getElementById('userInput'),SB=document.getElementById('sidebar');
+if(sessionStorage.getItem('authenticated')==='true')unlockApp();
 
 /* ═══ IMAGE UPLOAD ═══ */
 let pendingImage=null;
