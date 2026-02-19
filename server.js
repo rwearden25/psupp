@@ -224,7 +224,16 @@ IMPORTANT RULES:
 - Include part numbers, specifications, and step-by-step procedures when available
 - If you can't find information in the knowledge base, say so clearly
 - Keep responses concise but thorough
-- Format responses with clear sections when listing multiple causes/remedies`,
+- Format responses with clear sections when listing multiple causes/remedies
+
+IMAGE ANALYSIS:
+When a user uploads a photo of equipment, analyze it carefully:
+- Identify the brand (General Pump, Alkota, CAT, AR, Comet, etc.) from logos, nameplates, or design
+- Read any model numbers, serial numbers, or data plates visible
+- Identify components: pump type, unloader, chemical injector, hoses, fittings, spray gun, nozzles
+- Note any visible damage: leaks, corrosion, worn parts, broken fittings, discoloration
+- After identifying the equipment, search the knowledge base for relevant specs and troubleshooting info
+- Provide specific maintenance or repair recommendations based on what you see`,
       messages: messages,
       tools: tools
     })
@@ -234,12 +243,23 @@ IMPORTANT RULES:
 }
 
 // ─── PROCESS TOOL CALLS (AGENT LOOP) ───
-async function runAgent(userMessage) {
+async function runAgent(userMessage, imageData, imageType) {
   if (!API_KEY) {
     return "⚠️ AI agent is not configured. Set the ANTHROPIC_API_KEY environment variable in Railway to enable AI-powered responses.";
   }
   
-  let messages = [{ role: 'user', content: userMessage }];
+  // Build user content - text only or text + image
+  let userContent;
+  if (imageData) {
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageData }},
+      { type: 'text', text: userMessage }
+    ];
+  } else {
+    userContent = userMessage;
+  }
+  
+  let messages = [{ role: 'user', content: userContent }];
   let maxTurns = 5;
   
   while (maxTurns > 0) {
@@ -310,18 +330,24 @@ const server = http.createServer(async (req, res) => {
   // API endpoint
   if (req.method === 'POST' && req.url === '/api/chat') {
     let body = '';
-    req.on('data', chunk => body += chunk);
+    let bodySize = 0;
+    const MAX_BODY = 25 * 1024 * 1024; // 25MB
+    req.on('data', chunk => {
+      bodySize += chunk.length;
+      if (bodySize > MAX_BODY) { req.destroy(); return; }
+      body += chunk;
+    });
     req.on('end', async () => {
       try {
-        const { message } = JSON.parse(body);
-        if (!message) {
+        const { message, image, image_type } = JSON.parse(body);
+        if (!message && !image) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Missing message' }));
           return;
         }
         
-        console.log(`[Chat] ${message.substring(0, 80)}...`);
-        const reply = await runAgent(message);
+        console.log(`[Chat] ${image ? '📷 Image + ' : ''}${(message||'').substring(0, 80)}...`);
+        const reply = await runAgent(message || 'Identify this equipment and any visible issues.', image, image_type);
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ reply }));
