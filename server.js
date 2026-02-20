@@ -6,7 +6,8 @@ const Database = require('better-sqlite3');
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const DB_PATH = path.join(__dirname, 'knowledge.db');
-const USERDATA_PATH = path.join(__dirname, 'userdata.db');
+const USERDATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+const USERDATA_PATH = path.join(USERDATA_DIR, 'userdata.db');
 
 // ═══════════════════════════════════════════════════════
 //  User Data Database (writable — saved diagnostics)
@@ -16,6 +17,7 @@ let userDb = null;
 
 function initUserData() {
   try {
+    console.log(`User data path: ${USERDATA_PATH}`);
     userDb = new Database(USERDATA_PATH);
     userDb.pragma('journal_mode = WAL');
 
