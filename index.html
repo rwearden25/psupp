@@ -180,6 +180,11 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 
 /* ─── SAVED DIAGNOSTICS ─── */
 .save-btn{display:inline-flex;align-items:center;gap:0.35rem;background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--text-muted);font-family:var(--font-body);margin-top:0.6rem;transition:all 0.15s}
+.feedback-row{display:flex;align-items:center;gap:0.4rem;margin-top:0.3rem;margin-left:2.4rem}
+.feedback-label{font-size:0.72rem;color:var(--text-muted);font-family:var(--font-body)}
+.fb-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.85rem;transition:all 0.15s;line-height:1}
+.fb-btn:hover{background:var(--accent-dim);border-color:var(--accent)}
+.fb-btn.fb-active{background:var(--accent-dim);border-color:var(--accent)}
 .save-btn:hover{border-color:#16a34a;color:#16a34a;background:rgba(22,163,74,0.06)}
 .save-btn.saved{border-color:#16a34a;color:#16a34a;cursor:default}
 .save-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -343,6 +348,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
 <script>
 const C=document.getElementById('contentArea'),I=document.getElementById('userInput'),SB=document.getElementById('sidebar');
 const MAIN=C.parentElement; // .main is the scrollable container
+const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2,8);
 function scrollToMsg(el){if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
@@ -394,6 +400,11 @@ function buildSidebar(){
   h+=`<button class="sb-quick-btn" onclick="showNozzleChart()"><span class="qicon">🎯</span>Nozzle Size Chart</button>`;
   h+=`<button class="sb-quick-btn" onclick="showInjectorChart()"><span class="qicon">💉</span>Injector Sizing Chart</button>`;
   h+=`</div>`;
+  h+=`<div class="sb-section-label" style="padding:0.6rem 1rem 0.3rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Diagnostics</div>`;
+  h+=`<div class="sb-quick">`;
+  [['pressure','📉','Low Pressure'],['electrical','⚡','Electrical'],['burner','🔥','Burner'],['service','⚙️','Service & Repair']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
+  h+=`</div>`;
+  h+=`<button class="home-btn" data-topic="saved-diags" onclick="showSavedDiags()"><span class="topic-icon">📋</span> My Diagnostics</button>`;
   SB.innerHTML=h;
 }
 
@@ -664,7 +675,7 @@ function showSearch(query,img){setActive('home');
   fetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
+    body: JSON.stringify({...body, session_id: SESSION_ID})
   }).then(r=>r.json()).then(data=>{
     const el=document.getElementById('aiText'+myId);
     if(!el)return;
@@ -674,8 +685,9 @@ function showSearch(query,img){setActive('home');
       chatHistory.push({role:'assistant', content:data.reply});
       I.placeholder='Type your reply or ask a follow-up question...';
       I.focus();
-      // Add save button after AI bubble
+      // Add save + feedback buttons after AI bubble
       injectSaveButton(el);
+      if(data.log_id) injectFeedbackButtons(el, data.log_id);
       var userMsgs=document.querySelectorAll('.msg-user');
       var lastUser=userMsgs[userMsgs.length-1];
       if(lastUser)scrollToMsg(lastUser);
@@ -1064,6 +1076,31 @@ function injectSaveButton(afterEl){
   btn.innerHTML = '💾 Save Diagnosis';
   btn.onclick = openSaveDialog;
   msgDiv.after(btn);
+}
+
+function injectFeedbackButtons(afterEl, logId){
+  if(!afterEl || !logId) return;
+  const msgDiv = afterEl.closest('.msg');
+  if(!msgDiv) return;
+  if(msgDiv.parentElement.querySelector('.feedback-row')) return;
+  const row = document.createElement('div');
+  row.className = 'feedback-row';
+  row.innerHTML = `<span class="feedback-label">Helpful?</span><button class="fb-btn fb-up" onclick="sendFeedback(${logId}, 1, this)" title="Helpful">👍</button><button class="fb-btn fb-down" onclick="sendFeedback(${logId}, -1, this)" title="Not helpful">👎</button>`;
+  // Insert after save button if present, otherwise after msg
+  const saveBtn = msgDiv.nextElementSibling?.classList?.contains('save-btn') ? msgDiv.nextElementSibling : null;
+  if(saveBtn) saveBtn.after(row); else msgDiv.after(row);
+}
+
+function sendFeedback(logId, rating, btn){
+  const row = btn.closest('.feedback-row');
+  row.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('fb-active'));
+  btn.classList.add('fb-active');
+  row.querySelector('.feedback-label').textContent = rating > 0 ? 'Thanks! 👍' : 'Noted — we\'ll improve';
+  fetch('/api/feedback', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({log_id: logId, rating})
+  }).catch(()=>{});
 }
 </script>
 
