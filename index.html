@@ -260,8 +260,13 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   .welcome>p{font-size:0.82rem}
   .home-search{flex-wrap:wrap}
   .home-search input{min-width:0}
-  .msg-user .bubble{max-width:85%}
-  .msg-bot .bubble{max-width:92%}
+  .msg-user .bubble{max-width:82%;border-radius:18px 18px 4px 18px;padding:0.55rem 0.9rem;font-size:0.9rem}
+  .msg{margin-bottom:0.4rem}
+  .msg-bot{gap:0}
+  .msg-bot .bot-avatar{display:none}
+  .msg-bot .bubble{max-width:88%;border-radius:18px 18px 18px 4px;padding:0.55rem 0.9rem;font-size:0.9rem;background:#e9e9eb;border:none;color:#000}
+  body.ios .msg-user .bubble{background:#007AFF}
+  body.android .msg-user .bubble{background:#34C759}
   .login-box{width:calc(100vw - 2rem);padding:28px 24px}
 }
 
@@ -333,6 +338,7 @@ const MAIN=C.parentElement; // .main is the scrollable container
 const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2,8);
 const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 function safeFocus(el){ if(!isMobile && el) el.focus(); }
+if(isMobile){const ua=navigator.userAgent;if(/iPad|iPhone|iPod/.test(ua))document.body.classList.add('ios');else if(/Android/.test(ua))document.body.classList.add('android');}
 function scrollToMsg(el){if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
