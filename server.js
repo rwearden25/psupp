@@ -113,38 +113,12 @@ function getDiagnosticTree(category, nodeId) {
     return formatNode(nodeId, nodes[nodeId], tree);
   }
 
-  // Otherwise return the full guided path starting from entry
-  let output = `# ${tree.name || tree.title || category}\n${tree.description || ''}\n`;
-  if (tree.safety_warning) output += `\n${tree.safety_warning}\n`;
-  output += `\n## Diagnostic Steps\n\n`;
-
-  // Walk the tree from entry, showing the full decision path
-  const visited = new Set();
-  const queue = [tree.entry];
-
-  while (queue.length > 0 && visited.size < 30) {
-    const id = queue.shift();
-    if (visited.has(id) || !nodes[id]) continue;
-    visited.add(id);
-
-    const node = nodes[id];
-    output += formatNode(id, node, tree) + '\n\n';
-
-    // Add child nodes to queue
-    if (node.yes && !visited.has(node.yes)) queue.push(node.yes);
-    if (node.no && !visited.has(node.no)) queue.push(node.no);
-    if (node.next && !visited.has(node.next)) queue.push(node.next);
-    if (node.options) {
-      for (const target of Object.values(node.options)) {
-        if (!visited.has(target)) queue.push(target);
-      }
-    }
-    // Handle custom branching keywords
-    for (const key of ['sudden', 'gradual', 'pulsating', 'low_steady', 'black', 'white_blue']) {
-      if (node[key] && !visited.has(node[key])) queue.push(node[key]);
-    }
-  }
-
+  // Return ONLY the entry node — the AI must request subsequent nodes one at a time
+  let output = `Category: ${tree.name || category}\n`;
+  if (tree.safety_warning) output += `⚠️ ${tree.safety_warning}\n`;
+  output += `\nSTART HERE:\n`;
+  output += formatNode(tree.entry, nodes[tree.entry], tree);
+  output += `\n\nIMPORTANT: Ask the user this question and WAIT for their answer. Then call get_diagnostic_tree again with the appropriate next node_id based on their response.`;
   return output;
 }
 
@@ -300,17 +274,17 @@ function lookupModel(model) {
 function formatResults(results) {
   if (!results.length) return 'No results found.';
   return results.map((r, i) =>
-    `--- Result ${i + 1} [${r.brand || '?'} / ${r.filename || '?'} / p.${r.page_num || '?'}] ---\n${r.content}`
+    `--- Result ${i + 1} [${r.filename || '?'} / p.${r.page_num || '?'}] ---\n${r.content}`
   ).join('\n\n');
 }
 
 function formatSources(results) {
   const seen = new Set();
   return results.filter(r => {
-    const k = `${r.brand}|${r.filename}|${r.page_num}`;
+    const k = `${r.filename}|${r.page_num}`;
     if (seen.has(k)) return false;
     seen.add(k); return true;
-  }).map(r => `${r.brand}: ${r.title || r.filename} (p.${r.page_num || '?'})`).slice(0, 8);
+  }).map(r => `${r.title || r.filename} (p.${r.page_num || '?'})`).slice(0, 8);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -364,54 +338,41 @@ const tools = [
   }
 ];
 
-const SYSTEM_PROMPT = `You are P-Supp, a digital mechanic AI for pressure washer equipment. You guide technicians through structured diagnostics, look up specs, and find service procedures.
+const SYSTEM_PROMPT = `You are P-Supp, a pressure washer diagnostic assistant. You talk like a skilled technician helping a colleague — direct, short, practical.
 
-═══ YOUR 3-LAYER KNOWLEDGE SYSTEM ═══
+═══ CRITICAL: KEEP RESPONSES SHORT ═══
+- Your responses must be 1-3 sentences when asking diagnostic questions
+- NEVER list more than 3 items in a single response
+- NEVER dump raw manual text or long lists of possible causes
+- Ask ONE question, wait for the answer, then ask the next
+- Think of yourself as having a conversation, not writing a textbook
 
-LAYER 1 — DIAGNOSTIC LOGIC (Primary Brain):
-You have structured decision trees for: Flow/Pressure, Heat/Burner, Electrical, Leak, Noise/Vibration, Engine, and Packing failures.
-→ When a user describes a problem, ALWAYS call classify_symptoms FIRST
-→ Then call get_diagnostic_tree to get the step-by-step diagnostic path
-→ Walk the user through the tree one question at a time
-→ Ask ONE diagnostic question, wait for their answer, then advance to the next node
+═══ DIAGNOSTIC FLOW ═══
+1. User describes a problem → call classify_symptoms
+2. Call get_diagnostic_tree for the matched category
+3. Ask the FIRST question from the tree in plain language (hide node IDs)
+4. Wait for their answer → advance to the next node
+5. Repeat until you reach a DIAGNOSIS node
+6. At diagnosis: give 2-3 clear action steps, not a full repair manual
 
-LAYER 2 — OEM KNOWLEDGE (Reference Brain):
-You have 242 indexed manuals with specs, part numbers, procedures, torque values.
-→ Use search_knowledge_base to find specific details AFTER you know what to look for
-→ Summarize the info — do NOT dump raw manual text
-→ Include part numbers and specs when relevant
+Example good response: "Sounds like a flow issue. Is the surging rhythmic (pulsing every few seconds) or random and intermittent?"
+Example BAD response: listing 10 possible causes with explanations for each.
 
-LAYER 3 — SAFETY RULES (Guardrail Brain):
-When the diagnosis involves ANY of these, shift your tone and add safety warnings:
-→ Electrical/wiring/voltage → "⚠️ This involves live voltage. Continue only if qualified."
-→ Fuel/gas/burner → "⚠️ Fuel system work — ensure no open flames. Ventilate area."
-→ High pressure → "⚠️ Never disconnect fittings under pressure. Release all pressure first."
-→ Chemical → "⚠️ Review SDS for the chemical. Use appropriate PPE."
-Safety warnings should appear BEFORE the diagnostic steps, not buried at the end.
+═══ KNOWLEDGE BASE ═══
+You have 242 indexed manuals. Use search_knowledge_base ONLY after diagnosis to find specific part numbers, torque specs, or procedures. Summarize in 1-2 sentences — never paste raw results.
 
-═══ HOW TO DIAGNOSE ═══
-
-1. User describes symptoms → you call classify_symptoms
-2. You identify the category (or multiple) → call get_diagnostic_tree
-3. Present the FIRST question from the tree naturally (don't show node IDs)
-4. User answers → you advance to the next node
-5. Continue until you reach a DIAGNOSIS node
-6. At diagnosis: give the checks as a clear action plan
-7. If needed, call search_knowledge_base for specific part numbers, torque specs, procedures
-
-═══ CONVERSATION STYLE ═══
-- Talk like a skilled technician helping a colleague — direct, clear, practical
-- Ask ONE question at a time during diagnosis (don't dump the whole tree)
-- Use the decision tree logic but present it conversationally, not robotically
-- When you reach a diagnosis, present it as a clear action plan with numbered steps
-- If multiple categories detected (e.g., flow + heat), address the most critical first
-- For simple lookups (oil type, nozzle size, specs), just search and answer — no tree needed
+═══ SAFETY (NON-NEGOTIABLE) ═══
+Add a one-line warning BEFORE steps when the topic involves:
+- Electrical → "⚠️ Live voltage — only if qualified."
+- Fuel/burner → "⚠️ No open flames. Ventilate the area."
+- High pressure → "⚠️ Release all pressure before disconnecting."
 
 ═══ RULES ═══
+- NEVER show brand names (GP, General Pump, Alkota, Cat, AR, etc.) in your responses — keep advice brand-neutral
 - NEVER share GP Companies or General Pump contact info (phone, fax, email, address, website)
-- When user uploads a photo: identify equipment, read model numbers, note damage, search KB
 - If the KB doesn't have the answer, say so — don't guess on specs or part numbers
-- Safety warnings are NON-NEGOTIABLE — always include them for electrical, fuel, and pressure work`;
+- If multiple issues detected, address the most critical one first
+- For simple lookups (oil type, nozzle size), just search and answer briefly`;
 
 async function callAnthropic(messages, useWebSearch = false) {
   const toolsToUse = [...tools];
@@ -426,7 +387,7 @@ async function callAnthropic(messages, useWebSearch = false) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' },
       signal: ctrl.signal,
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2048, system: SYSTEM_PROMPT, messages, tools: toolsToUse })
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, system: SYSTEM_PROMPT, messages, tools: toolsToUse })
     });
     clearTimeout(timer);
     return await resp.json();
@@ -487,7 +448,7 @@ async function runAgent(userMessage, imageData, imageType) {
           break;
         }
         case 'search_knowledge_base': {
-          const r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 10 });
+          const r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 5 });
           result = formatResults(r); allSources.push(...formatSources(r)); break;
         }
         case 'lookup_pump_model': {
@@ -497,7 +458,7 @@ async function runAgent(userMessage, imageData, imageType) {
         default: result = 'Unknown tool'; usedWeb = tc.name === 'web_search' || usedWeb;
       }
       console.log(`  [Tool] ${tc.name}(${JSON.stringify(tc.input).substring(0, 80)}) ${Date.now() - t0}ms`);
-      results.push({ type: 'tool_result', tool_use_id: tc.id, content: (result || '').substring(0, 20000) });
+      results.push({ type: 'tool_result', tool_use_id: tc.id, content: (result || '').substring(0, 5000) });
     }
     messages.push({ role: 'user', content: results });
   }
