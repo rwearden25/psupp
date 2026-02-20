@@ -6,6 +6,46 @@ const Database = require('better-sqlite3');
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const DB_PATH = path.join(__dirname, 'knowledge.db');
+const USERDATA_PATH = path.join(__dirname, 'userdata.db');
+
+// ═══════════════════════════════════════════════════════
+//  User Data Database (writable — saved diagnostics)
+// ═══════════════════════════════════════════════════════
+
+let userDb = null;
+
+function initUserData() {
+  try {
+    userDb = new Database(USERDATA_PATH);
+    userDb.pragma('journal_mode = WAL');
+
+    userDb.exec(`
+      CREATE TABLE IF NOT EXISTS saved_diagnostics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        machine_name TEXT,
+        machine_brand TEXT,
+        machine_model TEXT,
+        machine_serial TEXT,
+        category TEXT,
+        severity TEXT,
+        diagnosis TEXT,
+        steps TEXT,
+        parts_used TEXT,
+        notes TEXT,
+        conversation TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    const count = userDb.prepare('SELECT COUNT(*) as cnt FROM saved_diagnostics').get().cnt;
+    console.log(`User data: ${count} saved diagnostics`);
+  } catch (e) {
+    console.error('User data init error:', e.message);
+  }
+}
+
+initUserData();
 
 // ─── MIME TYPES ───
 const mimeTypes = {
@@ -482,7 +522,7 @@ async function runAgent(userMessage, imageData, imageType, history) {
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
@@ -557,6 +597,206 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ═══════════════════════════════════════════════════════
+  //  Saved Diagnostics API
+  // ═══════════════════════════════════════════════════════
+
+  // ─── POST /api/saved-diags ───
+  if (req.method === 'POST' && url.pathname === '/api/saved-diags') {
+    let body = '';
+    req.on('data', c => { body += c; if (body.length > 1e6) req.destroy(); });
+    req.on('end', () => {
+      try {
+        if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Database not available' })); return; }
+        const d = JSON.parse(body);
+        if (!d.title) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Title required' })); return; }
+
+        const stmt = userDb.prepare(`INSERT INTO saved_diagnostics 
+          (title, machine_name, machine_brand, machine_model, machine_serial, category, severity, diagnosis, steps, parts_used, notes, conversation)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+        const result = stmt.run(
+          d.title || 'Untitled Diagnostic',
+          d.machine_name || null,
+          d.machine_brand || null,
+          d.machine_model || null,
+          d.machine_serial || null,
+          d.category || null,
+          d.severity || null,
+          d.diagnosis || null,
+          d.steps ? JSON.stringify(d.steps) : null,
+          d.parts_used ? JSON.stringify(d.parts_used) : null,
+          d.notes || null,
+          d.conversation ? JSON.stringify(d.conversation) : null
+        );
+
+        console.log(`[Save] Diagnostic #${result.lastInsertRowid}: "${d.title}"`);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ id: result.lastInsertRowid, message: 'Saved' }));
+      } catch (e) {
+        console.error('Save error:', e);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Save failed' }));
+      }
+    });
+    return;
+  }
+
+  // ─── GET /api/saved-diags ───
+  if (req.method === 'GET' && url.pathname === '/api/saved-diags') {
+    if (!userDb) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('[]'); return; }
+    const rows = userDb.prepare('SELECT id, title, machine_name, machine_brand, machine_model, category, severity, diagnosis, created_at FROM saved_diagnostics ORDER BY created_at DESC').all();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(rows));
+    return;
+  }
+
+  // ─── GET /api/saved-diags/:id ───
+  if (req.method === 'GET' && url.pathname.match(/^\/api\/saved-diags\/(\d+)$/)) {
+    const id = url.pathname.match(/\/(\d+)$/)[1];
+    if (!userDb) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+    const row = userDb.prepare('SELECT * FROM saved_diagnostics WHERE id = ?').get(id);
+    if (!row) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+    // Parse JSON fields
+    try { row.steps = JSON.parse(row.steps); } catch(e) {}
+    try { row.parts_used = JSON.parse(row.parts_used); } catch(e) {}
+    try { row.conversation = JSON.parse(row.conversation); } catch(e) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(row));
+    return;
+  }
+
+  // ─── DELETE /api/saved-diags/:id ───
+  if (req.method === 'DELETE' && url.pathname.match(/^\/api\/saved-diags\/(\d+)$/)) {
+    const id = url.pathname.match(/\/(\d+)$/)[1];
+    if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Database not available' })); return; }
+    userDb.prepare('DELETE FROM saved_diagnostics WHERE id = ?').run(id);
+    console.log(`[Delete] Diagnostic #${id}`);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ deleted: true }));
+    return;
+  }
+
+  // ─── GET /api/saved-diags/:id/report ───
+  if (req.method === 'GET' && url.pathname.match(/^\/api\/saved-diags\/(\d+)\/report$/)) {
+    const id = url.pathname.match(/\/(\d+)/)[1];
+    if (!userDb) { res.writeHead(404); res.end('Not found'); return; }
+    const row = userDb.prepare('SELECT * FROM saved_diagnostics WHERE id = ?').get(id);
+    if (!row) { res.writeHead(404); res.end('Not found'); return; }
+
+    try { row.steps = JSON.parse(row.steps); } catch(e) {}
+    try { row.parts_used = JSON.parse(row.parts_used); } catch(e) {}
+    try { row.conversation = JSON.parse(row.conversation); } catch(e) {}
+
+    const date = new Date(row.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const severityColors = { critical: '#dc2626', high: '#ea580c', medium: '#ca8a04', low: '#16a34a' };
+    const sevColor = severityColors[row.severity] || '#6b7280';
+
+    let stepsHtml = '';
+    if (Array.isArray(row.steps)) {
+      stepsHtml = row.steps.map((s, i) => `<tr><td style="width:32px;text-align:center;font-weight:700;color:#2563eb">${i + 1}</td><td>${esc(s)}</td></tr>`).join('');
+    }
+
+    let partsHtml = '';
+    if (Array.isArray(row.parts_used) && row.parts_used.length) {
+      partsHtml = `<h3 style="margin-top:24px">Parts Used / Needed</h3><ul>${row.parts_used.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
+    }
+
+    let convoHtml = '';
+    if (Array.isArray(row.conversation) && row.conversation.length) {
+      convoHtml = `<h3 style="margin-top:24px;page-break-before:auto">Diagnostic Conversation</h3><div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">`;
+      row.conversation.forEach(m => {
+        const isUser = m.role === 'user';
+        convoHtml += `<div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;background:${isUser ? '#f0f9ff' : '#ffffff'}">
+          <div style="font-size:11px;font-weight:700;color:${isUser ? '#2563eb' : '#059669'};text-transform:uppercase;margin-bottom:4px">${isUser ? 'Technician' : 'P-Supp AI'}</div>
+          <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(m.content || '')}</div>
+        </div>`;
+      });
+      convoHtml += `</div>`;
+    }
+
+    function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diagnostic Report — ${esc(row.title)}</title>
+<style>
+  @media print { body { margin: 0; } .no-print { display: none !important; } }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; font-size: 14px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; margin: 24px 0 12px; }
+  h3 { font-size: 14px; color: #374151; margin-bottom: 8px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid #2563eb; }
+  .header-right { text-align: right; font-size: 12px; color: #6b7280; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 24px; font-size: 13px; }
+  .meta-label { font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .severity { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; color: white; }
+  .diagnosis-box { background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: top; font-size: 13px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; font-size: 13px; }
+  .notes-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 13px; }
+  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; }
+  .actions { margin-bottom: 24px; display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn:hover { background: #f9fafb; }
+  .btn-primary { background: #2563eb; color: white; border-color: #2563eb; }
+  .btn-primary:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+<div class="actions no-print">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+  <button class="btn" onclick="window.close()">✕ Close</button>
+</div>
+
+<div class="header">
+  <div>
+    <h1>${esc(row.title)}</h1>
+    <div style="color:#6b7280;font-size:13px">${date}</div>
+  </div>
+  <div class="header-right">
+    <div style="font-weight:700;font-size:14px">P-Supp</div>
+    <div>Diagnostic Report</div>
+    <div>#${row.id}</div>
+  </div>
+</div>
+
+<div class="meta-grid">
+  ${row.machine_name ? `<div><div class="meta-label">Machine</div><div>${esc(row.machine_name)}</div></div>` : ''}
+  ${row.machine_brand ? `<div><div class="meta-label">Brand</div><div>${esc(row.machine_brand)}</div></div>` : ''}
+  ${row.machine_model ? `<div><div class="meta-label">Model</div><div>${esc(row.machine_model)}</div></div>` : ''}
+  ${row.machine_serial ? `<div><div class="meta-label">Serial #</div><div>${esc(row.machine_serial)}</div></div>` : ''}
+  ${row.category ? `<div><div class="meta-label">Category</div><div>${esc(row.category)}</div></div>` : ''}
+  ${row.severity ? `<div><div class="meta-label">Severity</div><div><span class="severity" style="background:${sevColor}">${esc(row.severity).toUpperCase()}</span></div></div>` : ''}
+</div>
+
+${row.diagnosis ? `<h2>Diagnosis</h2><div class="diagnosis-box">${esc(row.diagnosis)}</div>` : ''}
+
+${stepsHtml ? `<h2>Diagnostic Steps</h2><table>${stepsHtml}</table>` : ''}
+
+${partsHtml}
+
+${row.notes ? `<h2>Technician Notes</h2><div class="notes-box">${esc(row.notes)}</div>` : ''}
+
+${convoHtml}
+
+<div class="footer">
+  <div>Generated by P-Supp Diagnostic AI</div>
+  <div>Report #${row.id} — ${date}</div>
+</div>
+</body>
+</html>`;
+
+    res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Disposition': `inline; filename="diagnostic-${row.id}.html"` });
+    res.end(html);
+    return;
+  }
+
   // ─── GET /api/health ───
   if (url.pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -578,12 +818,14 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  const savedCount = userDb ? userDb.prepare('SELECT COUNT(*) as cnt FROM saved_diagnostics').get().cnt : 0;
   console.log('═══════════════════════════════════════════');
   console.log('  P-Supp Equipment Support AI');
   console.log('───────────────────────────────────────────');
   console.log(`  Port:        ${PORT}`);
   console.log(`  Database:    ${db ? `${dbStats.documents} docs, ${dbStats.chunks} chunks` : 'NOT FOUND'}`);
   console.log(`  Diagnostics: ${diagnostics ? `${Object.keys(diagnostics.trees).length} trees (${Object.keys(diagnostics.trees).join(', ')})` : 'NOT LOADED'}`);
+  console.log(`  User data:   ${userDb ? `✅ ${savedCount} saved diagnostics` : '❌ Not available'}`);
   console.log(`  AI:          ${API_KEY ? '✅ Enabled' : '❌ Set ANTHROPIC_API_KEY'}`);
   console.log('═══════════════════════════════════════════');
 });
