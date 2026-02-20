@@ -846,7 +846,6 @@ function handleSend(){const q=I.value.trim();if(!q&&!pendingImage)return;I.value
 function askQ(q){I.value=q;handleSend();}
 I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 
-if(typeof KB!=='undefined'&&KB.meta){document.getElementById('headerStats').innerHTML=`<div class="stat"><div class="stat-val">${KB.meta.stats.gpPumps}</div><div class="stat-label">Pumps</div></div><div class="stat"><div class="stat-val">${KB.meta.stats.totalSources}</div><div class="stat-label">Sources</div></div>`;}
 buildSidebar();showHome();I.focus();
 document.addEventListener('click',function(e){const m=document.getElementById('hamMenu');if(m&&!e.target.closest('.hamburger')&&!e.target.closest('.ham-menu'))m.classList.remove('open');});
 
