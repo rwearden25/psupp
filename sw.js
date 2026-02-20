@@ -1,62 +1,55 @@
-const CACHE_NAME = 'psupp-v9';
-const ASSETS = [
+// P-Supp Service Worker v1.0
+const CACHE_NAME = 'psupp-v1';
+const SHELL_ASSETS = [
   '/',
   '/index.html',
-  '/knowledge-base.js',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png'
 ];
 
-// Install — cache core assets
+// Install: pre-cache the app shell
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching core assets');
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(SHELL_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate: clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch — network first for API, cache first for assets
+// Fetch: network-first for API, cache-first for shell assets
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Always go to network for API calls
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ error: 'You are offline. AI features require an internet connection.' }),
-          { headers: { 'Content-Type': 'application/json' } })
-      )
-    );
+  // Never cache API calls or POST requests
+  if (url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
     return;
   }
 
-  // Cache first, then network for static assets
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      const networkFetch = fetch(event.request).then(response => {
-        // Update cache with fresh version
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
+  // Cache-first for app shell, network-first for everything else
+  if (SHELL_ASSETS.includes(url.pathname)) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        // Return cache immediately, but update in background
+        const fetchPromise = fetch(event.request).then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        }).catch(() => cached);
 
-      return cached || networkFetch;
-    })
-  );
+        return cached || fetchPromise;
+      })
+    );
+  }
 });

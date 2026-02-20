@@ -1357,7 +1357,6 @@ const server = http.createServer(async (req, res) => {
       const totalFeedback = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback').get().cnt;
       const thumbsUp = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback WHERE rating = 1').get().cnt;
       const thumbsDown = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback WHERE rating = -1').get().cnt;
-      const totalGaps = userDb.prepare('SELECT COUNT(*) as cnt FROM kb_gaps').get().cnt;
       const avgResponseTime = userDb.prepare('SELECT ROUND(AVG(response_time_ms)) as avg FROM chat_logs').get().avg || 0;
       const webSearchCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs WHERE used_web_search = 1').get().cnt;
       const gapCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs WHERE kb_gap = 1').get().cnt;
@@ -1733,7 +1732,7 @@ ${convoHtml}
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
     const ext = path.extname(filePath);
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
+    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain', 'Cache-Control': (ext === '.html' || filePath.endsWith('sw.js') || filePath.endsWith('manifest.json')) ? 'no-cache' : 'public, max-age=86400' });
     res.end(data);
   });
 });
