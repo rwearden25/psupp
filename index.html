@@ -59,7 +59,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .send-btn{border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.85rem;font-weight:600;font-family:var(--font-body);transition:all 0.15s;flex-shrink:0;padding:0 1rem;height:44px}
 .send-btn:hover{filter:brightness(1.15);transform:scale(1.04)}
 .layout{display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+@media(max-width:900px){.layout{grid-template-columns:1fr;order:2}.sidebar{display:none}.input-bar{position:relative;bottom:auto;left:auto;right:auto;order:3;flex-shrink:0;will-change:auto}.main{padding-bottom:1rem}}
 @media(max-width:600px){
   .upload-btn span.btn-label,.send-btn span.btn-label{display:none}
   .send-btn{width:44px;padding:0}
@@ -1117,17 +1117,14 @@ window.addEventListener('appinstalled', () => {
   console.log('[PWA] Installed');
 });
 
-// ─── iOS Keyboard Fix ───
-if(window.visualViewport){
-  const adjustBar = () => {
-    const bar = document.querySelector('.input-bar');
-    if(bar){
-      const offset = window.innerHeight - window.visualViewport.height;
-      bar.style.transform = offset > 50 ? `translateY(-${offset}px)` : '';
-    }
+// ─── Mobile Keyboard Fix ───
+if(isMobile && window.visualViewport){
+  const app = document.querySelector('.app');
+  const adjustForKeyboard = () => {
+    if(app) app.style.height = window.visualViewport.height + 'px';
   };
-  window.visualViewport.addEventListener('resize', adjustBar);
-  window.visualViewport.addEventListener('scroll', adjustBar);
+  window.visualViewport.addEventListener('resize', adjustForKeyboard);
+  window.visualViewport.addEventListener('scroll', adjustForKeyboard);
 }
 
 // ─── iOS Install Hint ───
