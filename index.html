@@ -217,7 +217,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .login-box button:hover{filter:brightness(1.15);transform:scale(1.02)}
 .login-error{color:#f87171;font-size:0.78rem;margin-top:10px;display:none}
 #appContent{display:none}
-#appContent.visible{display:block;height:100vh;height:100dvh;overflow:hidden}
+#appContent.visible{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 
 /* ═══ MOBILE ENHANCEMENTS ═══ */
 
@@ -339,7 +339,7 @@ const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36
 const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 function safeFocus(el){ if(!isMobile && el) el.focus(); }
 if(isMobile){const ua=navigator.userAgent;if(/iPad|iPhone|iPod/.test(ua))document.body.classList.add('ios');else if(/Android/.test(ua))document.body.classList.add('android');}
-function scrollToMsg(el){if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
+function scrollToMsg(el){if(el){const container=el.closest('.main')||MAIN;const top=el.offsetTop-container.offsetTop;container.scrollTo({top:top,behavior:'smooth'});}}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
 window.addEventListener('popstate',function(e){if(inChat){exitChat();}});
