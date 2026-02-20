@@ -1247,16 +1247,45 @@ async function runAgent(userMessage, imageData, imageType, history) {
 //  HTTP Server
 // ═══════════════════════════════════════════════════════
 
+// ─── Rate Limiter ───
+const rateLimits = new Map();
+function checkRateLimit(ip, limit = 30, windowMs = 60000) {
+  const now = Date.now();
+  const entry = rateLimits.get(ip) || { count: 0, resetAt: now + windowMs };
+  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + windowMs; }
+  entry.count++;
+  rateLimits.set(ip, entry);
+  // Cleanup old entries every 100 requests
+  if (rateLimits.size > 500) {
+    for (const [k, v] of rateLimits) { if (now > v.resetAt) rateLimits.delete(k); }
+  }
+  return entry.count <= limit;
+}
+
 const server = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // ─── Security Headers ───
+  const origin = req.headers.origin || '';
+  const allowedOrigins = ['https://psupp-production.up.railway.app', 'http://localhost:3000', 'http://127.0.0.1:3000'];
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   // ─── POST /api/chat ───
   if (req.method === 'POST' && url.pathname === '/api/chat') {
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    if (!checkRateLimit(clientIp, 30, 60000)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.' }));
+      return;
+    }
     let body = '', size = 0;
     req.on('data', c => { size += c.length; if (size > 25e6) { req.destroy(); return; } body += c; });
     req.on('end', async () => {

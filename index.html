@@ -728,25 +728,6 @@ function startTopic(topic){
   showSearch('I need help with '+label+'. What should I know?');
 }
 
-  const topicLabels={pressure:'low pressure',oil:'oil recommendation',burner:'burner issues',service:'service and repair',chemical:'chemical injection issues',find:'finding a pump',pilot:'pilot light issues',maintenance:'maintenance schedule',leak:'leaks',noise:'noise issues',packing:'packing failure',overheating:'overheating',rough:'rough running',pulsation:'pulsation',valves:'valve service',plungers:'plunger replacement',vpackings:'v-packing replacement',catalog:'product catalog',accessories:'accessories',system:'system design',warranty:'warranty',electrical:'electrical components',coils:'coils and heat exchangers',nozzles:'spray nozzles',unloaders:'unloaders',checklist:'pre-service checklist',installation:'installation',startup:'start-up procedure'};
-  const label=topicLabels[topic]||topic;
-  addChatMsg('user', esc(brand));
-  // Topics that need a model number
-  const needsModel=['oil','find','service','valves','plungers','vpackings'];
-  if(needsModel.includes(topic)){
-    const modelPrompt=topic==='find'?'What specifications are you looking for? Enter GPM, PSI, or application details.':'What\'s the model number?';
-    addChatMsg('bot', `<p>${modelPrompt}</p>`);
-    I.focus();I.placeholder=topic==='find'?'e.g. 4 GPM, 3000 PSI, belt drive...':'e.g. TS2021, EZ4040G, KFMZ...';
-    window._pendingContext=brand+' '+label+(topic==='find'?' matching ':' for model ');
-    return;
-  }
-  // Default: send directly to AI with brand context
-  const prompt=brand==='Not sure'
-    ? `I need help with ${label}. I'm not sure which brand. Can you help me figure it out?`
-    : `I have a ${brand} unit and need help with ${label}. What should I check?`;
-  showSearch(prompt);
-}
-
 /* ═══ ROUTING ═══ */
 function nav(t){
   if(t==='home')return showHome();
@@ -1129,7 +1110,6 @@ window.addEventListener('appinstalled', () => {
 });
 
 // ─── iOS Keyboard Fix ───
-// Keeps input bar visible when virtual keyboard opens
 if(window.visualViewport){
   const adjustBar = () => {
     const bar = document.querySelector('.input-bar');
@@ -1143,7 +1123,6 @@ if(window.visualViewport){
 }
 
 // ─── iOS Install Hint ───
-// Safari doesn't fire beforeinstallprompt — show a custom hint instead
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 if(isIOS && !isStandalone && !sessionStorage.getItem('pwaDismissed')){
