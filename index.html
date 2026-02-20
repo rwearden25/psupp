@@ -51,8 +51,8 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .input-wrap input::placeholder{color:var(--text-muted)}
 .send-btn{border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.85rem;font-weight:600;font-family:var(--font-body);transition:all 0.15s;flex-shrink:0;padding:0 1rem;height:44px}
 .send-btn:hover{filter:brightness(1.15);transform:scale(1.04)}
-.layout{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 70px)}
-@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 70px)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
 @media(max-width:600px){
   .upload-btn span.btn-label,.send-btn span.btn-label{display:none}
   .send-btn{width:44px;padding:0}
@@ -83,10 +83,26 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .home-btn:hover{background:var(--surface-2);color:var(--text)}
 .home-btn.active{background:var(--accent-dim);color:var(--accent);font-weight:600}
 .main{padding:2rem 2rem 100px 2rem;overflow-y:auto;max-height:calc(100vh - 70px)}
-.welcome{max-width:840px;margin:0 auto;animation:fadeUp 0.3s ease}
+.welcome{max-width:640px;margin:0 auto;animation:fadeUp 0.3s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 200px);text-align:center}
 .welcome-icon{font-size:2.5rem;margin-bottom:0.75rem}
 .welcome h2{font-size:1.5rem;margin-bottom:0.5rem;letter-spacing:-0.5px}
-.welcome>p{color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6}
+.welcome>p{color:var(--text-muted);font-size:0.88rem;margin-bottom:2rem;line-height:1.6;max-width:520px}
+.home-search{width:100%;max-width:560px;display:flex;gap:0.5rem;margin-bottom:1.5rem}
+.home-search input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;color:var(--text);font-family:var(--font-body);font-size:1rem;outline:none;transition:border-color 0.2s;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.home-search input:focus{border-color:var(--accent);box-shadow:0 2px 20px rgba(37,99,235,0.1)}
+.home-search input::placeholder{color:var(--text-muted)}
+.home-search .search-send{border-radius:14px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.9rem;font-weight:600;font-family:var(--font-body);transition:all 0.15s;flex-shrink:0;padding:0 1.25rem;height:52px}
+.home-search .search-send:hover{filter:brightness(1.15);transform:scale(1.03)}
+.home-search .upload-home{border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;width:52px;height:52px;transition:all 0.15s}
+.home-search .upload-home:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.home-hint{font-size:0.78rem;color:var(--text-muted);margin-top:-0.5rem}
+.mobile-quick{display:none;width:100%;max-width:560px}
+@media(max-width:900px){.mobile-quick{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:1rem}}
+.sb-quick{padding:0.5rem 0;border-bottom:1px solid var(--border)}
+.sb-quick-btn{display:flex;align-items:center;gap:0.55rem;width:100%;border:none;background:transparent;color:var(--text);padding:0.5rem 1rem;cursor:pointer;font-size:0.82rem;font-family:var(--font-body);transition:all 0.15s;text-align:left;font-weight:500}
+.sb-quick-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.sb-quick-btn .qicon{font-size:0.95rem;width:1.2rem;text-align:center}
+.input-bar.hidden{display:none}
 .brand-label{display:inline-block;padding:0.15rem 0.5rem;border-radius:5px;font-size:0.65rem;font-weight:700;font-family:var(--font-mono);letter-spacing:0.5px;vertical-align:middle;margin-right:0.3rem}
 .brand-label.gp{background:var(--accent-dim);color:var(--accent)}
 .brand-label.alk{background:var(--blue-dim);color:var(--blue)}
@@ -205,8 +221,11 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   .header-text span{font-size:0.65rem}
   .input-bar{padding:0.5rem 0.6rem}
   .quick-actions{grid-template-columns:1fr}
+  .mobile-quick{grid-template-columns:1fr}
   .welcome h2{font-size:1.2rem}
   .welcome>p{font-size:0.82rem}
+  .home-search{flex-wrap:wrap}
+  .home-search input{min-width:0}
   .msg-user .bubble{max-width:85%}
   .msg-bot .bubble{max-width:92%}
   .login-box{width:calc(100vw - 2rem);padding:28px 24px}
@@ -257,7 +276,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
       <button class="logout-btn" onclick="sessionStorage.removeItem('authenticated');location.reload();">Logout</button>
     </div>
   </header>
-  <div class="input-bar">
+  <div class="input-bar hidden">
     <div id="imgPreviewBar" class="img-preview-bar" style="display:none"><img id="imgThumb"/><span id="imgName"></span><button class="remove-img" onclick="clearImage()" title="Remove">✕</button></div>
     <div class="input-wrap">
     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageSelect(event)"/>
@@ -266,7 +285,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
     <button class="send-btn" onclick="handleSend()" title="Send"><span class="btn-label">Send</span> ➤</button>
   </div></div>
   <div class="layout">
-    <nav class="sidebar" id="sidebar" style="display:none"></nav>
+    <nav class="sidebar" id="sidebar"></nav>
     <div class="main"><div class="content-area" id="contentArea"></div></div>
   </div>
 </div>
@@ -308,6 +327,9 @@ const renderSteps=s=>`<ol class="step-list">${s.map((x,i)=>`<li class="step-item
 
 function buildSidebar(){
   let h=`<button class="home-btn active" data-topic="home" onclick="nav('home')"><span class="topic-icon">🏠</span> Home</button>`;
+  h+=`<div class="sb-quick">`;
+  [['pressure','📉','Low pressure'],['oil','🛢️','Oil lookup'],['burner','🔥','Burner issues'],['service','⚙️','Service & repair'],['chemical','🧪','Chemical issues'],['find','🔍','Find a pump'],['pilot','🔥','Pilot light'],['maintenance','🗓️','Maintenance']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
+  h+=`</div>`;
   h+=`<div class="sb-section" id="sec-gp"><div class="sb-header" onclick="toggleSection('sec-gp')"><span class="sb-chevron">▼</span><span class="sb-brand gp">Pumps</span><span class="sb-count">${KB.gp.pumpModels.length} pumps</span></div><div class="sb-body">`;
   h+=`<div class="sb-group-label">Diagnostics</div>`;
   [['gp-pressure','📉','Low Pressure'],['gp-pulsation','〰️','Pulsation'],['gp-rough','🔴','Rough Running'],['gp-leak','💧','Leaks'],['gp-noise','🔊','Noise / Knocking'],['gp-packing','⚙️','Packing Failure'],['gp-overheating','🌡️','Overheating']].forEach(([id,ic,lb])=>h+=`<button class="topic-btn" data-topic="${id}" onclick="nav('${id}')"><span class="topic-icon">${ic}</span>${lb}</button>`);
@@ -335,7 +357,7 @@ function getSeriesGroups(){const g={};for(const m of KB.gp.pumpModels){const s=m
 function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oilRecommendations)){for(const p of s.pumps){const pn=norm(p);if(q.includes(pn)||pn.includes(q.replace(/\s/g,'')))r.push({model:p,oil:s.label,weight:s.weight,badge:s.badge});}}return[...new Map(r.map(x=>[x.model,x])).values()];}
 
 /* ═══ PAGES ═══ */
-function showHome(){setActive('home');inChat=false;C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="quick-actions"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Chemical issues</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('pilot')"><span class="qicon">🔥</span> Pilot light</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="document.getElementById('imageUpload').click()"><span class="qicon">📷</span> Upload a photo</button></div></div>`;}
+function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="home-search"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><input type="text" id="homeInput" placeholder="Describe your issue, search models, look up specs…" autocomplete="off"/><button class="search-send" onclick="homeSearch()" title="Search">Search ➤</button></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});document.getElementById('homeInput').focus();}
 
 function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p>${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
@@ -414,12 +436,13 @@ let inChat=false;
 function ensureChatView(){
   if(!inChat){
     inChat=true;
+    document.querySelector('.input-bar').classList.remove('hidden');
     history.pushState({view:'chat'},'','#chat');
     C.innerHTML=`<div class="section-page"><div class="chat-nav"><button class="nav-btn" onclick="exitChat()">🏠 Home</button><button class="nav-btn primary" onclick="newChat()">＋ New Chat</button></div><div class="messages" id="chatMessages"></div></div>`;
   }
 }
 
-function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';showHome();}
+function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
 function newChat(){chatMessages=[];chatMsgId=0;inChat=false;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
   const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
   inChat=true;
@@ -582,6 +605,8 @@ function nav(t){
   if(t.startsWith('alk-')){const topic=t.slice(4);startTopic(topic);return;}
   startTopic(t);
 }
+
+function homeSearch(){const hi=document.getElementById('homeInput');if(!hi)return;const q=hi.value.trim();if(!q&&!pendingImage)return;hi.value='';const img=pendingImage;clearImage();showSearch(q||'Identify this equipment and any visible issues.',img);}
 
 function handleSend(){const q=I.value.trim();if(!q&&!pendingImage)return;I.value='';I.placeholder='Search models, troubleshoot issues, look up specs...';
   const img=pendingImage;clearImage();
