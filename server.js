@@ -131,7 +131,15 @@ function classifySymptoms(userText) {
       }
     }
     if (score > 0) {
-      matches.push({ category, label: info.label, icon: info.icon, score, matched_keywords: matched });
+      matches.push({
+        category,
+        label: info.label,
+        icon: info.icon,
+        score,
+        matched_keywords: matched,
+        difficulty_level: info.difficulty_level || null,
+        difficulty_label: info.difficulty_label || null
+      });
     }
   }
 
@@ -484,9 +492,23 @@ function calculateInjector(input) {
 // Guided electrical testing procedures
 
 const multimeterTests = {
+
+  // ═══ TECHNICIAN RULES (applied to all electrical testing) ═══
+  _rules: {
+    principles: [
+      "Follow power from TOP to BOTTOM — start at the source and work downstream",
+      "If voltage disappears at a point, the problem is ABOVE that point",
+      "Voltage shows WHERE power stops. Continuity shows WHICH switch failed.",
+      "Always test upstream first — never replace an igniter or solenoid until the safety chain is verified",
+      "Never assume — always measure. A switch can look fine and still be open internally."
+    ]
+  },
+
+  // ═══ GENERAL ELECTRICAL CHAIN (Machine Won't Run) ═══
   voltage_at_outlet: {
     name: "Test Power at Outlet",
     when: "Machine completely dead, nothing powers on",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ LIVE VOLTAGE — only if qualified. Use rated test equipment.",
     steps: [
       "Set meter to AC Voltage (V~), 200V or higher range",
@@ -498,11 +520,13 @@ const multimeterTests = {
     expected: "120V circuit: 108-132V. 240V circuit: 216-252V.",
     fail_low: "Below range → weak circuit, undersized wire run, or high demand on circuit. Check breaker, wire gauge, and other loads.",
     fail_zero: "0V → no power reaching outlet. Check breaker, GFCI reset, and wiring to outlet.",
-    next_if_pass: "voltage_at_switch"
+    next_if_pass: "voltage_at_switch",
+    rule_reminder: "Start at the source — this is the top of the chain."
   },
   voltage_at_switch: {
     name: "Test Voltage at Machine Switch",
     when: "Outlet has power but machine won't start",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ LIVE VOLTAGE — disconnect is not possible for this test.",
     steps: [
       "Access the power switch or control box on the machine",
@@ -514,11 +538,32 @@ const multimeterTests = {
     expected: "Input: same as outlet (120V or 240V). Output with switch ON: same voltage.",
     fail_input_zero: "0V at input → damaged power cord, bad plug, or broken wire in cord. Inspect cord for cuts, kinks, or heat damage.",
     fail_output_zero: "Voltage at input but 0V at output with switch ON → bad switch. Replace switch.",
-    next_if_pass: "motor_continuity"
+    next_if_pass: "cam_switch_test",
+    rule_reminder: "If voltage disappears here, the problem is between the outlet and this point."
+  },
+  cam_switch_test: {
+    name: "Test Cam Switch / Controls",
+    when: "Main switch passes voltage but machine doesn't respond",
+    difficulty: "Level 4 — Electrical",
+    safety: "⚠️ LIVE VOLTAGE at switch terminals.",
+    steps: [
+      "Locate the cam switch (rotary selector on control panel)",
+      "Set meter to AC Voltage (V~)",
+      "With machine switch ON, test for voltage at cam switch INPUT terminals",
+      "Rotate cam switch to each position and test OUTPUT terminals",
+      "In each active position, you should see voltage pass through to the appropriate circuit"
+    ],
+    expected: "Voltage at input in all positions. Voltage at output only in active positions.",
+    fail_no_input: "No voltage at cam switch input → problem is upstream (main switch or wiring). Go back to voltage_at_switch.",
+    fail_no_output: "Voltage at input but no output in any position → cam switch contacts are corroded or failed. Replace cam switch.",
+    fail_intermittent: "Voltage appears and disappears when wiggling switch → loose internal contacts. Replace.",
+    next_if_pass: "contactor_test",
+    rule_reminder: "Cam switch is a common failure point on older machines. Corrosion builds up on the internal contacts."
   },
   motor_continuity: {
     name: "Test Motor Windings (Continuity)",
     when: "Switch passes voltage but motor doesn't run",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ UNPLUG MACHINE before this test. Capacitor may hold charge — discharge first.",
     steps: [
       "UNPLUG the machine from power",
@@ -532,11 +577,13 @@ const multimeterTests = {
     fail_open: "OL (infinite) across windings → open winding, motor is burned. Replace motor.",
     fail_short: "Very low resistance (< 1Ω) across windings → shorted winding. Replace motor.",
     fail_ground: "Any continuity from winding to ground → ground fault. Motor must be replaced. This trips breakers and GFCIs.",
-    next_if_pass: "capacitor_test"
+    next_if_pass: "capacitor_test",
+    rule_reminder: "Continuity shows WHICH component failed — use it after voltage testing narrows the area."
   },
   capacitor_test: {
     name: "Test Motor Capacitor",
     when: "Motor hums but won't spin, or spins slowly",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ UNPLUG MACHINE. Discharge capacitor by shorting terminals with insulated screwdriver.",
     steps: [
       "UNPLUG machine. Discharge capacitor (short terminals briefly with insulated tool)",
@@ -550,11 +597,13 @@ const multimeterTests = {
     fail_low: "Reading significantly below rated µF → weak capacitor. Motor may start slowly or not at all. Replace with same µF and voltage rating.",
     fail_zero: "0µF or no sweep on Ω test → dead capacitor. Replace.",
     fail_shorted: "Near 0Ω steady → shorted capacitor. Replace immediately.",
-    next_if_pass: "contactor_test"
+    next_if_pass: "contactor_test",
+    rule_reminder: "Always replace with exact same µF and voltage rating. Wrong size damages motor."
   },
   contactor_test: {
     name: "Test Contactor/Relay",
     when: "Control circuit works but motor doesn't engage",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ May require LIVE testing. Extreme caution with exposed terminals.",
     steps: [
       "Identify contactor coil voltage (usually 24V or 120V, labeled on contactor)",
@@ -567,11 +616,13 @@ const multimeterTests = {
     fail_no_coil_voltage: "No voltage at coil → problem is upstream: control switch, thermostat, or safety circuit.",
     fail_no_pull_in: "Coil has voltage but contactor won't pull in → burned coil or mechanically stuck. Replace contactor.",
     fail_no_output: "Contactor pulls in but no voltage on output → burned/pitted contacts. Replace contactor.",
-    next_if_pass: null
+    next_if_pass: null,
+    rule_reminder: "If the coil doesn't have voltage, the problem is ABOVE the contactor — check the safety chain."
   },
   cad_cell_test: {
     name: "Test CAD Cell (Flame Sensor)",
     when: "Burner fires then shuts off within seconds, or lockout on safety",
+    difficulty: "Level 3 — Burner",
     safety: "⚠️ Fuel system. Ensure proper ventilation. No open flames nearby.",
     steps: [
       "Locate CAD cell (photoresistive sensor in burner housing, usually has two wires)",
@@ -584,11 +635,13 @@ const multimeterTests = {
     fail_always_low: "Low resistance in both conditions (< 1kΩ) → CAD cell cracked or contaminated. Replace.",
     fail_always_high: "High resistance in both conditions (> 10kΩ in light) → CAD cell dead. Replace.",
     fail_slow_response: "Takes > 5 seconds to change between light/dark readings → sluggish cell, replace.",
-    next_if_pass: null
+    next_if_pass: null,
+    rule_reminder: "CAD cell must see flame to keep burner running. Soot on the cell lens is a common cause of false lockout."
   },
   gfci_test: {
     name: "Diagnose GFCI Tripping",
     when: "Machine trips GFCI outlet or GFCI breaker",
+    difficulty: "Level 4 — Electrical",
     safety: "⚠️ Ground faults can be lethal. Do not bypass GFCI protection.",
     steps: [
       "UNPLUG machine. Reset GFCI.",
@@ -602,28 +655,235 @@ const multimeterTests = {
     fail_cord: "Continuity from prong to ground pin → damaged cord, replace.",
     fail_motor: "Continuity from motor winding to ground → motor ground fault, replace motor.",
     fail_wiring: "Fault with motor disconnected → inspect all internal wiring for bare spots, water ingress, or damaged insulation.",
-    next_if_pass: null
+    next_if_pass: null,
+    rule_reminder: "Isolate by disconnecting loads one at a time. The GFCI will hold once the faulted component is removed."
+  },
+
+  // ═══ BURNER SAFETY CHAIN (Hot Water — Follow Power Top to Bottom) ═══
+  burner_chain_power: {
+    name: "Test Power Input to Burner Circuit",
+    when: "Hot water burner won't fire — start here",
+    difficulty: "Level 3-4 — Burner Electrical",
+    chain: "burner_safety_chain",
+    chain_position: 1,
+    safety: "⚠️ LIVE VOLTAGE — fuel system nearby. Ensure proper ventilation. Only if qualified.",
+    steps: [
+      "Set meter to AC Voltage (V~)",
+      "Locate the main power input to the burner control circuit (usually inside the control box)",
+      "Test for 120V AC at the input terminals with machine switch ON",
+      "Verify power is reaching the burner circuit — this is the starting point of the safety chain"
+    ],
+    expected: "120V AC present at burner circuit input.",
+    fail_zero: "0V → power is not reaching burner circuit. Check main switch, cam switch position, and wiring from motor circuit to burner circuit.",
+    next_if_pass: "burner_chain_thermostat",
+    rule_reminder: "This is the TOP of the burner electrical chain. Follow power downward from here."
+  },
+  burner_chain_thermostat: {
+    name: "Test Thermostat",
+    when: "Power reaches burner circuit but burner doesn't call for heat",
+    difficulty: "Level 3 — Burner",
+    chain: "burner_safety_chain",
+    chain_position: 2,
+    safety: "⚠️ LIVE VOLTAGE present in control circuit.",
+    steps: [
+      "Locate the thermostat (temperature control dial on machine)",
+      "Set meter to Continuity (beep mode) or Resistance (Ω)",
+      "UNPLUG MACHINE, disconnect thermostat leads",
+      "Turn thermostat to maximum (calling for heat)",
+      "Test continuity across thermostat terminals — should be CLOSED (beep / 0Ω) when calling for heat",
+      "Turn thermostat to minimum — should be OPEN (no beep / OL) when satisfied"
+    ],
+    expected: "Continuity when calling for heat (turned up). Open when satisfied (turned down or at temperature).",
+    fail_always_open: "No continuity even at max setting → thermostat failed open. Replace.",
+    fail_always_closed: "Continuity in all positions → thermostat failed closed (always calling for heat). Replace — this is a safety issue.",
+    next_if_pass: "burner_chain_flow_switch",
+    rule_reminder: "Thermostat is the first link in the safety chain after power input."
+  },
+  burner_chain_flow_switch: {
+    name: "Test Flow Switch",
+    when: "Thermostat is good but burner doesn't fire",
+    difficulty: "Level 3 — Burner",
+    chain: "burner_safety_chain",
+    chain_position: 3,
+    safety: "⚠️ Machine must be running water to test flow switch properly.",
+    steps: [
+      "Locate the flow switch (usually on the pump outlet or bypass line)",
+      "UNPLUG machine, disconnect flow switch leads",
+      "Set meter to Continuity",
+      "Test continuity with NO water flowing — should be OPEN",
+      "Reconnect leads, start machine, pull trigger to establish flow",
+      "With water flowing, CAREFULLY test for continuity — should be CLOSED"
+    ],
+    expected: "Open with no flow. Closed (continuity) when trigger is pulled and water is flowing.",
+    fail_always_open: "No continuity even with full water flow → flow switch stuck or failed. Check for debris in the switch, adjust sensitivity if possible. Replace if failed.",
+    fail_always_closed: "Continuity even with no flow → flow switch stuck closed. Replace.",
+    next_if_pass: "burner_chain_pressure_switch",
+    rule_reminder: "Flow switch ensures the burner only fires when water is moving through the coil."
+  },
+  burner_chain_pressure_switch: {
+    name: "Test Pressure Switch",
+    when: "Flow switch is good but burner doesn't fire",
+    difficulty: "Level 3 — Burner",
+    chain: "burner_safety_chain",
+    chain_position: 4,
+    safety: "⚠️ Test while machine is running at operating pressure.",
+    steps: [
+      "Locate the pressure switch (usually on the pump head or outlet plumbing)",
+      "UNPLUG machine, disconnect pressure switch leads",
+      "Set meter to Continuity",
+      "Test with no pressure — should be OPEN",
+      "Reconnect, start machine, build pressure above ~580 PSI",
+      "Test for continuity — should be CLOSED above the set point"
+    ],
+    expected: "Open below ~580 PSI. Closed (continuity) above ~580 PSI.",
+    fail_always_open: "No continuity even at full operating pressure → switch failed or set point too high. Check adjustment, replace if failed.",
+    fail_always_closed: "Continuity even with no pressure → switch stuck closed. Replace.",
+    next_if_pass: "burner_chain_high_limit",
+    rule_reminder: "Pressure switch ensures minimum system pressure before burner fires."
+  },
+  burner_chain_high_limit: {
+    name: "Test High Limit Switch",
+    when: "Pressure switch is good but burner doesn't fire",
+    difficulty: "Level 3 — Burner",
+    chain: "burner_safety_chain",
+    chain_position: 5,
+    safety: "⚠️ High limit is a critical safety device. Never bypass.",
+    steps: [
+      "Locate the high-limit thermostat (usually on the coil or outlet plumbing)",
+      "UNPLUG machine, disconnect high-limit leads",
+      "Set meter to Continuity",
+      "Test continuity — should be CLOSED (circuit complete) when coil is COOL",
+      "If it has tripped (open), let the machine cool completely and retest"
+    ],
+    expected: "Closed circuit when cool (continuity / beep). Opens only when temperature exceeds safe limit.",
+    fail_open_when_cool: "Open even when machine is cold → high limit tripped and won't reset, or failed. Replace.",
+    fail_always_closed: "Never opens even when extremely hot → failed closed. Replace immediately — this is a critical safety device.",
+    next_if_pass: "burner_chain_contactor_coil",
+    rule_reminder: "High limit protects against overheating. If it keeps tripping, investigate WHY it's overheating before replacing."
+  },
+  burner_chain_contactor_coil: {
+    name: "Test Burner Contactor Coil",
+    when: "All safety switches pass but contactor won't pull in",
+    difficulty: "Level 4 — Electrical",
+    chain: "burner_safety_chain",
+    chain_position: 6,
+    safety: "⚠️ LIVE VOLTAGE. 120V AC at coil terminals when safety chain is complete.",
+    steps: [
+      "With machine running and all safety conditions met (flow, pressure, thermostat calling)",
+      "Set meter to AC Voltage (V~)",
+      "Test across the contactor coil's small terminals (not the large load terminals)",
+      "Should read 120V AC when the safety chain is complete",
+      "If voltage is present, contactor should click and pull in"
+    ],
+    expected: "120V AC across coil terminals. Contactor physically pulls in with an audible click.",
+    fail_no_voltage: "0V at coil → one of the safety chain switches is open. Go back and retest: thermostat → flow switch → pressure switch → high limit. The break is upstream.",
+    fail_voltage_no_pull_in: "120V at coil but no pull-in → burned contactor coil. Replace contactor.",
+    next_if_pass: "burner_chain_ignition",
+    rule_reminder: "If the coil doesn't have voltage, the problem is in the safety chain ABOVE this point. Don't replace the contactor — find the open switch."
+  },
+  burner_chain_ignition: {
+    name: "Test Ignition Transformer",
+    when: "Contactor pulls in but no spark / no ignition",
+    difficulty: "Level 3-4 — Burner Electrical",
+    chain: "burner_safety_chain",
+    chain_position: 7,
+    safety: "⚠️ LIVE VOLTAGE. High voltage at transformer secondary (10,000V). Do NOT touch electrodes while energized.",
+    steps: [
+      "With burner circuit energized (contactor pulled in)",
+      "Set meter to AC Voltage (V~)",
+      "Test for 120V AC at the ignition transformer INPUT terminals",
+      "If 120V is present at input, the transformer should produce spark at the electrodes",
+      "VISUALLY verify spark — DO NOT test transformer output with a standard multimeter (10,000V output)"
+    ],
+    expected: "120V AC at transformer input. Visible spark across electrodes.",
+    fail_no_input: "0V at transformer input → wiring issue between contactor and transformer. Check connections.",
+    fail_no_spark: "120V at input but no spark → failed ignition transformer. Replace.",
+    fail_weak_spark: "Weak or intermittent spark → cracked transformer insulation or worn electrodes. Check electrode gap and alignment first; replace transformer if electrodes are good.",
+    next_if_pass: "burner_chain_fuel_solenoid",
+    rule_reminder: "Never replace the igniter until you've verified the safety chain is complete. An open safety switch won't deliver power to the igniter."
+  },
+  burner_chain_fuel_solenoid: {
+    name: "Test Fuel Solenoid Valve",
+    when: "Ignition works (spark present) but no fuel delivery",
+    difficulty: "Level 3 — Burner",
+    chain: "burner_safety_chain",
+    chain_position: 8,
+    safety: "⚠️ FUEL SYSTEM. Ensure ventilation. No open flames. Have fire extinguisher accessible.",
+    steps: [
+      "With burner circuit energized and firing sequence active",
+      "Set meter to AC Voltage (V~)",
+      "Test for 120V AC at the fuel solenoid valve terminals",
+      "If voltage is present, you should hear the solenoid click open",
+      "Verify fuel is flowing to the nozzle (fuel pressure gauge if available)"
+    ],
+    expected: "120V AC at solenoid terminals when burner fires. Audible click. Fuel flows to nozzle.",
+    fail_no_voltage: "0V at solenoid → wiring issue between contactor and solenoid. Check connections.",
+    fail_voltage_no_click: "120V present but solenoid won't open → solenoid coil failed or valve stuck. Check for debris in valve; replace coil or entire solenoid.",
+    fail_clicks_no_fuel: "Solenoid clicks open but no fuel → fuel supply issue. Check fuel filter, fuel pump, fuel tank level, and fuel line for restrictions.",
+    next_if_pass: null,
+    rule_reminder: "The fuel solenoid is the LAST link in the chain. If you got here and it's working, the problem is combustion — check nozzle spray pattern, electrode alignment, and air supply."
   }
 };
 
 function getMultimeterTest(testName) {
   if (!testName) {
+    // List all tests organized by category
+    const generalChain = ['voltage_at_outlet', 'voltage_at_switch', 'cam_switch_test', 'motor_continuity', 'capacitor_test', 'contactor_test'];
+    const burnerChain = ['burner_chain_power', 'burner_chain_thermostat', 'burner_chain_flow_switch', 'burner_chain_pressure_switch', 'burner_chain_high_limit', 'burner_chain_contactor_coil', 'burner_chain_ignition', 'burner_chain_fuel_solenoid'];
+    const standalone = ['cad_cell_test', 'gfci_test'];
+
     return JSON.stringify({
-      available_tests: Object.entries(multimeterTests).map(([k, v]) => ({
-        id: k,
-        name: v.name,
-        when_to_use: v.when
+      technician_rules: multimeterTests._rules.principles,
+      chains: {
+        machine_wont_run: {
+          description: "Machine Dead / Won't Start — follow power from source to motor (Level 4)",
+          start_with: "voltage_at_outlet",
+          steps: generalChain.map(id => ({ id, name: multimeterTests[id].name }))
+        },
+        burner_safety_chain: {
+          description: "Hot Water Burner Won't Fire — follow safety chain top to bottom (Level 3-4)",
+          start_with: "burner_chain_power",
+          steps: burnerChain.map(id => ({ id, name: multimeterTests[id].name }))
+        }
+      },
+      standalone_tests: standalone.map(id => ({
+        id, name: multimeterTests[id].name, when_to_use: multimeterTests[id].when
       })),
-      instruction: "Choose a test based on the symptom. Start with 'voltage_at_outlet' for dead machines, 'cad_cell_test' for burner issues, 'gfci_test' for tripping."
+      all_tests: Object.entries(multimeterTests)
+        .filter(([k]) => k !== '_rules')
+        .map(([k, v]) => ({
+          id: k, name: v.name, when_to_use: v.when, difficulty: v.difficulty || null
+        })),
+      instruction: "For 'machine dead': start with voltage_at_outlet and follow the chain. For 'burner won't fire': start with burner_chain_power and follow the safety chain. For GFCI tripping: use gfci_test. For burner lockout: use cad_cell_test."
+    }, null, 2);
+  }
+
+  if (testName === 'burner_safety_chain') {
+    // Return the full chain overview
+    const chainTests = Object.entries(multimeterTests)
+      .filter(([k, v]) => v.chain === 'burner_safety_chain')
+      .sort((a, b) => a[1].chain_position - b[1].chain_position);
+    return JSON.stringify({
+      chain: "Burner Safety Chain — Hot Water Burner Control Logic",
+      description: "Follow power from TOP to BOTTOM. Test each link in the chain. If voltage disappears at any point, the problem is ABOVE that point.",
+      technician_rules: multimeterTests._rules.principles,
+      steps: chainTests.map(([id, t]) => ({
+        position: t.chain_position,
+        id,
+        name: t.name,
+        test: t.steps[t.steps.length - 1],
+        expected: t.expected
+      }))
     }, null, 2);
   }
 
   const test = multimeterTests[testName];
-  if (!test) return JSON.stringify({ error: `Unknown test "${testName}". Available: ${Object.keys(multimeterTests).join(', ')}` });
+  if (!test) return JSON.stringify({ error: `Unknown test "${testName}". Call with no test_name to see all available tests and chains.` });
   
   return JSON.stringify({
     test_id: testName,
     ...test,
+    technician_rules: multimeterTests._rules.principles,
     next_test: test.next_if_pass ? {
       id: test.next_if_pass,
       name: multimeterTests[test.next_if_pass]?.name
@@ -711,11 +971,11 @@ const tools = [
   },
   {
     name: "multimeter_test",
-    description: "Get guided multimeter/electrical testing procedures. Call with no test_name to see all available tests. Each test includes: what meter settings to use, where to probe, expected readings, and what failures mean. Tests chain together: voltage_at_outlet → voltage_at_switch → motor_continuity → capacitor_test → contactor_test. Also: cad_cell_test (burner), gfci_test (tripping).",
+    description: "Get guided multimeter/electrical testing procedures. Call with no test_name to see all available tests and chains. Two chains: (1) Machine Won't Run: voltage_at_outlet → voltage_at_switch → cam_switch_test → motor_continuity → capacitor_test → contactor_test. (2) Burner Safety Chain: burner_chain_power → burner_chain_thermostat → burner_chain_flow_switch → burner_chain_pressure_switch → burner_chain_high_limit → burner_chain_contactor_coil → burner_chain_ignition → burner_chain_fuel_solenoid. Also: cad_cell_test, gfci_test. Call with test_name='burner_safety_chain' to get full chain overview. Each test includes safety warnings, meter settings, expected readings, failure interpretations, and technician rules.",
     input_schema: {
       type: "object",
       properties: {
-        test_name: { type: "string", description: "Test ID: voltage_at_outlet, voltage_at_switch, motor_continuity, capacitor_test, contactor_test, cad_cell_test, gfci_test. Omit to list all tests." }
+        test_name: { type: "string", description: "Test ID or 'burner_safety_chain' for chain overview. Omit to list all tests and chains." }
       }
     }
   }
@@ -732,11 +992,22 @@ const SYSTEM_PROMPT = `You are P-Supp, a pressure washer diagnostic assistant. Y
 
 ═══ DIAGNOSTIC FLOW ═══
 1. User describes a problem → call classify_symptoms
-2. Call get_diagnostic_tree for the matched category
-3. Ask the FIRST question from the tree in plain language (hide node IDs)
-4. Wait for their answer → advance to the next node
-5. Repeat until you reach a DIAGNOSIS node
-6. At diagnosis: give 2-3 clear action steps, not a full repair manual
+2. Results include difficulty level (L1-L4) and matched category
+3. Use the SIMPLE RULES to confirm the right path:
+   - No water moving? → Flow (L2)
+   - Water moves but weak? → Pressure (L1)
+   - Water not hot? → Heat/Burner (L3)
+   - Machine dead? → Electrical (L4)
+4. Call get_diagnostic_tree for the matched category
+5. Ask the FIRST question in plain language, then wait for answer → advance
+6. At diagnosis: give 2-3 clear action steps
+7. For L3-L4 issues, offer: "Want me to walk you through testing that with a meter?"
+
+DIFFICULTY LEVELS — mention these naturally so the user knows what they're dealing with:
+- Level 1 (Basic): Nozzles, unloader, valves, seals — mechanical checks
+- Level 2 (Basic): Water supply, inlet filter, chemical injection, engine
+- Level 3 (Intermediate): Burner, ignition, fuel, CAD cell — may need multimeter
+- Level 4 (Advanced): Electrical chain, contactors, motors, safety switches — multimeter required
 
 Example good response: "Sounds like a flow issue. Is the surging rhythmic (pulsing every few seconds) or random and intermittent?"
 Example BAD response: listing 10 possible causes with explanations for each.
@@ -758,9 +1029,21 @@ Present: recommended injector, draw rate in practical units (oz/min and gal/hr),
 MULTIMETER ASSISTANT — call multimeter_test when user needs to:
 - Test electrical components (voltage, continuity, capacitance, resistance)
 - Diagnose dead machines, motor issues, GFCI tripping, CAD cell problems
+- Walk through the burner safety chain (hot water units)
 - "How do I test the capacitor?" or "Walk me through checking voltage"
-Present the test steps one at a time. Give the safety warning FIRST. After each test, tell them what the reading means and what to test next.
-If you reach a diagnosis during electrical diagnostic tree, offer: "Want me to walk you through testing that with a meter?"
+
+Two guided chains are available:
+1. MACHINE WON'T RUN chain: outlet → switch → cam switch → motor → capacitor → contactor
+2. BURNER SAFETY CHAIN: power input → thermostat → flow switch → pressure switch → high limit → contactor coil → ignition transformer → fuel solenoid
+
+Always include the TECHNICIAN RULES when walking through electrical tests:
+- Follow power from TOP to BOTTOM
+- If voltage disappears, the problem is ABOVE that point
+- Voltage shows WHERE power stops — continuity shows WHICH switch failed
+- Always test upstream first
+
+Present test steps one at a time. Give safety warning FIRST. After each test, tell them what the reading means and suggest the next test in the chain.
+After reaching a diagnosis during ANY diagnostic tree that involves electrical components, offer: "Want me to walk you through testing that with a meter?"
 
 ═══ KNOWLEDGE BASE ═══
 You have 242 indexed manuals. Use search_knowledge_base ONLY after diagnosis to find specific part numbers, torque specs, or procedures. Summarize in 1-2 sentences — never paste raw results.
@@ -855,12 +1138,19 @@ async function runAgent(userMessage, imageData, imageType, history) {
           if (matches.length === 0) {
             result = 'No diagnostic categories matched. This may be a general question — try search_knowledge_base instead.';
           } else {
+            const simpleRules = diagnostics?.simple_rules || null;
             result = JSON.stringify({
               detected_categories: matches,
               recommendation: matches.length > 1
-                ? `Multiple issues detected. Start with "${matches[0].label}" (highest match), then address "${matches[1].label}".`
-                : `Detected: ${matches[0].label}. Use get_diagnostic_tree with category="${matches[0].category}" to start diagnosis.`,
-              available_trees: Object.keys(diagnostics?.trees || {})
+                ? `Multiple issues detected. Start with "${matches[0].label}" (${matches[0].difficulty_label || 'unknown level'}, highest match), then address "${matches[1].label}".`
+                : `Detected: ${matches[0].label} (${matches[0].difficulty_label || 'unknown level'}). Use get_diagnostic_tree with category="${matches[0].category}" to start diagnosis.`,
+              available_trees: Object.keys(diagnostics?.trees || {}),
+              simple_rules: simpleRules ? simpleRules.questions : null,
+              technician_tip: matches[0].difficulty_level >= 4
+                ? "This is a Level 4 electrical issue — requires multimeter. Offer to walk the user through testing with the multimeter_test tool."
+                : matches[0].difficulty_level >= 3
+                ? "This is a Level 3 issue — may require multimeter for burner/electrical components."
+                : null
             }, null, 2);
           }
           break;
@@ -1240,8 +1530,9 @@ server.listen(PORT, () => {
   console.log('───────────────────────────────────────────');
   console.log(`  Port:        ${PORT}`);
   console.log(`  Database:    ${db ? `${dbStats.documents} docs, ${dbStats.chunks} chunks` : 'NOT FOUND'}`);
-  console.log(`  Diagnostics: ${diagnostics ? `${Object.keys(diagnostics.trees).length} trees (${Object.keys(diagnostics.trees).join(', ')})` : 'NOT LOADED'}`);
-  console.log(`  Pro tools:   ✅ Nozzle calc, Injector sizing, Multimeter (${Object.keys(multimeterTests).length} tests)`);
+  const testCount = Object.keys(multimeterTests).filter(k => k !== '_rules').length;
+  console.log(`  Diagnostics: ${diagnostics ? `${Object.keys(diagnostics.trees).length} trees, ${diagnostics.simple_rules ? diagnostics.simple_rules.questions.length + ' triage rules' : 'no triage'}` : 'NOT LOADED'}`);
+  console.log(`  Pro tools:   ✅ Nozzle calc, Injector sizing, Multimeter (${testCount} tests, 2 chains)`);
   console.log(`  Web search:  ✅ Always available as fallback`);
   console.log(`  User data:   ${userDb ? `✅ ${savedCount} saved diagnostics` : '❌ Not available'}`);
   console.log(`  AI:          ${API_KEY ? '✅ Enabled' : '❌ Set ANTHROPIC_API_KEY'}`);
