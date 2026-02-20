@@ -331,6 +331,8 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
 const C=document.getElementById('contentArea'),I=document.getElementById('userInput'),SB=document.getElementById('sidebar');
 const MAIN=C.parentElement; // .main is the scrollable container
 const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2,8);
+const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+function safeFocus(el){ if(!isMobile && el) el.focus(); }
 function scrollToMsg(el){if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
 if(sessionStorage.getItem('authenticated')==='true')unlockApp();
@@ -348,7 +350,7 @@ function handleImageSelect(e){
     document.getElementById('imgName').textContent=file.name;
     document.getElementById('imgPreviewBar').style.display='flex';
     I.placeholder='Describe the issue or ask about this equipment...';
-    I.focus();
+    safeFocus(I);
   };
   reader.readAsDataURL(file);
 }
@@ -507,7 +509,7 @@ function showInjectorChart(){
   </div>`;
   MAIN.scrollTop=0;
 }
-function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});document.getElementById('homeInput').focus();}
+function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});safeFocus(document.getElementById('homeInput'));}
 
 /* ═══ SEARCH ═══ */
 function genResponse(query){const q=norm(query);let html='';let found=false;
@@ -615,7 +617,7 @@ function showSearch(query,img){setActive('home');
       // Track assistant reply in history for next request
       chatHistory.push({role:'assistant', content:data.reply});
       I.placeholder='Type your reply or ask a follow-up question...';
-      I.focus();
+      safeFocus(I);
       // Add save + feedback buttons after AI bubble
       injectSaveButton(el);
       if(data.log_id) injectFeedbackButtons(el, data.log_id);
@@ -719,7 +721,7 @@ function startTopic(topic){
     addChatMsg('bot',`<p>I can help with <strong>${esc(topicLabels[topic])}</strong>. What's going on?</p>
       <div class="quick-actions" style="margin-top:0.75rem">${btns}</div>
       <p style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)">Or type your own description below.</p>`);
-    I.focus();I.placeholder='Describe your issue or ask a question...';
+    safeFocus(I);I.placeholder='Describe your issue or ask a question...';
     scrollBottom();
     return;
   }
@@ -748,7 +750,7 @@ function handleSend(){const q=I.value.trim();if(!q&&!pendingImage)return;I.value
     ensureChatView();
     addChatMsg('user', esc(q));
     addChatMsg('bot', `<p>It looks like you entered just a number. Could you provide the <strong>full model number</strong> including letters? For example: <strong>TS2021</strong>, <strong>EZ4040G</strong>, <strong>KFMZ</strong>, etc.</p>`);
-    I.focus();I.placeholder='e.g. TS2021, EZ4040G, T1011...';
+    safeFocus(I);I.placeholder='e.g. TS2021, EZ4040G, T1011...';
     window._pendingContext='Look up pump model ';
     return;
   }
@@ -758,7 +760,7 @@ function askQ(q){I.value=q;handleSend();}
 I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 
 console.log('[Init] C=', !!C, 'I=', !!I, 'SB=', !!SB);
-buildSidebar();if(C)showHome();else console.error('[Init] contentArea not found');if(I)I.focus();
+buildSidebar();if(C)showHome();else console.error('[Init] contentArea not found');if(I)safeFocus(I);
 document.addEventListener('click',function(e){const m=document.getElementById('hamMenu');if(m&&!e.target.closest('.hamburger')&&!e.target.closest('.ham-menu'))m.classList.remove('open');});
 
 /* ═══════════════════════════════════════════════════════
