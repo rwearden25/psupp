@@ -32,8 +32,15 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .hamburger{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;gap:3px;position:relative}
 .hamburger span{display:block;width:18px;height:2px;background:var(--text-muted);border-radius:1px;transition:0.2s}
 .hamburger:hover span{background:var(--accent)}
-.ham-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:0 8px 24px rgba(0,0,0,0.08);z-index:200;min-width:200px}
-.ham-menu.open{display:flex;gap:1.5rem}
+.ham-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,0.08);z-index:200;min-width:200px}
+.ham-menu.open{display:block}
+.ham-link{display:flex;align-items:center;gap:0.5rem;width:100%;border:none;background:transparent;color:var(--text);padding:0.5rem 0.6rem;cursor:pointer;font-size:0.82rem;font-family:var(--font-body);border-radius:6px;transition:all 0.15s;text-align:left}
+.ham-link:hover{background:var(--accent-dim);color:var(--accent)}
+.ref-table{width:100%;border-collapse:collapse;font-size:0.8rem;font-family:var(--font-body)}
+.ref-table th{background:var(--surface-2);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);padding:0.5rem 0.6rem;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:0.45rem 0.6rem;border-bottom:1px solid var(--border);color:var(--text)}
+.ref-table tr:hover td{background:var(--accent-dim)}
+.ref-table .nz-label{font-weight:600;background:var(--surface-2)}
 .logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.75rem;font-family:var(--font-body);color:var(--text-muted);cursor:pointer;transition:0.2s;white-space:nowrap}
 .logout-btn:hover{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,0.06)}
 .upload-btn{background:none;border:1px solid var(--border);border-radius:10px;padding:6px 12px;cursor:pointer;color:var(--text-muted);font-size:0.82rem;font-family:var(--font-body);transition:0.2s;display:flex;align-items:center;gap:0.3rem;white-space:nowrap}
@@ -305,11 +312,15 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
     <div class="header-text" onclick="exitChat?exitChat():showHome()" style="cursor:pointer"><h1>P-Supp Tool</h1><span>Diagnostics, Service &amp; Reference</span></div>
     <div class="header-right">
       <div style="position:relative">
-        <button class="hamburger" onclick="document.getElementById('hamMenu').classList.toggle('open')" title="Stats">
+        <button class="hamburger" onclick="document.getElementById('hamMenu').classList.toggle('open')" title="Reference Charts">
           <span></span><span></span><span></span>
         </button>
         <div class="ham-menu" id="hamMenu">
-          <div class="header-stats" id="headerStats"></div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;min-width:180px">
+            <div style="font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding-bottom:0.25rem;border-bottom:1px solid var(--border)">Reference Charts</div>
+            <button class="ham-link" onclick="showNozzleChart();document.getElementById('hamMenu').classList.remove('open')">🎯 Nozzle Size Chart</button>
+            <button class="ham-link" onclick="showInjectorChart();document.getElementById('hamMenu').classList.remove('open')">💉 Injector Sizing Chart</button>
+          </div>
         </div>
       </div>
       <button class="logout-btn" onclick="sessionStorage.removeItem('authenticated');location.reload();">Logout</button>
@@ -378,13 +389,12 @@ const renderSteps=s=>`<ol class="step-list">${s.map((x,i)=>`<li class="step-item
 
 function buildSidebar(){
   let h=`<button class="home-btn active" data-topic="home" onclick="nav('home')"><span class="topic-icon">🏠</span> Home</button>`;
-  h+=`<button class="home-btn" data-topic="saved-diags" onclick="showSavedDiags()"><span class="topic-icon">📋</span> My Diagnostics</button>`;
+  h+=`<div class="sb-section-label" style="padding:0.6rem 1rem 0.3rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Reference Charts</div>`;
   h+=`<div class="sb-quick">`;
-  [['pressure','📉','Low pressure'],['oil','🛢️','Oil lookup'],['burner','🔥','Burner issues'],['service','⚙️','Service & repair'],['chemical','🧪','Chemical issues'],['electrical','⚡','Electrical'],['find','🔍','Find a pump'],['pilot','🔥','Pilot light'],['maintenance','🗓️','Maintenance']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
+  h+=`<button class="sb-quick-btn" onclick="showNozzleChart()"><span class="qicon">🎯</span>Nozzle Size Chart</button>`;
+  h+=`<button class="sb-quick-btn" onclick="showInjectorChart()"><span class="qicon">💉</span>Injector Sizing Chart</button>`;
   h+=`</div>`;
-
   SB.innerHTML=h;
-  document.querySelectorAll('.sb-body').forEach(b=>{b.style.maxHeight=b.scrollHeight+'px'});
 }
 
 function toggleSection(id){const el=document.getElementById(id);el.classList.toggle('collapsed');if(!el.classList.contains('collapsed')){const body=el.querySelector('.sb-body');body.style.maxHeight=body.scrollHeight+'px';}}
@@ -393,6 +403,118 @@ function getSeriesGroups(){const g={};for(const m of KB.gp.pumpModels){const s=m
 function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oilRecommendations)){for(const p of s.pumps){const pn=norm(p);if(q.includes(pn)||pn.includes(q.replace(/\s/g,'')))r.push({model:p,oil:s.label,weight:s.weight,badge:s.badge});}}return[...new Map(r.map(x=>[x.model,x])).values()];}
 
 /* ═══ PAGES ═══ */
+
+/* ─── NOZZLE SIZE CHART ─── */
+function showNozzleChart(){
+  setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
+  // Nozzle # = GPM capacity at 4000 PSI. At other PSI: GPM = Nozzle# × √(PSI/4000)
+  const pressures = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
+  const nozzles = [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 12, 15];
+  const colors = {0:'Red',15:'Yellow',25:'Green',40:'White',65:'Black'};
+
+  let rows = nozzles.map(n => {
+    let cells = pressures.map(p => {
+      const gpm = (n * Math.sqrt(p / 4000)).toFixed(1);
+      return `<td>${gpm}</td>`;
+    }).join('');
+    return `<tr><td class="nz-label"><strong>#${n}</strong></td>${cells}</tr>`;
+  }).join('');
+
+  C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
+    <div class="page-header"><div class="page-header-icon">🎯</div><div><h2>Nozzle Size Chart</h2><p>GPM output by nozzle number and operating PSI</p></div></div>
+
+    <div class="card" style="overflow-x:auto">
+      <h4>Nozzle # → GPM at Operating Pressure</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Nozzle number = GPM capacity at 4,000 PSI. Spray angle does NOT affect flow rate.</p>
+      <table class="ref-table">
+        <thead><tr><th>Nozzle #</th>${pressures.map(p => `<th>${p.toLocaleString()} PSI</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h4>Spray Angle Color Codes</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Standard color coding (may vary by manufacturer)</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.5rem">
+        ${Object.entries(colors).map(([deg,color]) => `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:var(--surface-2);border-radius:8px;font-size:0.82rem"><span style="width:24px;height:24px;border-radius:50%;background:${color.toLowerCase()};border:2px solid var(--border);flex-shrink:0"></span><strong>${deg}°</strong> ${color}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Tip Code Format</h4>
+      <p style="font-size:0.85rem;line-height:1.6">Tip code = <strong>AABB</strong> where AA = spray angle, BB = nozzle size × 10.<br>
+      Example: <strong>2540</strong> = 25° angle, #4.0 nozzle (4.0 GPM at 4,000 PSI)</p>
+      <p style="font-size:0.85rem;line-height:1.6;margin-top:0.5rem">⚠️ A nozzle that is <strong>too small</strong> causes over-pressurization.<br>
+      ⚠️ A <strong>worn</strong> nozzle reduces system pressure — check nozzles regularly for wear.</p>
+    </div>
+
+    <div style="text-align:center;padding:1rem">
+      <button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI to calculate a specific nozzle</button>
+    </div>
+  </div>`;
+  MAIN.scrollTop=0;
+}
+
+/* ─── INJECTOR SIZING CHART ─── */
+function showInjectorChart(){
+  setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
+
+  const dsData = [
+    {gpm:'2.0', ratio:'10:1', draw_oz:'2.6', draw_gph:'1.2', model:'Standard DS', notes:'Short hose runs'},
+    {gpm:'2.5', ratio:'10:1', draw_oz:'3.2', draw_gph:'1.5', model:'Standard DS', notes:'Short hose runs'},
+    {gpm:'3.0', ratio:'10:1', draw_oz:'3.8', draw_gph:'1.8', model:'Standard DS', notes:'Up to 100 ft hose'},
+    {gpm:'3.5', ratio:'10:1', draw_oz:'4.5', draw_gph:'2.1', model:'Standard DS', notes:'Up to 100 ft hose'},
+    {gpm:'4.0', ratio:'10:1', draw_oz:'5.1', draw_gph:'2.4', model:'Standard DS', notes:'Up to 150 ft hose'},
+    {gpm:'5.0', ratio:'10:1', draw_oz:'6.4', draw_gph:'3.0', model:'High-flow DS', notes:'Up to 150 ft hose'},
+    {gpm:'5.5', ratio:'10:1', draw_oz:'7.0', draw_gph:'3.3', model:'High-flow DS', notes:'Up to 200 ft hose'},
+    {gpm:'8.0', ratio:'10:1', draw_oz:'10.2', draw_gph:'4.8', model:'High-flow DS', notes:'Requires upstream for long runs'},
+  ];
+
+  let dsRows = dsData.map(d => `<tr><td>${d.gpm}</td><td>${d.ratio}</td><td>${d.draw_oz}</td><td>${d.draw_gph}</td><td>${d.model}</td><td>${d.notes}</td></tr>`).join('');
+
+  C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
+    <div class="page-header"><div class="page-header-icon">💉</div><div><h2>Injector Sizing Chart</h2><p>Chemical draw rates by water flow and dilution ratio</p></div></div>
+
+    <div class="card" style="overflow-x:auto">
+      <h4>Downstream Injector — Draw Rates at 10:1 Dilution</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Downstream injectors require a low-pressure (soap) nozzle to function.</p>
+      <table class="ref-table">
+        <thead><tr><th>Water GPM</th><th>Ratio</th><th>Chem oz/min</th><th>Chem gal/hr</th><th>Injector Type</th><th>Notes</th></tr></thead>
+        <tbody>${dsRows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h4>Downstream vs Upstream</h4>
+      <table class="ref-table">
+        <thead><tr><th></th><th>Downstream</th><th>Upstream</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Location</strong></td><td>After unloader (low pressure side)</td><td>Before unloader (high pressure side)</td></tr>
+          <tr><td><strong>Draw ratio</strong></td><td>10:1 to 20:1 (lighter)</td><td>5:1 to 10:1 (stronger)</td></tr>
+          <tr><td><strong>Requires</strong></td><td>Soap nozzle (low-pressure tip)</td><td>Chemical-rated HP hose</td></tr>
+          <tr><td><strong>Best for</strong></td><td>House wash, fleet wash, light cleaning</td><td>Thick chemicals, long hose runs, heavy degreasing</td></tr>
+          <tr><td><strong>Hose effect</strong></td><td>Draw decreases with longer hose</td><td>Less affected by hose length</td></tr>
+          <tr><td><strong>Pump wear</strong></td><td>Chemical doesn't contact pump</td><td>Chemical flows through pump — more seal wear</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h4>Quick Rules</h4>
+      <p style="font-size:0.85rem;line-height:1.8">
+        📌 <strong>No soap?</strong> → Check: soap nozzle installed? Pickup tube submerged? Injector clogged? Arrow pointing right direction?<br>
+        📌 <strong>Weak chemical?</strong> → Shorten hose, pre-mix stronger, or switch to upstream injector.<br>
+        📌 <strong>Every 50 ft of hose</strong> reduces downstream draw rate noticeably.<br>
+        📌 <strong>Injector orientation:</strong> Arrow must point in flow direction (toward gun).
+      </p>
+    </div>
+
+    <div style="text-align:center;padding:1rem">
+      <button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI to calculate my specific setup</button>
+    </div>
+  </div>`;
+  MAIN.scrollTop=0;
+}
 function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals.</p><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});document.getElementById('homeInput').focus();}
 
 function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p>${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
