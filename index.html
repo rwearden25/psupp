@@ -87,15 +87,18 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .welcome-icon{font-size:2.5rem;margin-bottom:0.75rem}
 .welcome h2{font-size:1.5rem;margin-bottom:0.5rem;letter-spacing:-0.5px}
 .welcome>p{color:var(--text-muted);font-size:0.88rem;margin-bottom:2rem;line-height:1.6;max-width:520px}
-.home-search{width:100%;max-width:560px;display:flex;gap:0.5rem;margin-bottom:1.5rem}
-.home-search input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;color:var(--text);font-family:var(--font-body);font-size:1rem;outline:none;transition:border-color 0.2s;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
-.home-search input:focus{border-color:var(--accent);box-shadow:0 2px 20px rgba(37,99,235,0.1)}
-.home-search input::placeholder{color:var(--text-muted)}
-.home-search .search-send{border-radius:14px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.9rem;font-weight:600;font-family:var(--font-body);transition:all 0.15s;flex-shrink:0;padding:0 1.25rem;height:52px}
-.home-search .search-send:hover{filter:brightness(1.15);transform:scale(1.03)}
-.home-search .upload-home{border-radius:14px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;width:52px;height:52px;transition:all 0.15s}
-.home-search .upload-home:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.home-hint{font-size:0.78rem;color:var(--text-muted);margin-top:-0.5rem}
+.home-search{width:100%;max-width:620px;position:relative;margin-bottom:1.5rem}
+.home-search-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:0.25rem;display:flex;align-items:center;box-shadow:0 2px 16px rgba(0,0,0,0.04);transition:border-color 0.2s,box-shadow 0.2s}
+.home-search-box:focus-within{border-color:var(--accent);box-shadow:0 2px 24px rgba(37,99,235,0.1)}
+.home-search-box input{flex:1;background:transparent;border:none;padding:0.85rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.95rem;outline:none;min-width:0}
+.home-search-box input::placeholder{color:var(--text-muted)}
+.home-search-actions{display:flex;align-items:center;gap:0.25rem;padding-right:0.35rem}
+.home-search-actions button{border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;font-size:0.9rem;flex-shrink:0}
+.home-search-actions .upload-home{background:transparent;color:var(--text-muted)}
+.home-search-actions .upload-home:hover{background:var(--surface-2);color:var(--accent)}
+.home-search-actions .search-send{background:var(--accent);color:#fff}
+.home-search-actions .search-send:hover{filter:brightness(1.15);transform:scale(1.06)}
+.home-hint{font-size:0.76rem;color:var(--text-muted);margin-top:0.5rem}
 .mobile-quick{display:none;width:100%;max-width:560px}
 @media(max-width:900px){.mobile-quick{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:1rem}}
 .sb-quick{padding:0.5rem 0;border-bottom:1px solid var(--border)}
@@ -342,15 +345,6 @@ function buildSidebar(){
   h+=`<div class="sb-quick">`;
   [['pressure','📉','Low pressure'],['oil','🛢️','Oil lookup'],['burner','🔥','Burner issues'],['service','⚙️','Service & repair'],['chemical','🧪','Chemical issues'],['find','🔍','Find a pump'],['pilot','🔥','Pilot light'],['maintenance','🗓️','Maintenance']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
   h+=`</div>`;
-  h+=`<div class="sb-section" id="sec-gp"><div class="sb-header" onclick="toggleSection('sec-gp')"><span class="sb-chevron">▼</span><span class="sb-brand gp">Pumps</span><span class="sb-count">${KB.gp.pumpModels.length} pumps</span></div><div class="sb-body">`;
-  h+=`<div class="sb-group-label">Diagnostics</div>`;
-  [['gp-pressure','📉','Low Pressure'],['gp-pulsation','〰️','Pulsation'],['gp-rough','🔴','Rough Running'],['gp-leak','💧','Leaks'],['gp-noise','🔊','Noise / Knocking'],['gp-packing','⚙️','Packing Failure'],['gp-overheating','🌡️','Overheating']].forEach(([id,ic,lb])=>h+=`<button class="topic-btn" data-topic="${id}" onclick="nav('${id}')"><span class="topic-icon">${ic}</span>${lb}</button>`);
-  h+=`<div class="sb-group-label">Service</div>`;
-  [['gp-valves','🔧','Valve Service'],['gp-plungers','🔩','Plunger Service'],['gp-vpackings','🛞','V-Packing Service'],['gp-oil','🛢️','Oil & Lubrication'],['gp-maintenance','🗓️','Maintenance']].forEach(([id,ic,lb])=>h+=`<button class="topic-btn" data-topic="${id}" onclick="nav('${id}')"><span class="topic-icon">${ic}</span>${lb}</button>`);
-  h+=`<div class="sb-group-label">Reference</div>`;
-  [['gp-catalog','📖','Product Catalog'],['gp-accessories','🔗','Accessories'],['gp-system','📋','System Design'],['gp-warranty','📄','Warranty']].forEach(([id,ic,lb])=>h+=`<button class="topic-btn" data-topic="${id}" onclick="nav('${id}')"><span class="topic-icon">${ic}</span>${lb}</button>`);
-  h+=`</div></div>`;
-
 
   SB.innerHTML=h;
   document.querySelectorAll('.sb-body').forEach(b=>{b.style.maxHeight=b.scrollHeight+'px'});
@@ -362,7 +356,7 @@ function getSeriesGroups(){const g={};for(const m of KB.gp.pumpModels){const s=m
 function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oilRecommendations)){for(const p of s.pumps){const pn=norm(p);if(q.includes(pn)||pn.includes(q.replace(/\s/g,'')))r.push({model:p,oil:s.label,weight:s.weight,badge:s.badge});}}return[...new Map(r.map(x=>[x.model,x])).values()];}
 
 /* ═══ PAGES ═══ */
-function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals covering pressure washers, steam cleaners, water heaters &amp; more.</p><div class="home-search"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><input type="text" id="homeInput" placeholder="Describe your issue, search models, look up specs…" autocomplete="off"/><button class="search-send" onclick="homeSearch()" title="Search">Search ➤</button></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});document.getElementById('homeInput').focus();}
+function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧</div><h2>How can I help?</h2><p>Search across ${KB.gp.pumpModels.length} pump models, troubleshooting, oil &amp; service data, and equipment manuals.</p><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});document.getElementById('homeInput').focus();}
 
 function showGPTrouble(key){const t=KB.gp.troubleshooting[key];if(!t)return;setActive('gp-'+key);let h=`<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">${t.icon}</div><div><h2>${t.title}</h2><p>${t.desc||''}</p></div></div>`;if(t.causes)h+=`<div class="card"><h4>Possible Causes &amp; Remedies</h4>${renderCauses(t.causes)}</div>`;if(t.items)for(const i of t.items)h+=`<div class="card"><h4>${i.subtitle}</h4>${renderCauses(i.causes)}</div>`;h+=`</div>`;C.innerHTML=h;MAIN.scrollTop=0;}
 
@@ -466,12 +460,26 @@ function addChatMsg(role, html){
   scrollBottom();
 }
 
+let _aiTruncId=0;
 function formatAIText(raw){
-  return raw
+  const MAX=600;
+  let formatted=raw
     .replace(/\n\n/g,'</p><p>')
     .replace(/\n/g,'<br>')
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/^/, '<p>') + '</p>';
+  if(raw.length>MAX){
+    _aiTruncId++;
+    const cutPoint=raw.lastIndexOf(' ',MAX);
+    const shortRaw=raw.substring(0,cutPoint>200?cutPoint:MAX);
+    const shortHtml=shortRaw
+      .replace(/\n\n/g,'</p><p>')
+      .replace(/\n/g,'<br>')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^/, '<p>') + '…</p>';
+    return shortHtml+`<button class="show-more-btn" onclick="this.style.display='none';document.getElementById('aiTr${_aiTruncId}').style.display='block';document.getElementById('aiSh${_aiTruncId}').style.display='none'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--accent);font-family:var(--font-body);margin-top:0.5rem" id="aiSh${_aiTruncId}">Show full response ▾</button><div id="aiTr${_aiTruncId}" style="display:none">${formatted}</div>`;
+  }
+  return formatted;
 }
 
 function showSearch(query,img){setActive('home');
