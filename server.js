@@ -1372,7 +1372,7 @@ const server = http.createServer(async (req, res) => {
       const topTools = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
       // Top categories
-      const catRows = userDb.prepare('SELECT categories_detected FROM chat_logs WHERE categories_detected IS NOT NULL AND categories_detected != "[]"').all();
+      const catRows = userDb.prepare("SELECT categories_detected FROM chat_logs WHERE categories_detected IS NOT NULL AND categories_detected != '[]'").all();
       const catCounts = {};
       for (const row of catRows) {
         try {
