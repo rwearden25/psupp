@@ -1,9 +1,11 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
+const DB_PATH = path.join(__dirname, 'knowledge.db');
 
 // ─── MIME TYPES ───
 const mimeTypes = {
@@ -17,416 +19,600 @@ const mimeTypes = {
   '.svg': 'image/svg+xml'
 };
 
-// ─── FAST IN-MEMORY SEARCH ENGINE ───
-// Pre-loads everything at startup — zero disk I/O at query time
+// ═══════════════════════════════════════════════════════
+//  SQLite FTS5 Search Engine
+// ═══════════════════════════════════════════════════════
 
-const searchEngine = {
-  chunks: [],        // array of { text, lower, words }
-  invertedIndex: {}, // word → Set of chunk indices
-  lines: [],         // raw lines for model lookup
-  linesUpper: [],    // uppercased lines for fast model match
-  ready: false
-};
+let db = null;
+let dbStats = null;
 
-function buildSearchEngine() {
-  const t0 = Date.now();
+function initDatabase() {
   try {
-    const kbText = fs.readFileSync(path.join(__dirname, 'knowledge-base.js'), 'utf8');
-    
-    // Store lines for model lookup
-    searchEngine.lines = kbText.split('\n');
-    searchEngine.linesUpper = searchEngine.lines.map(l => l.toUpperCase());
-    
-    // Build overlapping chunks (15 lines, 3 line overlap)
-    const lines = searchEngine.lines;
-    let currentChunk = [];
-    for (let i = 0; i < lines.length; i++) {
-      currentChunk.push(lines[i]);
-      if (currentChunk.length >= 15) {
-        const text = currentChunk.join('\n');
-        const lower = text.toLowerCase();
-        const words = new Set(lower.match(/[a-z0-9]+/g) || []);
-        const idx = searchEngine.chunks.length;
-        searchEngine.chunks.push({ text, lower, words });
-        
-        // Build inverted index
-        for (const w of words) {
-          if (w.length < 3) continue;
-          if (!searchEngine.invertedIndex[w]) searchEngine.invertedIndex[w] = new Set();
-          searchEngine.invertedIndex[w].add(idx);
-        }
-        
-        currentChunk = currentChunk.slice(-3);
-      }
+    if (!fs.existsSync(DB_PATH)) {
+      console.error('Database not found: ' + DB_PATH);
+      return;
     }
-    // Final chunk
-    if (currentChunk.length > 0) {
-      const text = currentChunk.join('\n');
-      const lower = text.toLowerCase();
-      const words = new Set(lower.match(/[a-z0-9]+/g) || []);
-      const idx = searchEngine.chunks.length;
-      searchEngine.chunks.push({ text, lower, words });
-      for (const w of words) {
-        if (w.length < 3) continue;
-        if (!searchEngine.invertedIndex[w]) searchEngine.invertedIndex[w] = new Set();
-        searchEngine.invertedIndex[w].add(idx);
-      }
-    }
-    
-    searchEngine.ready = true;
-    const dt = Date.now() - t0;
-    const indexSize = Object.keys(searchEngine.invertedIndex).length;
-    console.log(`Search engine ready: ${searchEngine.chunks.length} chunks, ${indexSize} terms indexed in ${dt}ms`);
+    db = new Database(DB_PATH, { readonly: true });
+    db.pragma('journal_mode = WAL');
+
+    const docs = db.prepare('SELECT COUNT(*) as cnt FROM documents').get().cnt;
+    const chunks = db.prepare('SELECT COUNT(*) as cnt FROM chunks').get().cnt;
+    const words = db.prepare('SELECT SUM(word_count) as cnt FROM chunks').get().cnt;
+    const brands = db.prepare('SELECT brand, COUNT(*) as cnt FROM documents GROUP BY brand ORDER BY cnt DESC').all();
+
+    dbStats = { documents: docs, chunks, total_words: words, brands };
+    console.log(`Database: ${docs} docs, ${chunks} chunks, ${(words || 0).toLocaleString()} words`);
   } catch (e) {
-    console.error('Search engine build error:', e.message);
+    console.error('Database init error:', e.message);
   }
 }
 
-// Build index on startup
-buildSearchEngine();
+initDatabase();
 
-// ─── SEARCH FUNCTIONS (all in-memory, no disk I/O) ───
+// ═══════════════════════════════════════════════════════
+//  Layer 1 — Diagnostic Decision Trees
+// ═══════════════════════════════════════════════════════
 
-function searchKnowledgeBase(query) {
-  if (!searchEngine.ready) return 'Search engine not ready';
-  const terms = query.toLowerCase().match(/[a-z0-9]+/g)?.filter(t => t.length > 2) || [];
-  if (terms.length === 0) return 'No search terms provided';
-  
-  // Find candidate chunks via inverted index
-  const candidates = new Map(); // chunkIdx → score
-  for (const term of terms) {
-    const exact = searchEngine.invertedIndex[term];
-    if (exact) {
-      for (const idx of exact) {
-        candidates.set(idx, (candidates.get(idx) || 0) + 3);
+let diagnostics = null;
+
+function initDiagnostics() {
+  const diagPath = path.join(__dirname, 'diagnostics.json');
+  if (!fs.existsSync(diagPath)) {
+    console.log('diagnostics.json not found — diagnostic trees disabled');
+    return;
+  }
+  try {
+    diagnostics = JSON.parse(fs.readFileSync(diagPath, 'utf8'));
+    const treeNames = Object.keys(diagnostics.trees);
+    console.log(`Diagnostics: ${treeNames.length} trees loaded (${treeNames.join(', ')})`);
+  } catch (e) {
+    console.error('Diagnostics load error:', e.message);
+  }
+}
+
+initDiagnostics();
+
+// ─── Intent Classifier ───
+// Maps natural language symptoms to diagnostic categories
+function classifySymptoms(userText) {
+  if (!diagnostics) return [];
+  // Normalize: lowercase, remove apostrophes, collapse whitespace
+  const lower = userText.toLowerCase().replace(/[''`]/g, '').replace(/\s+/g, ' ').trim();
+  const matches = [];
+
+  for (const [category, info] of Object.entries(diagnostics.intent_map)) {
+    let score = 0;
+    const matched = [];
+    for (const kw of info.keywords) {
+      const kwNorm = kw.toLowerCase().replace(/[''`]/g, '');
+      if (lower.includes(kwNorm)) {
+        score += kw.includes(' ') ? 3 : 1;  // multi-word matches score higher
+        matched.push(kw);
       }
     }
-    // Prefix match for partial terms (e.g. "puls" matches "pulsation")
-    if (term.length >= 4) {
-      for (const [word, idxSet] of Object.entries(searchEngine.invertedIndex)) {
-        if (word !== term && word.startsWith(term)) {
-          for (const idx of idxSet) {
-            candidates.set(idx, (candidates.get(idx) || 0) + 1);
-          }
+    if (score > 0) {
+      matches.push({ category, label: info.label, icon: info.icon, score, matched_keywords: matched });
+    }
+  }
+
+  return matches.sort((a, b) => b.score - a.score);
+}
+
+// ─── Get Diagnostic Tree ───
+// Returns a formatted walkthrough for a specific category and optional node
+function getDiagnosticTree(category, nodeId) {
+  if (!diagnostics || !diagnostics.trees[category]) {
+    return `No diagnostic tree found for category: ${category}. Available: ${Object.keys(diagnostics?.trees || {}).join(', ')}`;
+  }
+
+  const tree = diagnostics.trees[category];
+  const nodes = tree.nodes;
+
+  // If specific node requested, return just that node
+  if (nodeId && nodes[nodeId]) {
+    return formatNode(nodeId, nodes[nodeId], tree);
+  }
+
+  // Otherwise return the full guided path starting from entry
+  let output = `# ${tree.name || tree.title || category}\n${tree.description || ''}\n`;
+  if (tree.safety_warning) output += `\n${tree.safety_warning}\n`;
+  output += `\n## Diagnostic Steps\n\n`;
+
+  // Walk the tree from entry, showing the full decision path
+  const visited = new Set();
+  const queue = [tree.entry];
+
+  while (queue.length > 0 && visited.size < 30) {
+    const id = queue.shift();
+    if (visited.has(id) || !nodes[id]) continue;
+    visited.add(id);
+
+    const node = nodes[id];
+    output += formatNode(id, node, tree) + '\n\n';
+
+    // Add child nodes to queue
+    if (node.yes && !visited.has(node.yes)) queue.push(node.yes);
+    if (node.no && !visited.has(node.no)) queue.push(node.no);
+    if (node.next && !visited.has(node.next)) queue.push(node.next);
+    if (node.options) {
+      for (const target of Object.values(node.options)) {
+        if (!visited.has(target)) queue.push(target);
+      }
+    }
+    // Handle custom branching keywords
+    for (const key of ['sudden', 'gradual', 'pulsating', 'low_steady', 'black', 'white_blue']) {
+      if (node[key] && !visited.has(node[key])) queue.push(node[key]);
+    }
+  }
+
+  return output;
+}
+
+function formatNode(id, node, tree) {
+  let out = `[${id}] `;
+
+  if (node.question) {
+    out += `QUESTION: ${node.question}\n`;
+    if (node.yes && node.no) {
+      out += `  → YES: go to ${node.yes}\n  → NO: go to ${node.no}`;
+    }
+    if (node.options) {
+      for (const [label, target] of Object.entries(node.options)) {
+        out += `  → ${label.replace(/_/g, ' ').toUpperCase()}: go to ${target}\n`;
+      }
+    }
+    // Handle branching keywords (sudden/gradual, pulsating/low_steady, etc.)
+    for (const key of ['sudden', 'gradual', 'pulsating', 'low_steady', 'black', 'white_blue']) {
+      if (node[key]) out += `  → ${key.replace(/_/g, ' ').toUpperCase()}: go to ${node[key]}\n`;
+    }
+  }
+
+  if (node.diagnosis) {
+    out += `DIAGNOSIS: ${node.diagnosis}\n`;
+    if (node.safety_flag) out += `⚠️ SAFETY FLAG — include safety warning in response\n`;
+    if (node.checks) {
+      out += `CHECKS:\n`;
+      node.checks.forEach((c, i) => {
+        if (typeof c === 'string') {
+          out += `  ${i + 1}. ${c}\n`;
+        } else if (c.action) {
+          out += `  ${c.step || (i + 1)}. ${c.action}${c.detail ? ' — ' + c.detail : ''}\n`;
         }
-      }
+      });
+    }
+    if (node.oem_note) out += `OEM NOTE: ${node.oem_note}\n`;
+    if (node.cross_ref) out += `CROSS-REF: Also check ${node.cross_ref.join(', ')} diagnostic tree(s)\n`;
+    if (node.parts_needed) {
+      out += `PARTS NEEDED: ${node.parts_needed.join(', ')}\n`;
+    }
+    if (node.severity) {
+      out += `SEVERITY: ${node.severity.toUpperCase()}\n`;
+    }
+    if (node.next) {
+      out += `→ If not resolved, continue to ${node.next}\n`;
+    }
+    if (node.redirect) {
+      out += `→ REDIRECT: Diagnose using the "${node.redirect}" tree first\n`;
+    }
+    if (node.pro_feature) {
+      out += `PRO FEATURE: ${node.pro_feature} — advanced diagnostics available with Pro upgrade\n`;
     }
   }
-  
-  if (candidates.size === 0) return 'No relevant information found for: ' + query;
-  
-  // Sort by score and return top results
-  const sorted = [...candidates.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
-  
-  return sorted.map(([idx]) => searchEngine.chunks[idx].text).join('\n\n---\n\n');
+
+  return out;
 }
 
-function lookupPumpModel(model) {
-  if (!searchEngine.ready) return 'Search engine not ready';
-  const modelUpper = model.toUpperCase().trim();
-  const relevant = [];
-  
-  for (let i = 0; i < searchEngine.linesUpper.length; i++) {
-    if (searchEngine.linesUpper[i].includes(modelUpper)) {
-      const start = Math.max(0, i - 3);
-      const end = Math.min(searchEngine.lines.length, i + 5);
-      relevant.push(searchEngine.lines.slice(start, end).join('\n'));
-    }
-  }
-  
-  if (relevant.length === 0) return 'No information found for pump model: ' + model;
-  return relevant.slice(0, 10).join('\n\n---\n\n');
+// ─── Get specific diagnostic node for step-by-step conversation ───
+function getDiagnosticNode(category, nodeId) {
+  if (!diagnostics || !diagnostics.trees[category]) return null;
+  const tree = diagnostics.trees[category];
+  const node = tree.nodes[nodeId];
+  if (!node) return null;
+
+  return {
+    tree_title: tree.title,
+    safety_warning: tree.safety_warning || null,
+    node_id: nodeId,
+    ...node
+  };
 }
 
-function getTroubleshootingInfo(problem) {
-  if (!searchEngine.ready) return 'Search engine not ready';
-  const q = problem.toLowerCase();
-  const queryTerms = q.match(/[a-z0-9]+/g)?.filter(t => t.length > 2) || [];
-  const tsTerms = ['cause', 'remedy', 'troubleshoot', 'problem', 'symptom', 'solution', 'check', 'replace', 'inspect'];
-  
-  // Find candidates via inverted index using query terms
-  const candidates = new Map();
-  for (const term of queryTerms) {
-    const exact = searchEngine.invertedIndex[term];
-    if (exact) {
-      for (const idx of exact) {
-        candidates.set(idx, (candidates.get(idx) || 0) + 3);
-      }
+// ─── FTS5 SEARCH ───
+function searchFTS(query, opts = {}) {
+  if (!db) return [];
+  const limit = opts.limit || 15;
+  const brand = opts.brand || null;
+
+  const terms = query.replace(/[^\w\s\-\.]/g, '').trim().split(/\s+/).filter(t => t.length > 1);
+  if (terms.length === 0) return [];
+
+  const ftsQuery = terms.map(t => `"${t}"*`).join(' OR ');
+
+  try {
+    let sql, params;
+    if (brand) {
+      sql = `SELECT c.content, c.chunk_type, c.section, c.page_num,
+                    d.filename, d.title, d.brand, d.doc_type, rank
+             FROM chunks_fts fts
+             JOIN chunks c ON c.id = fts.rowid
+             JOIN documents d ON d.id = c.doc_id
+             WHERE chunks_fts MATCH ? AND d.brand = ?
+             ORDER BY rank LIMIT ?`;
+      params = [ftsQuery, brand, limit];
+    } else {
+      sql = `SELECT c.content, c.chunk_type, c.section, c.page_num,
+                    d.filename, d.title, d.brand, d.doc_type, rank
+             FROM chunks_fts fts
+             JOIN chunks c ON c.id = fts.rowid
+             JOIN documents d ON d.id = c.doc_id
+             WHERE chunks_fts MATCH ?
+             ORDER BY rank LIMIT ?`;
+      params = [ftsQuery, limit];
     }
+    return db.prepare(sql).all(...params);
+  } catch (e) {
+    // Fallback: LIKE search
+    try {
+      return db.prepare(`
+        SELECT c.content, c.chunk_type, c.section, c.page_num,
+               d.filename, d.title, d.brand, d.doc_type
+        FROM chunks c JOIN documents d ON d.id = c.doc_id
+        WHERE c.content LIKE ? LIMIT ?
+      `).all(`%${terms[0]}%`, limit);
+    } catch (e2) { return []; }
   }
-  
-  if (candidates.size === 0) return 'No troubleshooting information found for: ' + problem;
-  
-  // Boost chunks that also contain troubleshooting-specific terms
-  for (const [idx, score] of candidates) {
-    const chunk = searchEngine.chunks[idx];
-    let boost = 0;
-    for (const t of tsTerms) {
-      if (chunk.words.has(t)) boost += 1;
-    }
-    candidates.set(idx, score + boost);
-  }
-  
-  const sorted = [...candidates.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
-  
-  return sorted.map(([idx]) => searchEngine.chunks[idx].text).join('\n\n---\n\n');
 }
 
-// ─── ANTHROPIC API TOOL DEFINITIONS ───
+// ─── MODEL LOOKUP ───
+function lookupModel(model) {
+  if (!db) return [];
+  const clean = model.replace(/[^\w\-\.]/g, '').trim();
+  if (!clean) return [];
+
+  let results = [];
+  try {
+    results = db.prepare(`
+      SELECT c.content, c.chunk_type, c.section, c.page_num,
+             d.filename, d.title, d.brand, d.doc_type
+      FROM chunks_fts fts
+      JOIN chunks c ON c.id = fts.rowid
+      JOIN documents d ON d.id = c.doc_id
+      WHERE chunks_fts MATCH ? ORDER BY rank LIMIT 10
+    `).all(`"${clean}"`);
+  } catch (e) { /* ignore */ }
+
+  if (results.length < 3) {
+    try {
+      const extra = db.prepare(`
+        SELECT c.content, c.chunk_type, c.section, c.page_num,
+               d.filename, d.title, d.brand, d.doc_type
+        FROM chunks c JOIN documents d ON d.id = c.doc_id
+        WHERE UPPER(c.content) LIKE ? LIMIT 10
+      `).all(`%${clean.toUpperCase()}%`);
+      const seen = new Set(results.map(r => r.content));
+      for (const r of extra) { if (!seen.has(r.content)) results.push(r); }
+    } catch (e) { /* ignore */ }
+  }
+  return results.slice(0, 10);
+}
+
+// ─── FORMAT FOR CLAUDE ───
+function formatResults(results) {
+  if (!results.length) return 'No results found.';
+  return results.map((r, i) =>
+    `--- Result ${i + 1} [${r.brand || '?'} / ${r.filename || '?'} / p.${r.page_num || '?'}] ---\n${r.content}`
+  ).join('\n\n');
+}
+
+function formatSources(results) {
+  const seen = new Set();
+  return results.filter(r => {
+    const k = `${r.brand}|${r.filename}|${r.page_num}`;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  }).map(r => `${r.brand}: ${r.title || r.filename} (p.${r.page_num || '?'})`).slice(0, 8);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Anthropic API
+// ═══════════════════════════════════════════════════════
+
 const tools = [
   {
-    name: "search_knowledge_base",
-    description: "Search the complete equipment knowledge base including pump specifications, accessories, maintenance procedures, installation guides, oil recommendations, system design info, and warranty details for General Pump and Alkota equipment. Use this for general questions about equipment, parts, procedures, or specs.",
+    name: "classify_symptoms",
+    description: "ALWAYS call this FIRST when a user describes a problem or symptom. Analyzes the user's message and identifies which diagnostic categories match (flow, heat, electrical, leak, noise, engine, packing). Returns matched categories with confidence scores. Use the results to decide which diagnostic tree to follow.",
     input_schema: {
       type: "object",
       properties: {
-        query: {
-          type: "string",
-          description: "The search query - use specific keywords related to the question"
-        }
+        user_message: { type: "string", description: "The user's original message describing their problem" }
+      },
+      required: ["user_message"]
+    }
+  },
+  {
+    name: "get_diagnostic_tree",
+    description: "Get the structured diagnostic decision tree for a specific problem category. Call this AFTER classify_symptoms to get the step-by-step diagnostic walkthrough. Use the tree to guide the user through yes/no questions to reach a diagnosis.",
+    input_schema: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Diagnostic category: flow, heat, electrical, leak, noise, engine, or packing" },
+        node_id: { type: "string", description: "Optional: specific node ID to jump to (e.g., 'Q2', 'D_AIR_SUPPLY')" }
+      },
+      required: ["category"]
+    }
+  },
+  {
+    name: "search_knowledge_base",
+    description: "Search the equipment knowledge base (242 manuals, 13,000+ sections) for detailed specs, procedures, part numbers, and OEM data. Use this AFTER diagnostic classification to find specific details to support your diagnosis. Covers General Pump, AR Pumps, Kohler, Cat Pumps, Comet, Honda, Beckett, and more.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search keywords" },
+        brand: { type: "string", description: "Optional brand filter" }
       },
       required: ["query"]
     }
   },
   {
     name: "lookup_pump_model",
-    description: "Look up specific information about a pump model by its model number (e.g., TS2021, EZ4040G, T991). Returns specs, GPM, PSI, RPM, and related data.",
+    description: "Look up a specific pump/engine model number for specs, breakdowns, and service info.",
     input_schema: {
       type: "object",
-      properties: {
-        model: {
-          type: "string",
-          description: "The pump model number to look up"
-        }
-      },
+      properties: { model: { type: "string", description: "Model number" } },
       required: ["model"]
-    }
-  },
-  {
-    name: "get_troubleshooting_info",
-    description: "Search for troubleshooting information about equipment problems. Use this when a user describes a problem like low pressure, pulsation, leaks, overheating, noise, rough running, packing failure, burner issues, or other equipment malfunctions.",
-    input_schema: {
-      type: "object",
-      properties: {
-        problem: {
-          type: "string",
-          description: "Description of the problem or symptom to troubleshoot"
-        }
-      },
-      required: ["problem"]
     }
   }
 ];
 
-// ─── CALL ANTHROPIC API ───
-async function callAnthropic(messages) {
-  console.log('[API] Calling Anthropic...');
+const SYSTEM_PROMPT = `You are P-Supp, a digital mechanic AI for pressure washer equipment. You guide technicians through structured diagnostics, look up specs, and find service procedures.
+
+═══ YOUR 3-LAYER KNOWLEDGE SYSTEM ═══
+
+LAYER 1 — DIAGNOSTIC LOGIC (Primary Brain):
+You have structured decision trees for: Flow/Pressure, Heat/Burner, Electrical, Leak, Noise/Vibration, Engine, and Packing failures.
+→ When a user describes a problem, ALWAYS call classify_symptoms FIRST
+→ Then call get_diagnostic_tree to get the step-by-step diagnostic path
+→ Walk the user through the tree one question at a time
+→ Ask ONE diagnostic question, wait for their answer, then advance to the next node
+
+LAYER 2 — OEM KNOWLEDGE (Reference Brain):
+You have 242 indexed manuals with specs, part numbers, procedures, torque values.
+→ Use search_knowledge_base to find specific details AFTER you know what to look for
+→ Summarize the info — do NOT dump raw manual text
+→ Include part numbers and specs when relevant
+
+LAYER 3 — SAFETY RULES (Guardrail Brain):
+When the diagnosis involves ANY of these, shift your tone and add safety warnings:
+→ Electrical/wiring/voltage → "⚠️ This involves live voltage. Continue only if qualified."
+→ Fuel/gas/burner → "⚠️ Fuel system work — ensure no open flames. Ventilate area."
+→ High pressure → "⚠️ Never disconnect fittings under pressure. Release all pressure first."
+→ Chemical → "⚠️ Review SDS for the chemical. Use appropriate PPE."
+Safety warnings should appear BEFORE the diagnostic steps, not buried at the end.
+
+═══ HOW TO DIAGNOSE ═══
+
+1. User describes symptoms → you call classify_symptoms
+2. You identify the category (or multiple) → call get_diagnostic_tree
+3. Present the FIRST question from the tree naturally (don't show node IDs)
+4. User answers → you advance to the next node
+5. Continue until you reach a DIAGNOSIS node
+6. At diagnosis: give the checks as a clear action plan
+7. If needed, call search_knowledge_base for specific part numbers, torque specs, procedures
+
+═══ CONVERSATION STYLE ═══
+- Talk like a skilled technician helping a colleague — direct, clear, practical
+- Ask ONE question at a time during diagnosis (don't dump the whole tree)
+- Use the decision tree logic but present it conversationally, not robotically
+- When you reach a diagnosis, present it as a clear action plan with numbered steps
+- If multiple categories detected (e.g., flow + heat), address the most critical first
+- For simple lookups (oil type, nozzle size, specs), just search and answer — no tree needed
+
+═══ RULES ═══
+- NEVER share GP Companies or General Pump contact info (phone, fax, email, address, website)
+- When user uploads a photo: identify equipment, read model numbers, note damage, search KB
+- If the KB doesn't have the answer, say so — don't guess on specs or part numbers
+- Safety warnings are NON-NEGOTIABLE — always include them for electrical, fuel, and pressure work`;
+
+async function callAnthropic(messages, useWebSearch = false) {
+  const toolsToUse = [...tools];
+  if (useWebSearch) {
+    toolsToUse.push({ type: "web_search_20250305", name: "web_search", max_uses: 3 });
+  }
+
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
-    
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 45000);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        system: `You are P-Supp, an expert equipment service assistant for General Pump and Alkota pressure washer equipment. You help technicians and service personnel troubleshoot problems, look up pump specifications, find maintenance procedures, and answer technical questions.
-
-IMPORTANT RULES:
-- Always use your tools to search the knowledge base before answering technical questions
-- Be specific and actionable in your responses
-- Include part numbers, specifications, and step-by-step procedures when available
-- If you can't find information in the knowledge base, say so clearly
-- Keep responses concise but thorough
-- Format responses with clear sections when listing multiple causes/remedies
-- NEVER share GP Companies or General Pump contact information including phone numbers, fax numbers, email addresses, physical addresses, or website URLs. If a user asks for contact info, tell them to visit their authorized dealer or distributor.
-
-IMAGE ANALYSIS:
-When a user uploads a photo of equipment, analyze it carefully:
-- Identify the brand (General Pump, Alkota, CAT, AR, Comet, etc.) from logos, nameplates, or design
-- Read any model numbers, serial numbers, or data plates visible
-- Identify components: pump type, unloader, chemical injector, hoses, fittings, spray gun, nozzles
-- Note any visible damage: leaks, corrosion, worn parts, broken fittings, discoloration
-- After identifying the equipment, search the knowledge base for relevant specs and troubleshooting info
-- Provide specific maintenance or repair recommendations based on what you see`,
-        messages: messages,
-        tools: tools
-      })
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' },
+      signal: ctrl.signal,
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2048, system: SYSTEM_PROMPT, messages, tools: toolsToUse })
     });
-    
-    clearTimeout(timeout);
-    console.log('[API] Response status:', response.status);
-    const data = await response.json();
-    if (data.error) console.log('[API] Error:', JSON.stringify(data.error));
-    return data;
+    clearTimeout(timer);
+    return await resp.json();
   } catch (e) {
-    console.error('[API] Fetch failed:', e.message);
-    return { error: { message: 'API request failed: ' + e.message } };
+    return { error: { message: 'API failed: ' + e.message } };
   }
 }
 
-// ─── PROCESS TOOL CALLS (AGENT LOOP) ───
 async function runAgent(userMessage, imageData, imageType) {
-  if (!API_KEY) {
-    return "⚠️ AI agent is not configured. Set the ANTHROPIC_API_KEY environment variable in Railway to enable AI-powered responses.";
-  }
-  
-  // Build user content - text only or text + image
-  let userContent;
-  if (imageData) {
-    userContent = [
-      { type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageData }},
-      { type: 'text', text: userMessage }
-    ];
-  } else {
-    userContent = userMessage;
-  }
-  
+  if (!API_KEY) return { text: '⚠️ AI not configured. Set ANTHROPIC_API_KEY.', sources: [] };
+
+  let userContent = imageData
+    ? [{ type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageData } }, { type: 'text', text: userMessage }]
+    : userMessage;
+
   let messages = [{ role: 'user', content: userContent }];
-  let maxTurns = 3;
-  
-  while (maxTurns > 0) {
-    maxTurns--;
-    
-    const response = await callAnthropic(messages);
-    
-    if (response.error) {
-      return "API Error: " + (response.error.message || JSON.stringify(response.error));
+  let allSources = [];
+  let usedWeb = false;
+  let turns = 5;
+
+  while (turns-- > 0) {
+    const resp = await callAnthropic(messages, allSources.length < 3 && turns < 3);
+    if (resp.error) return { text: 'API Error: ' + (resp.error.message || JSON.stringify(resp.error)), sources: [] };
+
+    const toolCalls = (resp.content || []).filter(b => b.type === 'tool_use');
+    if (!toolCalls.length) {
+      return {
+        text: (resp.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n'),
+        sources: allSources,
+        used_web_search: usedWeb
+      };
     }
-    
-    // Check if there are tool calls
-    const toolUseBlocks = (response.content || []).filter(b => b.type === 'tool_use');
-    
-    if (toolUseBlocks.length === 0) {
-      // No tool calls — return the text response
-      const textBlocks = (response.content || []).filter(b => b.type === 'text');
-      return textBlocks.map(b => b.text).join('\n');
-    }
-    
-    // Process tool calls
-    messages.push({ role: 'assistant', content: response.content });
-    
-    const toolResults = [];
-    for (const toolCall of toolUseBlocks) {
+
+    messages.push({ role: 'assistant', content: resp.content });
+    const results = [];
+
+    for (const tc of toolCalls) {
       let result;
-      const toolT0 = Date.now();
-      
-      switch (toolCall.name) {
-        case 'search_knowledge_base':
-          result = searchKnowledgeBase(toolCall.input.query);
+      const t0 = Date.now();
+      switch (tc.name) {
+        case 'classify_symptoms': {
+          const matches = classifySymptoms(tc.input.user_message);
+          if (matches.length === 0) {
+            result = 'No diagnostic categories matched. This may be a general question — try search_knowledge_base instead.';
+          } else {
+            result = JSON.stringify({
+              detected_categories: matches,
+              recommendation: matches.length > 1
+                ? `Multiple issues detected. Start with "${matches[0].label}" (highest match), then address "${matches[1].label}".`
+                : `Detected: ${matches[0].label}. Use get_diagnostic_tree with category="${matches[0].category}" to start diagnosis.`,
+              available_trees: Object.keys(diagnostics?.trees || {})
+            }, null, 2);
+          }
           break;
-        case 'lookup_pump_model':
-          result = lookupPumpModel(toolCall.input.model);
+        }
+        case 'get_diagnostic_tree': {
+          result = getDiagnosticTree(tc.input.category, tc.input.node_id);
           break;
-        case 'get_troubleshooting_info':
-          result = getTroubleshootingInfo(toolCall.input.problem);
-          break;
-        default:
-          result = 'Unknown tool: ' + toolCall.name;
+        }
+        case 'search_knowledge_base': {
+          const r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 10 });
+          result = formatResults(r); allSources.push(...formatSources(r)); break;
+        }
+        case 'lookup_pump_model': {
+          const r = lookupModel(tc.input.model);
+          result = formatResults(r); allSources.push(...formatSources(r)); break;
+        }
+        default: result = 'Unknown tool'; usedWeb = tc.name === 'web_search' || usedWeb;
       }
-      
-      console.log(`  [Tool] ${toolCall.name}(${JSON.stringify(toolCall.input).substring(0,60)}) → ${Date.now()-toolT0}ms`);
-      
-      toolResults.push({
-        type: 'tool_result',
-        tool_use_id: toolCall.id,
-        content: result.substring(0, 15000) // Limit size
-      });
+      console.log(`  [Tool] ${tc.name}(${JSON.stringify(tc.input).substring(0, 80)}) ${Date.now() - t0}ms`);
+      results.push({ type: 'tool_result', tool_use_id: tc.id, content: (result || '').substring(0, 20000) });
     }
-    
-    messages.push({ role: 'user', content: toolResults });
+    messages.push({ role: 'user', content: results });
   }
-  
-  return "I searched multiple sources but couldn't compile a complete answer. Please try rephrasing your question.";
+
+  return { text: 'Could not compile a complete answer. Please rephrase.', sources: allSources };
 }
 
-// ─── HTTP SERVER ───
+// ═══════════════════════════════════════════════════════
+//  HTTP Server
+// ═══════════════════════════════════════════════════════
+
 const server = http.createServer(async (req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-  
-  // API endpoint
-  if (req.method === 'POST' && req.url === '/api/chat') {
-    let body = '';
-    let bodySize = 0;
-    const MAX_BODY = 25 * 1024 * 1024; // 25MB
-    req.on('data', chunk => {
-      bodySize += chunk.length;
-      if (bodySize > MAX_BODY) { req.destroy(); return; }
-      body += chunk;
-    });
+  if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+
+  // ─── POST /api/chat ───
+  if (req.method === 'POST' && url.pathname === '/api/chat') {
+    let body = '', size = 0;
+    req.on('data', c => { size += c.length; if (size > 25e6) { req.destroy(); return; } body += c; });
     req.on('end', async () => {
       try {
         const { message, image, image_type } = JSON.parse(body);
-        if (!message && !image) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Missing message' }));
-          return;
-        }
-        
-        console.log(`[Chat] ${image ? '📷 Image + ' : ''}${(message||'').substring(0, 80)}...`);
+        if (!message && !image) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Missing message' })); return; }
+        console.log(`[Chat] ${image ? '📷 ' : ''}${(message || '').substring(0, 100)}`);
         const t0 = Date.now();
-        const reply = await runAgent(message || 'Identify this equipment and any visible issues.', image, image_type);
-        console.log(`[Chat] Responded in ${Date.now() - t0}ms`);
-        
+        const result = await runAgent(message || 'Identify this equipment.', image, image_type);
+        console.log(`[Chat] ${Date.now() - t0}ms, ${result.sources?.length || 0} sources`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ reply }));
+        res.end(JSON.stringify({ reply: result.text, sources: result.sources || [], used_web_search: result.used_web_search || false }));
       } catch (e) {
         console.error('Chat error:', e);
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Server error: ' + e.message }));
+        res.end(JSON.stringify({ error: 'Server error' }));
       }
     });
     return;
   }
-  
-  // Health check
-  if (req.url === '/api/health') {
+
+  // ─── GET /api/search ───
+  if (url.pathname === '/api/search') {
+    const results = searchFTS(url.searchParams.get('q') || '', { brand: url.searchParams.get('brand'), limit: 20 });
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      status: 'ok', 
-      ai: API_KEY ? 'configured' : 'not configured',
-      search: searchEngine.ready ? `${searchEngine.chunks.length} chunks, ${Object.keys(searchEngine.invertedIndex).length} terms` : 'not ready',
-      timestamp: new Date().toISOString()
-    }));
+    res.end(JSON.stringify({ query: url.searchParams.get('q'), count: results.length, results }));
     return;
   }
-  
-  // Static files
-  let filePath = req.url === '/' ? '/index.html' : req.url;
-  filePath = path.join(__dirname, filePath);
-  const ext = path.extname(filePath);
-  
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404);
-      res.end('Not found');
+
+  // ─── GET /api/stats ───
+  if (url.pathname === '/api/stats') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ai_enabled: !!API_KEY, database: db ? 'connected' : 'not found', ...dbStats }));
+    return;
+  }
+
+  // ─── GET /api/brands ───
+  if (url.pathname === '/api/brands') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(dbStats?.brands?.map(b => ({ brand: b.brand, doc_count: b.cnt })) || []));
+    return;
+  }
+
+  // ─── GET /api/diagnose?q=... ───
+  if (url.pathname === '/api/diagnose') {
+    const q = url.searchParams.get('q') || '';
+    const matches = classifySymptoms(q);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ query: q, categories: matches }));
+    return;
+  }
+
+  // ─── GET /api/diagnostic-tree?category=...&node=... ───
+  if (url.pathname === '/api/diagnostic-tree') {
+    const category = url.searchParams.get('category');
+    const node = url.searchParams.get('node');
+    if (!category) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ available_trees: Object.keys(diagnostics?.trees || {}) }));
       return;
     }
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
+    const result = node ? getDiagnosticNode(category, node) : getDiagnosticTree(category);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ category, node: node || 'full', result }));
+    return;
+  }
+
+  // ─── GET /api/health ───
+  if (url.pathname === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', ai: API_KEY ? 'configured' : 'not configured', database: db ? `${dbStats?.documents} docs` : 'missing' }));
+    return;
+  }
+
+  // ─── Static Files ───
+  let filePath = url.pathname === '/' ? '/index.html' : url.pathname;
+  filePath = path.join(__dirname, filePath);
+  if (!filePath.startsWith(__dirname)) { res.writeHead(403); res.end('Forbidden'); return; }
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) { res.writeHead(404); res.end('Not found'); return; }
+    const ext = path.extname(filePath);
+    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
     res.end(data);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`P-Supp running on port ${PORT}`);
-  console.log(`AI Agent: ${API_KEY ? '✓ Configured' : '✗ Set ANTHROPIC_API_KEY to enable'}`);
+  console.log('═══════════════════════════════════════════');
+  console.log('  P-Supp Equipment Support AI');
+  console.log('───────────────────────────────────────────');
+  console.log(`  Port:        ${PORT}`);
+  console.log(`  Database:    ${db ? `${dbStats.documents} docs, ${dbStats.chunks} chunks` : 'NOT FOUND'}`);
+  console.log(`  Diagnostics: ${diagnostics ? `${Object.keys(diagnostics.trees).length} trees (${Object.keys(diagnostics.trees).join(', ')})` : 'NOT LOADED'}`);
+  console.log(`  AI:          ${API_KEY ? '✅ Enabled' : '❌ Set ANTHROPIC_API_KEY'}`);
+  console.log('═══════════════════════════════════════════');
 });
