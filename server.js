@@ -38,8 +38,48 @@ function initUserData() {
       )
     `);
 
-    const count = userDb.prepare('SELECT COUNT(*) as cnt FROM saved_diagnostics').get().cnt;
-    console.log(`User data: ${count} saved diagnostics`);
+    // ─── LEARNING PIPELINE TABLES ───
+    userDb.exec(`
+      CREATE TABLE IF NOT EXISTS chat_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT,
+        user_message TEXT,
+        ai_reply TEXT,
+        tools_used TEXT,
+        categories_detected TEXT,
+        sources_count INTEGER DEFAULT 0,
+        used_web_search INTEGER DEFAULT 0,
+        kb_gap INTEGER DEFAULT 0,
+        response_time_ms INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    userDb.exec(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        log_id INTEGER,
+        rating INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (log_id) REFERENCES chat_logs(id)
+      )
+    `);
+
+    userDb.exec(`
+      CREATE TABLE IF NOT EXISTS kb_gaps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT,
+        tool_name TEXT,
+        context TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    const diagCount = userDb.prepare('SELECT COUNT(*) as cnt FROM saved_diagnostics').get().cnt;
+    const logCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs').get().cnt;
+    const feedbackCount = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback').get().cnt;
+    const gapCount = userDb.prepare('SELECT COUNT(*) as cnt FROM kb_gaps').get().cnt;
+    console.log(`User data: ${diagCount} saved diagnostics, ${logCount} chat logs, ${feedbackCount} feedback, ${gapCount} KB gaps`);
   } catch (e) {
     console.error('User data init error:', e.message);
   }
@@ -1092,7 +1132,7 @@ async function callAnthropic(messages, useWebSearch = false) {
 }
 
 async function runAgent(userMessage, imageData, imageType, history) {
-  if (!API_KEY) return { text: '⚠️ AI not configured. Set ANTHROPIC_API_KEY.', sources: [] };
+  if (!API_KEY) return { text: '⚠️ AI not configured. Set ANTHROPIC_API_KEY.', sources: [], toolsUsed: [], categoriesDetected: [], kbGaps: [] };
 
   let userContent = imageData
     ? [{ type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageData } }, { type: 'text', text: userMessage }]
@@ -1111,6 +1151,9 @@ async function runAgent(userMessage, imageData, imageType, history) {
   messages.push({ role: 'user', content: userContent });
   let allSources = [];
   let usedWeb = false;
+  let toolsUsed = [];
+  let categoriesDetected = [];
+  let kbGaps = [];
   let turns = 5;
 
   while (turns-- > 0) {
@@ -1122,7 +1165,10 @@ async function runAgent(userMessage, imageData, imageType, history) {
       return {
         text: (resp.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n'),
         sources: allSources,
-        used_web_search: usedWeb
+        used_web_search: usedWeb,
+        toolsUsed,
+        categoriesDetected,
+        kbGaps
       };
     }
 
@@ -1132,12 +1178,14 @@ async function runAgent(userMessage, imageData, imageType, history) {
     for (const tc of toolCalls) {
       let result;
       const t0 = Date.now();
+      toolsUsed.push(tc.name);
       switch (tc.name) {
         case 'classify_symptoms': {
           const matches = classifySymptoms(tc.input.user_message);
           if (matches.length === 0) {
             result = 'No diagnostic categories matched. This may be a general question — try search_knowledge_base instead.';
           } else {
+            categoriesDetected.push(...matches.map(m => m.category));
             const simpleRules = diagnostics?.simple_rules || null;
             result = JSON.stringify({
               detected_categories: matches,
@@ -1161,10 +1209,16 @@ async function runAgent(userMessage, imageData, imageType, history) {
         }
         case 'search_knowledge_base': {
           const r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 5 });
+          if (r.length === 0) {
+            kbGaps.push({ query: tc.input.query, tool: 'search_knowledge_base', brand: tc.input.brand || null });
+          }
           result = formatResults(r); allSources.push(...formatSources(r)); break;
         }
         case 'lookup_pump_model': {
           const r = lookupModel(tc.input.model);
+          if (r.length === 0) {
+            kbGaps.push({ query: tc.input.model, tool: 'lookup_pump_model' });
+          }
           result = formatResults(r); allSources.push(...formatSources(r)); break;
         }
         case 'calculate_nozzle': {
@@ -1184,7 +1238,7 @@ async function runAgent(userMessage, imageData, imageType, history) {
     messages.push({ role: 'user', content: results });
   }
 
-  return { text: 'Could not compile a complete answer. Please rephrase.', sources: allSources };
+  return { text: 'Could not compile a complete answer. Please rephrase.', sources: allSources, toolsUsed, categoriesDetected, kbGaps };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1205,20 +1259,179 @@ const server = http.createServer(async (req, res) => {
     req.on('data', c => { size += c.length; if (size > 25e6) { req.destroy(); return; } body += c; });
     req.on('end', async () => {
       try {
-        const { message, image, image_type, history } = JSON.parse(body);
+        const { message, image, image_type, history, session_id } = JSON.parse(body);
         if (!message && !image) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Missing message' })); return; }
         console.log(`[Chat] ${image ? '📷 ' : ''}${(message || '').substring(0, 100)}${history?.length ? ` (${history.length} prev)` : ''}`);
         const t0 = Date.now();
         const result = await runAgent(message || 'Identify this equipment.', image, image_type, history);
-        console.log(`[Chat] ${Date.now() - t0}ms, ${result.sources?.length || 0} sources`);
+        const elapsed = Date.now() - t0;
+        console.log(`[Chat] ${elapsed}ms, ${result.sources?.length || 0} sources, ${result.toolsUsed?.length || 0} tools`);
+
+        // ─── LOG TO DATABASE ───
+        let logId = null;
+        try {
+          if (userDb) {
+            const stmt = userDb.prepare(`
+              INSERT INTO chat_logs (session_id, user_message, ai_reply, tools_used, categories_detected, sources_count, used_web_search, kb_gap, response_time_ms)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const info = stmt.run(
+              session_id || null,
+              (message || '').substring(0, 2000),
+              (result.text || '').substring(0, 5000),
+              JSON.stringify(result.toolsUsed || []),
+              JSON.stringify(result.categoriesDetected || []),
+              result.sources?.length || 0,
+              result.used_web_search ? 1 : 0,
+              (result.kbGaps?.length || 0) > 0 ? 1 : 0,
+              elapsed
+            );
+            logId = info.lastInsertRowid;
+
+            // Log KB gaps
+            if (result.kbGaps?.length > 0) {
+              const gapStmt = userDb.prepare('INSERT INTO kb_gaps (query, tool_name, context) VALUES (?, ?, ?)');
+              for (const gap of result.kbGaps) {
+                gapStmt.run(gap.query, gap.tool, JSON.stringify(gap));
+              }
+            }
+          }
+        } catch (logErr) {
+          console.error('[Log] Error:', logErr.message);
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ reply: result.text, sources: result.sources || [], used_web_search: result.used_web_search || false }));
+        res.end(JSON.stringify({
+          reply: result.text,
+          sources: result.sources || [],
+          used_web_search: result.used_web_search || false,
+          log_id: logId
+        }));
       } catch (e) {
         console.error('Chat error:', e);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Server error' }));
       }
     });
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  Learning Pipeline API
+  // ═══════════════════════════════════════════════════════
+
+  // ─── POST /api/feedback ───
+  if (req.method === 'POST' && url.pathname === '/api/feedback') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { log_id, rating } = JSON.parse(body);
+        if (!log_id || ![-1, 1].includes(rating)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Need log_id and rating (1 or -1)' }));
+          return;
+        }
+        if (userDb) {
+          userDb.prepare('INSERT INTO feedback (log_id, rating) VALUES (?, ?)').run(log_id, rating);
+          console.log(`[Feedback] log_id=${log_id} rating=${rating > 0 ? '👍' : '👎'}`);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── GET /api/analytics ───
+  if (url.pathname === '/api/analytics') {
+    try {
+      if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'No database' })); return; }
+
+      const totalChats = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs').get().cnt;
+      const totalFeedback = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback').get().cnt;
+      const thumbsUp = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback WHERE rating = 1').get().cnt;
+      const thumbsDown = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback WHERE rating = -1').get().cnt;
+      const totalGaps = userDb.prepare('SELECT COUNT(*) as cnt FROM kb_gaps').get().cnt;
+      const avgResponseTime = userDb.prepare('SELECT ROUND(AVG(response_time_ms)) as avg FROM chat_logs').get().avg || 0;
+      const webSearchCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs WHERE used_web_search = 1').get().cnt;
+      const gapCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs WHERE kb_gap = 1').get().cnt;
+
+      // Top tools used
+      const toolRows = userDb.prepare('SELECT tools_used FROM chat_logs WHERE tools_used IS NOT NULL').all();
+      const toolCounts = {};
+      for (const row of toolRows) {
+        try {
+          const tools = JSON.parse(row.tools_used);
+          for (const t of tools) { toolCounts[t] = (toolCounts[t] || 0) + 1; }
+        } catch {}
+      }
+      const topTools = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+      // Top categories
+      const catRows = userDb.prepare('SELECT categories_detected FROM chat_logs WHERE categories_detected IS NOT NULL AND categories_detected != "[]"').all();
+      const catCounts = {};
+      for (const row of catRows) {
+        try {
+          const cats = JSON.parse(row.categories_detected);
+          for (const c of cats) { catCounts[c] = (catCounts[c] || 0) + 1; }
+        } catch {}
+      }
+      const topCategories = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+      // Recent KB gaps (unique queries)
+      const recentGaps = userDb.prepare('SELECT query, tool_name, COUNT(*) as cnt, MAX(created_at) as last_seen FROM kb_gaps GROUP BY query ORDER BY cnt DESC LIMIT 20').all();
+
+      // Recent negative feedback with context
+      const negativeFeedback = userDb.prepare(`
+        SELECT f.rating, f.created_at as feedback_at, c.user_message, c.ai_reply, c.tools_used
+        FROM feedback f JOIN chat_logs c ON f.log_id = c.id
+        WHERE f.rating = -1
+        ORDER BY f.created_at DESC LIMIT 10
+      `).all();
+
+      // Chats per day (last 30 days)
+      const dailyVolume = userDb.prepare(`
+        SELECT DATE(created_at) as day, COUNT(*) as cnt
+        FROM chat_logs
+        WHERE created_at > datetime('now', '-30 days')
+        GROUP BY DATE(created_at)
+        ORDER BY day DESC
+      `).all();
+
+      // Satisfaction rate
+      const satisfactionRate = totalFeedback > 0 ? Math.round((thumbsUp / totalFeedback) * 100) : null;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        overview: {
+          total_chats: totalChats,
+          avg_response_time_ms: avgResponseTime,
+          web_search_fallbacks: webSearchCount,
+          kb_gap_questions: gapCount,
+          satisfaction_rate: satisfactionRate !== null ? `${satisfactionRate}%` : 'No feedback yet',
+          thumbs_up: thumbsUp,
+          thumbs_down: thumbsDown,
+          total_feedback: totalFeedback
+        },
+        top_tools: topTools.map(([tool, count]) => ({ tool, count })),
+        top_categories: topCategories.map(([category, count]) => ({ category, count })),
+        kb_gaps: recentGaps,
+        negative_feedback: negativeFeedback.map(r => ({
+          user_question: (r.user_message || '').substring(0, 200),
+          ai_reply: (r.ai_reply || '').substring(0, 200),
+          tools: r.tools_used,
+          feedback_at: r.feedback_at
+        })),
+        daily_volume: dailyVolume
+      }, null, 2));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
     return;
   }
 
