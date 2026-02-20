@@ -396,14 +396,24 @@ async function callAnthropic(messages, useWebSearch = false) {
   }
 }
 
-async function runAgent(userMessage, imageData, imageType) {
+async function runAgent(userMessage, imageData, imageType, history) {
   if (!API_KEY) return { text: '⚠️ AI not configured. Set ANTHROPIC_API_KEY.', sources: [] };
 
   let userContent = imageData
     ? [{ type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageData } }, { type: 'text', text: userMessage }]
     : userMessage;
 
-  let messages = [{ role: 'user', content: userContent }];
+  // Build messages with conversation history so Claude can ask follow-ups
+  let messages = [];
+  if (history && Array.isArray(history) && history.length > 0) {
+    // Keep last 20 turns to stay within context limits
+    for (const msg of history.slice(-20)) {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        messages.push({ role: msg.role, content: msg.content });
+      }
+    }
+  }
+  messages.push({ role: 'user', content: userContent });
   let allSources = [];
   let usedWeb = false;
   let turns = 5;
@@ -484,11 +494,11 @@ const server = http.createServer(async (req, res) => {
     req.on('data', c => { size += c.length; if (size > 25e6) { req.destroy(); return; } body += c; });
     req.on('end', async () => {
       try {
-        const { message, image, image_type } = JSON.parse(body);
+        const { message, image, image_type, history } = JSON.parse(body);
         if (!message && !image) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Missing message' })); return; }
-        console.log(`[Chat] ${image ? '📷 ' : ''}${(message || '').substring(0, 100)}`);
+        console.log(`[Chat] ${image ? '📷 ' : ''}${(message || '').substring(0, 100)}${history?.length ? ` (${history.length} prev)` : ''}`);
         const t0 = Date.now();
-        const result = await runAgent(message || 'Identify this equipment.', image, image_type);
+        const result = await runAgent(message || 'Identify this equipment.', image, image_type, history);
         console.log(`[Chat] ${Date.now() - t0}ms, ${result.sources?.length || 0} sources`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ reply: result.text, sources: result.sources || [], used_web_search: result.used_web_search || false }));

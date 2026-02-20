@@ -429,6 +429,7 @@ function genResponse(query){const q=norm(query);let html='';let found=false;
 
 /* ═══ CHAT STATE ═══ */
 let chatMessages=[];
+let chatHistory=[]; // plain text history sent to API for conversation context
 let chatMsgId=0;
 let inChat=false;
 
@@ -441,8 +442,8 @@ function ensureChatView(){
   }
 }
 
-function exitChat(){inChat=false;chatMessages=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
-function newChat(){chatMessages=[];chatMsgId=0;inChat=false;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
+function exitChat(){inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
+function newChat(){chatMessages=[];chatHistory=[];chatMsgId=0;inChat=false;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
   const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
   inChat=true;
 }
@@ -487,10 +488,15 @@ function showSearch(query,img){setActive('home');
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
   addChatMsg('user', imgHtml+esc(query));
   addChatMsg('bot', `<span class="ai-loading">🔍 Searching…</span>`);
-  const myId=chatMsgId; // grab the ID that addChatMsg just created
+  const myId=chatMsgId;
   
-  const body={message:query};
+  // Build request with conversation history
+  const body={message:query, history:chatHistory};
   if(img){body.image=img.data;body.image_type=img.mediaType;}
+  
+  // Track user message in history for next request
+  chatHistory.push({role:'user', content:query});
+  
   fetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -500,6 +506,8 @@ function showSearch(query,img){setActive('home');
     if(!el)return;
     if(data.reply){
       el.innerHTML=formatAIText(data.reply);
+      // Track assistant reply in history for next request
+      chatHistory.push({role:'assistant', content:data.reply});
       I.placeholder='Type your reply or ask a follow-up question...';
       I.focus();
       var userMsgs=document.querySelectorAll('.msg-user');
