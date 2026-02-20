@@ -394,12 +394,12 @@ const renderCauses=(c,limit)=>{
 const renderSteps=s=>`<ol class="step-list">${s.map((x,i)=>`<li class="step-item"><div class="step-num">${i+1}</div><div>${x}</div></li>`).join('')}</ol>`;
 
 function buildSidebar(){
+  if(!SB) return;
   let h=`<button class="home-btn active" data-topic="home" onclick="nav('home')"><span class="topic-icon">🏠</span> Home</button>`;
-  h+=`<div class="sb-section-label" style="padding:0.6rem 1rem 0.3rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Reference Charts</div>`;
-  h+=`<div class="sb-quick">`;
+  h+=`<div class="sb-section collapsed" id="sec-charts"><div class="sb-header" onclick="toggleSection('sec-charts')"><span class="sb-chevron">▼</span><span class="sb-brand">Reference Charts</span></div><div class="sb-body"><div class="sb-quick">`;
   h+=`<button class="sb-quick-btn" onclick="showNozzleChart()"><span class="qicon">🎯</span>Nozzle Size Chart</button>`;
   h+=`<button class="sb-quick-btn" onclick="showInjectorChart()"><span class="qicon">💉</span>Injector Sizing Chart</button>`;
-  h+=`</div>`;
+  h+=`</div></div></div>`;
   h+=`<div class="sb-section-label" style="padding:0.6rem 1rem 0.3rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Diagnostics</div>`;
   h+=`<div class="sb-quick">`;
   [['pressure','📉','Low Pressure'],['electrical','⚡','Electrical'],['burner','🔥','Burner'],['service','⚙️','Service & Repair']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
@@ -846,7 +846,8 @@ function handleSend(){const q=I.value.trim();if(!q&&!pendingImage)return;I.value
 function askQ(q){I.value=q;handleSend();}
 I.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
 
-buildSidebar();showHome();I.focus();
+console.log('[Init] C=', !!C, 'I=', !!I, 'SB=', !!SB);
+buildSidebar();if(C)showHome();else console.error('[Init] contentArea not found');if(I)I.focus();
 document.addEventListener('click',function(e){const m=document.getElementById('hamMenu');if(m&&!e.target.closest('.hamburger')&&!e.target.closest('.ham-menu'))m.classList.remove('open');});
 
 /* ═══════════════════════════════════════════════════════
