@@ -5,9 +5,40 @@ const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
+const APP_PASSWORD = process.env.APP_PASSWORD || 'psupp2025';
 const DB_PATH = path.join(__dirname, 'knowledge.db');
 const USERDATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
 const USERDATA_PATH = path.join(USERDATA_DIR, 'userdata.db');
+
+// ─── Auth Tokens ───
+const authTokens = new Map(); // token → { createdAt }
+const TOKEN_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const crypto = require('crypto');
+
+function generateToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  authTokens.set(token, { createdAt: Date.now() });
+  // Cleanup expired tokens
+  if (authTokens.size > 200) {
+    const now = Date.now();
+    for (const [t, v] of authTokens) { if (now - v.createdAt > TOKEN_TTL) authTokens.delete(t); }
+  }
+  return token;
+}
+
+function checkAuth(req) {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.replace('Bearer ', '');
+  if (!token || !authTokens.has(token)) return false;
+  const entry = authTokens.get(token);
+  if (Date.now() - entry.createdAt > TOKEN_TTL) { authTokens.delete(token); return false; }
+  return true;
+}
+
+function denyAuth(res) {
+  res.writeHead(401, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Unauthorized' }));
+}
 
 // ═══════════════════════════════════════════════════════
 //  User Data Database (writable — saved diagnostics)
@@ -1285,7 +1316,7 @@ const server = http.createServer(async (req, res) => {
   const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -1293,6 +1324,36 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
+
+  // ─── POST /api/login (public — no auth needed) ───
+  if (req.method === 'POST' && url.pathname === '/api/login') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { password } = JSON.parse(body);
+        if (password === APP_PASSWORD) {
+          const token = generateToken();
+          console.log(`[Auth] Login success from ${req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress}`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, token }));
+        } else {
+          console.log(`[Auth] Login failed from ${req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress}`);
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid password' }));
+        }
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Bad request' }));
+      }
+    });
+    return;
+  }
+
+  // ─── Auth gate: all /api/ routes except health + login require auth ───
+  if (url.pathname.startsWith('/api/') && url.pathname !== '/api/health') {
+    if (!checkAuth(req)) { denyAuth(res); return; }
+  }
 
   // ─── POST /api/chat ───
   if (req.method === 'POST' && url.pathname === '/api/chat') {
@@ -1822,5 +1883,6 @@ server.listen(PORT, () => {
   console.log(`  Web search:  ✅ Always available as fallback`);
   console.log(`  User data:   ${userDb ? `✅ ${savedCount} saved diagnostics` : '❌ Not available'}`);
   console.log(`  AI:          ${API_KEY ? '✅ Enabled' : '❌ Set ANTHROPIC_API_KEY'}`);
+  console.log(`  Auth:        ✅ Server-side (${process.env.APP_PASSWORD ? 'env var' : 'default password'})`);
   console.log('═══════════════════════════════════════════');
 });

@@ -318,8 +318,17 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   </div>
 </div>
 <script>
-const TEAM_PASSWORD = "psupp2025"; // ← CHANGE THIS
-function tryLogin(){const i=document.getElementById('loginPass'),e=document.getElementById('loginError');if(i.value===TEAM_PASSWORD){sessionStorage.setItem('authenticated','true');unlockApp();}else{e.style.display='block';i.value='';i.focus();}}
+function tryLogin(){
+  const i=document.getElementById('loginPass'),e=document.getElementById('loginError');
+  const btn=document.querySelector('.login-box button');
+  btn.disabled=true;btn.textContent='Signing in…';
+  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:i.value})})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok&&d.token){sessionStorage.setItem('authToken',d.token);unlockApp();}
+      else{e.style.display='block';i.value='';i.focus();}
+      btn.disabled=false;btn.textContent='Sign In';
+    }).catch(()=>{e.textContent='Connection error';e.style.display='block';btn.disabled=false;btn.textContent='Sign In';});
+}
 function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
 document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
 </script>
@@ -342,7 +351,7 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
           </div>
         </div>
       </div>
-      <button class="logout-btn" onclick="sessionStorage.removeItem('authenticated');location.reload();">Logout</button>
+      <button class="logout-btn" onclick="sessionStorage.removeItem('authToken');location.reload();">Logout</button>
     </div>
   </header>
   <div class="input-bar hidden">
@@ -363,12 +372,23 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
 const C=document.getElementById('contentArea'),I=document.getElementById('userInput'),SB=document.getElementById('sidebar');
 const MAIN=C.parentElement; // .main is the scrollable container
 const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2,8);
+function authFetch(url, opts = {}) {
+  const token = sessionStorage.getItem('authToken');
+  if (!opts.headers) opts.headers = {};
+  if (typeof opts.headers === 'object' && !(opts.headers instanceof Headers)) {
+    opts.headers['Authorization'] = 'Bearer ' + (token || '');
+  }
+  return fetch(url, opts).then(r => {
+    if (r.status === 401) { sessionStorage.removeItem('authToken'); location.reload(); }
+    return r;
+  });
+}
 const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 function safeFocus(el){ if(!isMobile && el) el.focus(); }
 if(isMobile){const ua=navigator.userAgent;if(/iPad|iPhone|iPod/.test(ua))document.body.classList.add('ios');else if(/Android/.test(ua))document.body.classList.add('android');}
 function scrollToMsg(el){if(el){const container=el.closest('.main')||MAIN;const top=el.offsetTop-container.offsetTop;container.scrollTo({top:top,behavior:'smooth'});}}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
-if(sessionStorage.getItem('authenticated')==='true')unlockApp();
+if(sessionStorage.getItem('authToken'))unlockApp();
 window.addEventListener('popstate',function(e){if(inChat){exitChat();}});
 
 /* ═══ IMAGE UPLOAD ═══ */
@@ -638,7 +658,7 @@ function showSearch(query,img){setActive('home');
   // Track user message in history for next request
   chatHistory.push({role:'user', content:query});
   
-  fetch('/api/chat', {
+  authFetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({...body, session_id: SESSION_ID})
@@ -847,7 +867,7 @@ async function confirmSave(){
   };
 
   try {
-    const r = await fetch('/api/saved-diags', {
+    const r = await authFetch('/api/saved-diags', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
@@ -883,7 +903,7 @@ async function showSavedDiags(){
   C.innerHTML='<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button><div class="page-header"><div class="page-header-icon">📋</div><div><h2>Saved Diagnostics</h2><p>Your diagnostic history</p></div></div><div id="diagListContainer"><div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading...</div></div></div>';
   
   try {
-    const r = await fetch('/api/saved-diags');
+    const r = await authFetch('/api/saved-diags');
     const diags = await r.json();
     const container = document.getElementById('diagListContainer');
     
@@ -920,7 +940,7 @@ async function viewSavedDiag(id){
   C.innerHTML='<div class="section-page"><button class="back-btn" onclick="showSavedDiags()">← Back to List</button><div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading...</div></div>';
   
   try {
-    const r = await fetch('/api/saved-diags/'+id);
+    const r = await authFetch('/api/saved-diags/'+id);
     const d = await r.json();
     const date = new Date(d.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
     
@@ -1001,7 +1021,7 @@ function downloadDiag(id){
 async function deleteDiag(id, title){
   if(!confirm('Delete "'+title+'"? This cannot be undone.')) return;
   try {
-    await fetch('/api/saved-diags/'+id, {method:'DELETE'});
+    await authFetch('/api/saved-diags/'+id, {method:'DELETE'});
     showToast('Diagnostic deleted');
     showSavedDiags();
   } catch(e){
@@ -1042,7 +1062,7 @@ function sendFeedback(logId, rating, btn){
   row.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('fb-active'));
   btn.classList.add('fb-active');
   row.querySelector('.feedback-label').textContent = rating > 0 ? 'Thanks! 👍' : 'Noted — we\'ll improve';
-  fetch('/api/feedback', {
+  authFetch('/api/feedback', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({log_id: logId, rating})
@@ -1062,7 +1082,7 @@ function submitCorrection(logId, btn){
   const box = btn.closest('.correction-box');
   const text = box.querySelector('textarea').value.trim();
   if(!text){box.remove();return;}
-  fetch('/api/feedback', {
+  authFetch('/api/feedback', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({log_id: logId, rating: -1, correction: text})
@@ -1095,7 +1115,7 @@ function submitTip(logId, btn){
   const text = document.getElementById('tipText'+logId).value.trim();
   const cat = document.getElementById('tipCat'+logId).value;
   if(!text || text.length < 5){alert('Please enter a tip (at least a few words).');return;}
-  fetch('/api/tips', {
+  authFetch('/api/tips', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({tip_text: text, category: cat || null, log_id: logId})
@@ -1108,7 +1128,7 @@ function submitHomeTip(){
   const text = document.getElementById('tipTextHome').value.trim();
   const cat = document.getElementById('tipCatHome').value;
   if(!text || text.length < 5){alert('Please enter a tip (at least a few words).');return;}
-  fetch('/api/tips', {
+  authFetch('/api/tips', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({tip_text: text, category: cat || null})

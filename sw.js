@@ -1,5 +1,5 @@
 // P-Supp Service Worker v6.0
-const CACHE_NAME = 'psupp-v7';
+const CACHE_NAME = 'psupp-v8';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
