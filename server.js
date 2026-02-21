@@ -1431,7 +1431,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     } else {
-      if (!checkAuth(req) && !checkAdminAuth(req)) { denyAuth(res); return; }
+      if (!checkAuth(req)) { denyAuth(res); return; }
     }
   }
 
@@ -1900,6 +1900,47 @@ const server = http.createServer(async (req, res) => {
     try { row.conversation = JSON.parse(row.conversation); } catch(e) {}
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(row));
+    return;
+  }
+
+  // ─── PUT /api/saved-diags/:id ───
+  if (req.method === 'PUT' && url.pathname.match(/^\/api\/saved-diags\/(\d+)$/)) {
+    const id = url.pathname.match(/\/(\d+)$/)[1];
+    let body = '';
+    req.on('data', c => { body += c; if (body.length > 1e6) req.destroy(); });
+    req.on('end', () => {
+      try {
+        if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Database not available' })); return; }
+        const d = JSON.parse(body);
+        if (!d.title) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Title required' })); return; }
+        const existing = userDb.prepare('SELECT id FROM saved_diagnostics WHERE id = ?').get(id);
+        if (!existing) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+        userDb.prepare(`UPDATE saved_diagnostics SET
+          title=?, machine_name=?, machine_brand=?, machine_model=?, machine_serial=?,
+          category=?, severity=?, diagnosis=?, steps=?, parts_used=?, notes=?
+          WHERE id=?`).run(
+          d.title || 'Untitled Diagnostic',
+          d.machine_name || null,
+          d.machine_brand || null,
+          d.machine_model || null,
+          d.machine_serial || null,
+          d.category || null,
+          d.severity || null,
+          d.diagnosis || null,
+          d.steps ? JSON.stringify(d.steps) : null,
+          d.parts_used ? JSON.stringify(d.parts_used) : null,
+          d.notes || null,
+          id
+        );
+        console.log(`[Update] Diagnostic #${id}: "${d.title}"`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ updated: true }));
+      } catch(e) {
+        console.error('Update error:', e);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Update failed' }));
+      }
+    });
     return;
   }
 

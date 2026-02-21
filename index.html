@@ -923,6 +923,7 @@ async function showSavedDiags(){
             ${d.machine_name||d.machine_model?'<div class="diag-machine">🔧 '+(d.machine_name?esc(d.machine_name):'')+(d.machine_model?' · '+esc(d.machine_model):'')+'</div>':''}
           </div>
           <div class="diag-card-actions" onclick="event.stopPropagation()">
+            <button class="dl-btn" onclick="editSavedDiag(${d.id})" title="Edit">✏️</button>
             <button class="dl-btn" onclick="downloadDiag(${d.id})" title="Download report">📄</button>
             <button class="del-btn" onclick="deleteDiag(${d.id},'${esc(d.title).replace(/'/g,"\\'")}')" title="Delete">🗑</button>
           </div>
@@ -947,7 +948,7 @@ async function viewSavedDiag(id){
     let html='<div class="section-page"><button class="back-btn" onclick="showSavedDiags()">← Back to List</button>';
     html+='<div class="diag-detail-header"><div><h2 style="font-size:1.3rem;margin-bottom:0.25rem">'+esc(d.title)+'</h2>';
     html+='<div style="font-size:0.78rem;color:var(--text-muted)">'+date+'</div></div>';
-    html+='<div class="diag-detail-actions"><button class="nav-btn" onclick="downloadDiag('+d.id+')">📄 Download Report</button>';
+    html+='<div class="diag-detail-actions"><button class="nav-btn" onclick="editSavedDiag('+d.id+')">✏️ Edit</button><button class="nav-btn" onclick="downloadDiag('+d.id+')">📄 Download Report</button>';
     html+='<button class="nav-btn" style="color:#ef4444;border-color:#ef4444" onclick="deleteDiag('+d.id+',\''+esc(d.title).replace(/'/g,"\\'")+'\')">🗑 Delete</button></div></div>';
     
     // Machine info
@@ -1026,6 +1027,122 @@ async function deleteDiag(id, title){
     showSavedDiags();
   } catch(e){
     alert('Delete failed: '+e.message);
+  }
+}
+
+async function editSavedDiag(id){
+  C.innerHTML='<div class="section-page"><button class="back-btn" onclick="viewSavedDiag('+id+')">← Cancel</button><div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading...</div></div>';
+  try {
+    const r = await authFetch('/api/saved-diags/'+id);
+    const d = await r.json();
+    const stepsVal = Array.isArray(d.steps) ? d.steps.join('\n') : (d.steps||'');
+    const partsVal = Array.isArray(d.parts_used) ? d.parts_used.join('\n') : (d.parts_used||'');
+
+    C.innerHTML=`<div class="section-page">
+      <button class="back-btn" onclick="viewSavedDiag(${id})">← Cancel</button>
+      <div class="page-header"><div class="page-header-icon">✏️</div><div><h2>Edit Diagnostic</h2><p>Update saved record #${id}</p></div></div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="save-form">
+          <label class="save-label">Title *</label>
+          <input class="save-input" id="ef-title" value="${esc(d.title||'')}" placeholder="e.g. Pump losing pressure — Honda GX390">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div>
+              <label class="save-label">Machine Name</label>
+              <input class="save-input" id="ef-machine_name" value="${esc(d.machine_name||'')}" placeholder="e.g. Unit #4">
+            </div>
+            <div>
+              <label class="save-label">Brand</label>
+              <input class="save-input" id="ef-machine_brand" value="${esc(d.machine_brand||'')}" placeholder="e.g. Alkota">
+            </div>
+            <div>
+              <label class="save-label">Model</label>
+              <input class="save-input" id="ef-machine_model" value="${esc(d.machine_model||'')}" placeholder="e.g. 3210">
+            </div>
+            <div>
+              <label class="save-label">Serial</label>
+              <input class="save-input" id="ef-machine_serial" value="${esc(d.machine_serial||'')}" placeholder="e.g. SN-12345">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div>
+              <label class="save-label">Category</label>
+              <input class="save-input" id="ef-category" value="${esc(d.category||'')}" placeholder="e.g. pump, burner, engine">
+            </div>
+            <div>
+              <label class="save-label">Severity</label>
+              <select class="save-input" id="ef-severity">
+                <option value="">— select —</option>
+                <option value="low" ${d.severity==='low'?'selected':''}>Low</option>
+                <option value="medium" ${d.severity==='medium'?'selected':''}>Medium</option>
+                <option value="high" ${d.severity==='high'?'selected':''}>High</option>
+                <option value="critical" ${d.severity==='critical'?'selected':''}>Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="save-label">Diagnosis Summary</label>
+          <textarea class="save-input" id="ef-diagnosis" rows="3" style="resize:vertical" placeholder="What was the root cause?">${esc(d.diagnosis||'')}</textarea>
+
+          <label class="save-label">Steps Taken <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
+          <textarea class="save-input" id="ef-steps" rows="4" style="resize:vertical" placeholder="Step 1&#10;Step 2&#10;Step 3">${esc(stepsVal)}</textarea>
+
+          <label class="save-label">Parts Used / Needed <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
+          <textarea class="save-input" id="ef-parts_used" rows="3" style="resize:vertical" placeholder="Part number or description">${esc(partsVal)}</textarea>
+
+          <label class="save-label">Notes</label>
+          <textarea class="save-input" id="ef-notes" rows="3" style="resize:vertical" placeholder="Additional observations, tips for next time…">${esc(d.notes||'')}</textarea>
+
+          <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+            <button class="nav-btn" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)" onclick="saveDiagEdit(${id})">💾 Save Changes</button>
+            <button class="nav-btn" onclick="viewSavedDiag(${id})">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    MAIN.scrollTop=0;
+  } catch(e){
+    C.innerHTML='<div class="section-page"><button class="back-btn" onclick="showSavedDiags()">← Back</button><p style="color:var(--text-muted)">Error loading: '+e.message+'</p></div>';
+  }
+}
+
+async function saveDiagEdit(id){
+  const title = document.getElementById('ef-title')?.value?.trim();
+  if(!title){ alert('Title is required'); return; }
+  const stepsRaw = document.getElementById('ef-steps')?.value?.trim();
+  const partsRaw = document.getElementById('ef-parts_used')?.value?.trim();
+  const payload = {
+    title,
+    machine_name:   document.getElementById('ef-machine_name')?.value?.trim()||null,
+    machine_brand:  document.getElementById('ef-machine_brand')?.value?.trim()||null,
+    machine_model:  document.getElementById('ef-machine_model')?.value?.trim()||null,
+    machine_serial: document.getElementById('ef-machine_serial')?.value?.trim()||null,
+    category:       document.getElementById('ef-category')?.value?.trim()||null,
+    severity:       document.getElementById('ef-severity')?.value||null,
+    diagnosis:      document.getElementById('ef-diagnosis')?.value?.trim()||null,
+    steps:          stepsRaw ? stepsRaw.split('\n').map(s=>s.trim()).filter(Boolean) : [],
+    parts_used:     partsRaw ? partsRaw.split('\n').map(s=>s.trim()).filter(Boolean) : [],
+    notes:          document.getElementById('ef-notes')?.value?.trim()||null,
+  };
+  try {
+    const btn = document.querySelector('#ef-title')?.closest('.save-form')?.querySelector('button');
+    if(btn){ btn.textContent='Saving…'; btn.disabled=true; }
+    const r = await authFetch('/api/saved-diags/'+id, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await r.json();
+    if(result.updated){
+      showToast('Diagnostic updated ✓');
+      viewSavedDiag(id);
+    } else {
+      alert('Save failed: '+(result.error||'Unknown error'));
+      if(btn){ btn.textContent='💾 Save Changes'; btn.disabled=false; }
+    }
+  } catch(e){
+    alert('Save failed: '+e.message);
   }
 }
 
