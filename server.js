@@ -62,10 +62,14 @@ function initUserData() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         log_id INTEGER,
         rating INTEGER,
+        correction TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (log_id) REFERENCES chat_logs(id)
       )
     `);
+    
+    // Add correction column if upgrading from older schema
+    try { userDb.exec('ALTER TABLE feedback ADD COLUMN correction TEXT'); } catch(e) { /* already exists */ }
 
     userDb.exec(`
       CREATE TABLE IF NOT EXISTS kb_gaps (
@@ -1357,15 +1361,15 @@ const server = http.createServer(async (req, res) => {
     req.on('data', c => body += c);
     req.on('end', () => {
       try {
-        const { log_id, rating } = JSON.parse(body);
+        const { log_id, rating, correction } = JSON.parse(body);
         if (!log_id || ![-1, 1].includes(rating)) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Need log_id and rating (1 or -1)' }));
           return;
         }
         if (userDb) {
-          userDb.prepare('INSERT INTO feedback (log_id, rating) VALUES (?, ?)').run(log_id, rating);
-          console.log(`[Feedback] log_id=${log_id} rating=${rating > 0 ? '👍' : '👎'}`);
+          userDb.prepare('INSERT INTO feedback (log_id, rating, correction) VALUES (?, ?, ?)').run(log_id, rating, correction || null);
+          console.log(`[Feedback] log_id=${log_id} rating=${rating > 0 ? '👍' : '👎'}${correction ? ' correction: ' + correction.substring(0, 80) : ''}`);
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
@@ -1417,7 +1421,7 @@ const server = http.createServer(async (req, res) => {
 
       // Recent negative feedback with context
       const negativeFeedback = userDb.prepare(`
-        SELECT f.rating, f.created_at as feedback_at, c.user_message, c.ai_reply, c.tools_used
+        SELECT f.rating, f.correction, f.created_at as feedback_at, c.user_message, c.ai_reply, c.tools_used
         FROM feedback f JOIN chat_logs c ON f.log_id = c.id
         WHERE f.rating = -1
         ORDER BY f.created_at DESC LIMIT 10
@@ -1453,6 +1457,7 @@ const server = http.createServer(async (req, res) => {
         negative_feedback: negativeFeedback.map(r => ({
           user_question: (r.user_message || '').substring(0, 200),
           ai_reply: (r.ai_reply || '').substring(0, 200),
+          correction: r.correction || null,
           tools: r.tools_used,
           feedback_at: r.feedback_at
         })),

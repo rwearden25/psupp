@@ -167,6 +167,12 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .fb-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.85rem;transition:all 0.15s;line-height:1}
 .fb-btn:hover{background:var(--accent-dim);border-color:var(--accent)}
 .fb-btn.fb-active{background:var(--accent-dim);border-color:var(--accent)}
+.correction-box{margin-top:0.4rem;margin-left:2.4rem;animation:fadeUp 0.2s ease}
+.correction-box textarea{width:100%;max-width:400px;min-height:60px;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;font-size:0.8rem;font-family:var(--font-body);resize:vertical;outline:none;transition:border-color 0.2s}
+.correction-box textarea:focus{border-color:var(--accent)}
+.correction-box button{margin-top:0.3rem;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.75rem;font-size:0.75rem;font-family:var(--font-body);cursor:pointer}
+.correction-box button:hover{filter:brightness(1.1)}
+.correction-box .correction-sent{font-size:0.75rem;color:var(--success);font-family:var(--font-body)}
 .save-btn:hover{border-color:#16a34a;color:#16a34a;background:rgba(22,163,74,0.06)}
 .save-btn.saved{border-color:#16a34a;color:#16a34a;cursor:default}
 .save-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -267,6 +273,8 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   .msg-bot .bubble{max-width:88%;border-radius:18px 18px 18px 4px;padding:0.55rem 0.9rem;font-size:0.9rem;background:#e9e9eb;border:none;color:#000}
   body.ios .msg-user .bubble{background:#007AFF}
   body.android .msg-user .bubble{background:#34C759}
+  .correction-box{margin-left:0}
+  .feedback-row{margin-left:0}
   .login-box{width:calc(100vw - 2rem);padding:28px 24px}
 }
 
@@ -1020,6 +1028,28 @@ function sendFeedback(logId, rating, btn){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({log_id: logId, rating})
   }).catch(()=>{});
+  // Show correction box on thumbs-down
+  const existing = row.parentElement.querySelector('.correction-box');
+  if(existing) existing.remove();
+  if(rating === -1){
+    const box = document.createElement('div');
+    box.className = 'correction-box';
+    box.innerHTML = `<textarea placeholder="What should the answer have been? (optional)" id="corr${logId}"></textarea><br><button onclick="submitCorrection(${logId}, this)">Submit correction</button>`;
+    row.after(box);
+  }
+}
+
+function submitCorrection(logId, btn){
+  const box = btn.closest('.correction-box');
+  const text = box.querySelector('textarea').value.trim();
+  if(!text){box.remove();return;}
+  fetch('/api/feedback', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({log_id: logId, rating: -1, correction: text})
+  }).catch(()=>{});
+  box.innerHTML = '<span class="correction-sent">✓ Correction saved — thank you!</span>';
+  setTimeout(()=>{ box.style.opacity='0.5'; }, 2000);
 }
 </script>
 
