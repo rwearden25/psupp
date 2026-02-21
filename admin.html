@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-Supp Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:       #0d0f12;
+    --surface:  #141618;
+    --border:   #1e2125;
+    --border2:  #2a2e34;
+    --text:     #e2e4e8;
+    --muted:    #6b7280;
+    --accent:   #3b82f6;
+    --accent2:  #1d4ed8;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --yellow:   #f59e0b;
+    --orange:   #f97316;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 40px;
+    width: 340px;
+  }
+  .login-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 32px;
+    color: var(--text);
+  }
+  .login-title span { color: var(--accent); }
+  .login-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+  .login-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2);
+    color: var(--text); padding: 10px 12px; border-radius: 5px;
+    font-family: var(--mono); font-size: 14px; margin-bottom: 20px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: var(--accent); }
+  .login-btn {
+    width: 100%; background: var(--accent); border: none; color: #fff;
+    padding: 11px; border-radius: 5px; font-family: var(--sans);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-btn:hover { background: var(--accent2); }
+  .login-error { color: var(--red); font-size: 12px; margin-top: 10px; text-align: center; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 200px; min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 0;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .sidebar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .sidebar-title span { color: var(--accent); }
+
+  .nav-section { padding: 12px 8px 4px; }
+  .nav-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    transition: all 0.15s;
+    position: relative;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--border); color: var(--text); }
+  .nav-item.active { background: rgba(59,130,246,0.12); color: var(--accent); }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 1px 5px;
+    border-radius: 9px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .nav-badge.green { background: var(--green); }
+  .nav-badge.yellow { background: var(--yellow); color: #000; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .logout-btn {
+    width: 100%; background: none; border: 1px solid var(--border2);
+    color: var(--muted); padding: 7px; border-radius: 5px;
+    font-family: var(--sans); font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── MAIN CONTENT ── */
+  #main {
+    margin-left: 200px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 16px; font-weight: 600; }
+  .page-subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .topbar-actions { display: flex; gap: 8px; }
+
+  .section { display: none; padding: 24px 28px; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .stat-value { font-family: var(--mono); font-size: 26px; font-weight: 600; line-height: 1; }
+  .stat-value.blue { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 13px; font-weight: 600; }
+  .panel-body { padding: 0; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-mono { font-family: var(--mono); font-size: 12px; }
+  .td-muted { color: var(--muted); font-size: 12px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: var(--sans);
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-success { background: rgba(34,197,94,0.12); color: var(--green); border-color: rgba(34,197,94,0.3); }
+  .btn-success:hover { background: rgba(34,197,94,0.2); }
+  .btn-danger { background: rgba(239,68,68,0.12); color: var(--red); border-color: rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-ghost { background: none; color: var(--muted); border-color: var(--border2); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--border); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+  .badge-pending { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-approved { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-rejected { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .badge-gray { background: rgba(107,114,128,0.15); color: var(--muted); }
+
+  /* ── TIP CARD (approval queue) ── */
+  .tip-card {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 18px;
+  }
+  .tip-card:last-child { border-bottom: none; }
+  .tip-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .tip-text { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 10px; }
+  .tip-context { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; }
+  .tip-actions { display: flex; gap: 8px; }
+
+  /* ── LOG ENTRY ── */
+  .log-row-expand { background: rgba(0,0,0,0.3); }
+  .log-detail { padding: 12px 16px; font-size: 12px; color: var(--muted); font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; }
+
+  /* ── SCRAPER ── */
+  .scraper-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block; }
+  .form-input, .form-select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2);
+    color: var(--text); padding: 8px 10px; border-radius: 5px;
+    font-family: var(--sans); font-size: 13px; outline: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select option { background: var(--surface); }
+
+  /* ── BAR CHART ── */
+  .bar-chart { padding: 16px 18px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-label { font-size: 12px; color: var(--muted); width: 180px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.6s ease; }
+  .bar-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 40px; text-align: right; }
+
+  /* ── EMPTY STATE ── */
+  .empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+  .empty-text { font-size: 13px; }
+
+  /* ── LOADING ── */
+  .loading { padding: 30px 20px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+  /* ── PAGINATION ── */
+  .pagination { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+  .page-info { font-size: 12px; color: var(--muted); margin-right: auto; font-family: var(--mono); }
+
+  /* ── SCRAPER LOG ── */
+  .scraper-log {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+    padding: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+    height: 160px; overflow-y: auto; white-space: pre-wrap;
+  }
+  .scraper-log .log-ok { color: var(--green); }
+  .scraper-log .log-err { color: var(--red); }
+  .scraper-log .log-info { color: var(--accent); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface); border: 1px solid var(--border2);
+    color: var(--text); padding: 10px 16px; border-radius: 6px;
+    font-size: 13px; display: none; z-index: 9999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #toast.show { display: block; }
+  #toast.ok { border-left: 3px solid var(--green); }
+  #toast.err { border-left: 3px solid var(--red); }
+
+  /* ── SEARCH BAR ── */
+  .search-input {
+    background: var(--bg); border: 1px solid var(--border2);
+    color: var(--text); padding: 7px 11px; border-radius: 5px;
+    font-family: var(--sans); font-size: 13px; outline: none; width: 220px;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* ── KB BRAND LIST ── */
+  .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 16px 18px; }
+  .brand-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+    padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand-name { font-size: 13px; font-weight: 500; }
+  .brand-count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  select { color-scheme: dark; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">P-Supp</div>
+    <div class="login-title">Admin <span>Dashboard</span></div>
+    <label class="login-label">Admin Password</label>
+    <input type="password" class="login-input" id="admin-pass" placeholder="Enter admin password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar" style="display:none">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">P-Supp</div>
+    <div class="sidebar-title"><span>Admin</span> Panel</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Monitor</div>
+    <div class="nav-item active" onclick="showSection('overview')" id="nav-overview">
+      <span class="nav-icon">◈</span> Overview
+    </div>
+    <div class="nav-item" onclick="showSection('tips')" id="nav-tips">
+      <span class="nav-icon">💡</span> Tips Queue
+      <span class="nav-badge" id="tips-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showSection('logs')" id="nav-logs">
+      <span class="nav-icon">📋</span> Chat Logs
+    </div>
+    <div class="nav-item" onclick="showSection('gaps')" id="nav-gaps">
+      <span class="nav-icon">⚠</span> KB Gaps
+      <span class="nav-badge yellow" id="gaps-badge" style="display:none">0</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Knowledge Base</div>
+    <div class="nav-item" onclick="showSection('kb')" id="nav-kb">
+      <span class="nav-icon">📚</span> KB Contents
+    </div>
+    <div class="nav-item" onclick="showSection('analytics')" id="nav-analytics">
+      <span class="nav-icon">📊</span> Analytics
+    </div>
+    <div class="nav-item" onclick="showSection('scraper')" id="nav-scraper">
+      <span class="nav-icon">🌐</span> Web Scraper
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main" style="display:none">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="page-title">Overview</div>
+      <div class="page-subtitle" id="page-subtitle">System status at a glance</div>
+    </div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="section-overview">
+    <div class="stat-grid" id="overview-stats">
+      <div class="stat-card"><div class="stat-label">Loading…</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Recent KB Gaps</div></div>
+        <div id="overview-gaps"><div class="loading">Loading…</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Pending Tips</div></div>
+        <div id="overview-tips"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS QUEUE -->
+  <div class="section" id="section-tips">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Community Field Tips</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="form-select" style="width:140px;padding:5px 8px" id="tips-filter" onchange="loadTips()">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="">All</option>
+          </select>
+          <button class="btn btn-ghost" onclick="loadTips()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="panel-body" id="tips-list"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- CHAT LOGS -->
+  <div class="section" id="section-logs">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Chat Logs</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="search-input" id="logs-search" placeholder="Search messages…" oninput="debounce(loadLogs, 400)()">
+          <button class="btn btn-ghost" onclick="loadLogs()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px">Time</th>
+              <th>User Message</th>
+              <th style="width:80px">Tools</th>
+              <th style="width:80px">Time (ms)</th>
+              <th style="width:70px">Gap</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody"><tr><td colspan="5"><div class="loading">Loading…</div></td></tr></tbody>
+        </table>
+        <div class="pagination">
+          <span class="page-info" id="logs-page-info"></span>
+          <button class="btn btn-ghost" id="logs-prev" onclick="logsPage(-1)">← Prev</button>
+          <button class="btn btn-ghost" id="logs-next" onclick="logsPage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KB GAPS -->
+  <div class="section" id="section-gaps">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Unanswered / Low-Confidence Queries</div>
+        <button class="btn btn-ghost" onclick="loadGaps()">↻ Refresh</button>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Query</th>
+              <th style="width:120px">Tool</th>
+              <th style="width:160px">Time</th>
+              <th style="width:120px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="gaps-tbody"><tr><td colspan="4"><div class="loading">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- KB CONTENTS -->
+  <div class="section" id="section-kb">
+    <div class="stat-grid" id="kb-stats">
+      <div class="stat-card"><div class="stat-label">Loading…</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Indexed Brands</div></div>
+      <div id="kb-brands"><div class="loading">Loading…</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Search KB</div>
+      </div>
+      <div style="padding:16px 18px;display:flex;gap:10px">
+        <input type="text" class="search-input" id="kb-search-q" placeholder="Search knowledge base…" style="flex:1" onkeydown="if(event.key==='Enter')kbSearch()">
+        <select class="form-select" style="width:160px" id="kb-search-brand"></select>
+        <button class="btn btn-primary" onclick="kbSearch()">Search</button>
+      </div>
+      <div id="kb-search-results"></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="section" id="section-analytics">
+    <div class="stat-grid" id="analytics-stats">
+      <div class="stat-card"><div class="stat-label">Loading…</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top Categories</div></div>
+        <div class="bar-chart" id="analytics-categories"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top Tools Used</div></div>
+        <div class="bar-chart" id="analytics-tools"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Daily Chat Volume (last 14 days)</div></div>
+      <div class="bar-chart" id="analytics-volume"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Negative Feedback</div></div>
+      <div id="analytics-feedback"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- SCRAPER -->
+  <div class="section" id="section-scraper">
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Web Scraper — Manufacturer Content</div></div>
+      <div class="scraper-grid">
+        <div>
+          <div class="form-group">
+            <label class="form-label">Brand / Manufacturer</label>
+            <select class="form-select" id="scrape-brand">
+              <option value="">All manufacturers</option>
+              <option value="General Pump">General Pump</option>
+              <option value="Cat Pumps">Cat Pumps</option>
+              <option value="AR Pumps">AR Pumps</option>
+              <option value="Beckett">Beckett</option>
+              <option value="Honda">Honda</option>
+              <option value="Kohler">Kohler</option>
+              <option value="Briggs & Stratton">Briggs & Stratton</option>
+              <option value="Generac">Generac</option>
+              <option value="Ingersoll Rand">Ingersoll Rand</option>
+              <option value="Quincy">Quincy</option>
+              <option value="Campbell Hausfeld">Campbell Hausfeld</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="scrape-category">
+              <option value="">All categories</option>
+              <option value="pumps">Pumps</option>
+              <option value="burners">Burners</option>
+              <option value="engines">Engines</option>
+              <option value="generators">Generators</option>
+              <option value="air_compressors">Air Compressors</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specific URL (optional)</label>
+            <input type="text" class="form-input" id="scrape-url" placeholder="https://manufacturer.com/support/…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quality Threshold (1–10)</label>
+            <input type="number" class="form-input" id="scrape-threshold" value="7" min="1" max="10">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">AI scores each chunk — only content scoring above this is stored</div>
+          </div>
+          <button class="btn btn-primary" onclick="triggerScrape()" id="scrape-btn" style="width:100%">▶ Run Scraper</button>
+        </div>
+        <div>
+          <label class="form-label" style="margin-bottom:8px;display:block">Scraper Output</label>
+          <div class="scraper-log" id="scraper-log">Ready. Configure and click Run Scraper to begin.
+</div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="clearScraperLog()">Clear Log</button>
+            <div id="scrape-status" style="font-size:12px;color:var(--muted);align-self:center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Scrape History</div></div>
+      <div id="scrape-history"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let adminToken = sessionStorage.getItem('adminToken') || null;
+let currentSection = 'overview';
+let logsCurrentPage = 1;
+const LOGS_PER_PAGE = 30;
+
+const SECTION_META = {
+  overview:  { title: 'Overview',           subtitle: 'System status at a glance' },
+  tips:      { title: 'Community Tips Queue', subtitle: 'Review and approve field technician tips' },
+  logs:      { title: 'Chat Logs',           subtitle: 'All conversations' },
+  gaps:      { title: 'KB Gaps',             subtitle: 'Queries that returned no useful results' },
+  kb:        { title: 'Knowledge Base',      subtitle: 'Indexed documents, brands, chunks' },
+  analytics: { title: 'Analytics',           subtitle: 'Usage patterns and satisfaction' },
+  scraper:   { title: 'Web Scraper',         subtitle: 'Pull manufacturer content into KB' },
+};
+
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+async function doLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (!pass) return;
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+    const d = await r.json();
+    if (d.token) {
+      adminToken = d.token;
+      sessionStorage.setItem('adminToken', adminToken);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('sidebar').style.display = 'flex';
+      document.getElementById('main').style.display = 'flex';
+      initDashboard();
+    } else {
+      document.getElementById('login-err').textContent = 'Invalid password';
+    }
+  } catch(e) {
+    document.getElementById('login-err').textContent = 'Connection error';
+  }
+}
+
+function doLogout() {
+  adminToken = null;
+  sessionStorage.removeItem('adminToken');
+  location.reload();
+}
+
+document.getElementById('admin-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ═══════════════════════════════════════
+//  API HELPER
+// ═══════════════════════════════════════
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${adminToken}`,
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { doLogout(); return null; }
+  return res.json();
+}
+
+// ═══════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  currentSection = name;
+  const meta = SECTION_META[name];
+  document.getElementById('page-title').textContent = meta.title;
+  document.getElementById('page-subtitle').textContent = meta.subtitle;
+  document.getElementById('topbar-actions').innerHTML = '';
+
+  // Load data for section
+  if (name === 'overview')  loadOverview();
+  if (name === 'tips')      loadTips();
+  if (name === 'logs')      loadLogs();
+  if (name === 'gaps')      loadGaps();
+  if (name === 'kb')        loadKB();
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'scraper')   loadScrapeHistory();
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+async function initDashboard() {
+  // Load badge counts
+  loadBadges();
+  showSection('overview');
+}
+
+async function loadBadges() {
+  const d = await api('/api/admin/counts');
+  if (!d) return;
+  const tb = document.getElementById('tips-badge');
+  const gb = document.getElementById('gaps-badge');
+  if (d.pending_tips > 0) { tb.textContent = d.pending_tips; tb.style.display = 'inline'; }
+  if (d.kb_gaps > 0) { gb.textContent = d.kb_gaps; gb.style.display = 'inline'; }
+}
+
+// ═══════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════
+async function loadOverview() {
+  // Stats from /api/stats and /api/admin/counts
+  const [stats, counts, analytics] = await Promise.all([
+    api('/api/stats'),
+    api('/api/admin/counts'),
+    api('/api/analytics')
+  ]);
+
+  if (!stats || !counts) return;
+
+  const satisf = analytics?.overview?.satisfaction_rate || '—';
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">KB Documents</div>
+      <div class="stat-value blue">${(stats.documents || 0).toLocaleString()}</div>
+      <div class="stat-sub">${(stats.chunks || 0).toLocaleString()} chunks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Chats</div>
+      <div class="stat-value">${(analytics?.overview?.total_chats || 0).toLocaleString()}</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Tips</div>
+      <div class="stat-value yellow">${counts.pending_tips || 0}</div>
+      <div class="stat-sub">awaiting review</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">KB Gaps</div>
+      <div class="stat-value red">${counts.kb_gaps || 0}</div>
+      <div class="stat-sub">unanswered queries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Satisfaction</div>
+      <div class="stat-value green">${satisf}</div>
+      <div class="stat-sub">${analytics?.overview?.thumbs_up || 0}↑ ${analytics?.overview?.thumbs_down || 0}↓</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Response</div>
+      <div class="stat-value">${Math.round((analytics?.overview?.avg_response_time_ms || 0) / 100) / 10}s</div>
+      <div class="stat-sub">per query</div>
+    </div>
+  `;
+
+  // Recent gaps
+  const gaps = await api('/api/admin/gaps?limit=5');
+  const gapEl = document.getElementById('overview-gaps');
+  if (!gaps?.gaps?.length) {
+    gapEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div>';
+  } else {
+    gapEl.innerHTML = `<table>${gaps.gaps.map(g => `
+      <tr>
+        <td class="td-muted" style="width:100px">${fmtTime(g.created_at)}</td>
+        <td>${esc(g.query)}</td>
+      </tr>`).join('')}</table>`;
+  }
+
+  // Pending tips
+  const tips = await api('/api/admin/tips?status=pending&limit=5');
+  const tipEl = document.getElementById('overview-tips');
+  if (!tips?.tips?.length) {
+    tipEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No pending tips</div></div>';
+  } else {
+    tipEl.innerHTML = `<table>${tips.tips.map(t => `
+      <tr>
+        <td>${esc(t.tip_text.substring(0, 100))}${t.tip_text.length > 100 ? '…' : ''}</td>
+        <td style="width:130px;text-align:right">
+          <button class="btn btn-success" onclick="approveTip(${t.id}, this)">✓ Approve</button>
+        </td>
+      </tr>`).join('')}</table>`;
+  }
+}
+
+// ═══════════════════════════════════════
+//  TIPS
+// ═══════════════════════════════════════
+async function loadTips() {
+  const status = document.getElementById('tips-filter').value;
+  const url = `/api/admin/tips${status ? '?status=' + status : ''}`;
+  const data = await api(url);
+  const el = document.getElementById('tips-list');
+  if (!data?.tips?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💡</div><div class="empty-text">No tips found</div></div>';
+    return;
+  }
+  el.innerHTML = data.tips.map(t => `
+    <div class="tip-card" id="tip-${t.id}">
+      <div class="tip-meta">
+        <span class="badge badge-${t.status || 'pending'}">${t.status || 'pending'}</span>
+        ${t.category ? `<span class="badge badge-blue">${esc(t.category)}</span>` : ''}
+        <span class="td-muted">${fmtTime(t.created_at)}</span>
+      </div>
+      ${t.context_query ? `<div class="tip-context">Query: "${esc(t.context_query)}"</div>` : ''}
+      <div class="tip-text">${esc(t.tip_text)}</div>
+      <div class="tip-actions">
+        ${(!t.status || t.status === 'pending' || t.status === 'rejected') ?
+          `<button class="btn btn-success" onclick="approveTip(${t.id}, this)">✓ Approve</button>` : ''}
+        ${(!t.status || t.status === 'pending' || t.status === 'approved') ?
+          `<button class="btn btn-danger" onclick="rejectTip(${t.id}, this)">✕ Reject</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function approveTip(id, btn) {
+  btn.disabled = true;
+  const d = await api(`/api/admin/tips/${id}/approve`, { method: 'POST' });
+  if (d?.ok) {
+    toast('Tip approved ✓', 'ok');
+    const card = document.getElementById('tip-' + id);
+    if (card) card.style.opacity = '0.4';
+    loadBadges();
+  } else {
+    btn.disabled = false;
+    toast('Error approving tip', 'err');
+  }
+}
+
+async function rejectTip(id, btn) {
+  btn.disabled = true;
+  const d = await api(`/api/admin/tips/${id}/reject`, { method: 'POST' });
+  if (d?.ok) {
+    toast('Tip rejected', 'ok');
+    const card = document.getElementById('tip-' + id);
+    if (card) card.style.opacity = '0.4';
+    loadBadges();
+  } else {
+    btn.disabled = false;
+    toast('Error rejecting tip', 'err');
+  }
+}
+
+// ═══════════════════════════════════════
+//  CHAT LOGS
+// ═══════════════════════════════════════
+async function loadLogs() {
+  const q = document.getElementById('logs-search')?.value || '';
+  const offset = (logsCurrentPage - 1) * LOGS_PER_PAGE;
+  const url = `/api/admin/logs?limit=${LOGS_PER_PAGE}&offset=${offset}${q ? '&q=' + encodeURIComponent(q) : ''}`;
+  const data = await api(url);
+  const tbody = document.getElementById('logs-tbody');
+  if (!data?.logs?.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-text">No chat logs found</div></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.logs.map(l => `
+    <tr style="cursor:pointer" onclick="toggleLogDetail(${l.id})">
+      <td class="td-mono td-muted">${fmtTime(l.created_at)}</td>
+      <td>${esc((l.user_message || '').substring(0, 120))}${(l.user_message || '').length > 120 ? '…' : ''}</td>
+      <td class="td-mono">${l.tools_used ? JSON.parse(l.tools_used || '[]').length : 0}</td>
+      <td class="td-mono">${l.response_time_ms || '—'}</td>
+      <td>${l.kb_gap ? '<span class="badge badge-pending">gap</span>' : '<span class="badge badge-gray">ok</span>'}</td>
+    </tr>
+    <tr id="log-detail-${l.id}" style="display:none" class="log-row-expand">
+      <td colspan="5">
+        <div class="log-detail"><span style="color:var(--accent)">USER:</span> ${esc(l.user_message || '')}
+
+<span style="color:var(--green)">AI:</span> ${esc((l.ai_reply || '').substring(0, 600))}${(l.ai_reply || '').length > 600 ? '\n…[truncated]' : ''}</div>
+      </td>
+    </tr>
+  `).join('');
+
+  const info = document.getElementById('logs-page-info');
+  const total = data.total || 0;
+  info.textContent = `${offset + 1}–${Math.min(offset + data.logs.length, total)} of ${total}`;
+  document.getElementById('logs-prev').disabled = logsCurrentPage <= 1;
+  document.getElementById('logs-next').disabled = offset + data.logs.length >= total;
+}
+
+function logsPage(dir) {
+  logsCurrentPage = Math.max(1, logsCurrentPage + dir);
+  loadLogs();
+}
+
+function toggleLogDetail(id) {
+  const row = document.getElementById('log-detail-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// ═══════════════════════════════════════
+//  KB GAPS
+// ═══════════════════════════════════════
+async function loadGaps() {
+  const data = await api('/api/admin/gaps?limit=100');
+  const tbody = document.getElementById('gaps-tbody');
+  if (!data?.gaps?.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.gaps.map(g => `
+    <tr>
+      <td>${esc(g.query || '')}</td>
+      <td class="td-mono td-muted">${esc(g.tool_name || '—')}</td>
+      <td class="td-muted">${fmtTime(g.created_at)}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="scrapeForGap('${esc(g.query || '')}')">→ Scrape</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function scrapeForGap(query) {
+  showSection('scraper');
+  document.getElementById('scrape-url').value = '';
+  document.getElementById('scraper-log').textContent = `Queued scrape for gap: "${query}"\n`;
+}
+
+// ═══════════════════════════════════════
+//  KB CONTENTS
+// ═══════════════════════════════════════
+async function loadKB() {
+  const [stats, brands] = await Promise.all([
+    api('/api/stats'),
+    api('/api/brands')
+  ]);
+  if (!stats) return;
+
+  document.getElementById('kb-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Documents</div>
+      <div class="stat-value blue">${(stats.documents || 0).toLocaleString()}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Chunks</div>
+      <div class="stat-value">${(stats.chunks || 0).toLocaleString()}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Words</div>
+      <div class="stat-value">${Math.round((stats.total_words || 0) / 1000)}k</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Brands</div>
+      <div class="stat-value">${(brands || []).length}</div>
+    </div>
+  `;
+
+  const brandEl = document.getElementById('kb-brands');
+  if (!brands?.length) {
+    brandEl.innerHTML = '<div class="empty"><div class="empty-text">No brands found</div></div>';
+  } else {
+    brandEl.innerHTML = `<div class="brand-grid">${brands.map(b => `
+      <div class="brand-card">
+        <span class="brand-name">${esc(b.brand || 'Unknown')}</span>
+        <span class="brand-count">${b.doc_count} docs</span>
+      </div>
+    `).join('')}</div>`;
+
+    // Populate brand filter in search
+    const sel = document.getElementById('kb-search-brand');
+    sel.innerHTML = '<option value="">All brands</option>' +
+      brands.map(b => `<option value="${esc(b.brand)}">${esc(b.brand)}</option>`).join('');
+  }
+}
+
+async function kbSearch() {
+  const q = document.getElementById('kb-search-q').value.trim();
+  const brand = document.getElementById('kb-search-brand').value;
+  if (!q) return;
+  const el = document.getElementById('kb-search-results');
+  el.innerHTML = '<div class="loading">Searching…</div>';
+  const url = `/api/search?q=${encodeURIComponent(q)}${brand ? '&brand=' + encodeURIComponent(brand) : ''}`;
+  const data = await api(url);
+  if (!data?.results?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-text">No results found</div></div>';
+    return;
+  }
+  el.innerHTML = `<div style="padding:0 4px">${data.results.map(r => `
+    <div style="border-top:1px solid var(--border);padding:12px 18px">
+      <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">${esc(r.brand || '—')}</span>
+        <span class="badge badge-gray">${esc(r.chunk_type || 'text')}</span>
+        ${r.section ? `<span class="badge badge-gray">${esc(r.section)}</span>` : ''}
+        <span class="td-muted" style="font-size:11px">${esc(r.filename || '')}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text);line-height:1.5">${esc((r.content || '').substring(0, 300))}…</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════
+//  ANALYTICS
+// ═══════════════════════════════════════
+async function loadAnalytics() {
+  const data = await api('/api/analytics');
+  if (!data) return;
+  const ov = data.overview;
+
+  document.getElementById('analytics-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Chats</div>
+      <div class="stat-value blue">${(ov.total_chats || 0).toLocaleString()}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Satisfaction</div>
+      <div class="stat-value green">${ov.satisfaction_rate || '—'}</div>
+      <div class="stat-sub">${ov.thumbs_up}↑ / ${ov.thumbs_down}↓</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Response</div>
+      <div class="stat-value">${Math.round((ov.avg_response_time_ms || 0) / 100) / 10}s</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">KB Gaps</div>
+      <div class="stat-value yellow">${ov.kb_gap_questions || 0}</div>
+      <div class="stat-sub">unanswered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Web Fallbacks</div>
+      <div class="stat-value">${ov.web_search_fallbacks || 0}</div>
+    </div>
+  `;
+
+  renderBarChart('analytics-categories', data.top_categories || [], 'category', 'count');
+  renderBarChart('analytics-tools',      data.top_tools || [],      'tool',     'count');
+
+  // Daily volume
+  const vol = data.daily_volume || [];
+  const maxVol = Math.max(1, ...vol.map(v => v.count));
+  document.getElementById('analytics-volume').innerHTML = vol.length ? vol.map(v => `
+    <div class="bar-row">
+      <div class="bar-label">${esc(v.date)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v.count / maxVol * 100)}%;background:var(--green)"></div></div>
+      <div class="bar-count">${v.count}</div>
+    </div>
+  `).join('') : '<div class="empty"><div class="empty-text">No data yet</div></div>';
+
+  // Negative feedback
+  const fb = data.negative_feedback || [];
+  const fbEl = document.getElementById('analytics-feedback');
+  if (!fb.length) {
+    fbEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No negative feedback yet</div></div>';
+  } else {
+    fbEl.innerHTML = `<table>
+      <thead><tr><th>Question</th><th>AI Reply</th><th>Correction</th><th>Date</th></tr></thead>
+      <tbody>${fb.map(f => `<tr>
+        <td>${esc((f.user_question || '').substring(0, 80))}</td>
+        <td class="td-muted">${esc((f.ai_reply || '').substring(0, 80))}</td>
+        <td>${f.correction ? esc(f.correction.substring(0, 80)) : '<span class="td-muted">—</span>'}</td>
+        <td class="td-muted td-mono">${fmtTime(f.feedback_at)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+}
+
+function renderBarChart(elId, data, labelKey, countKey) {
+  const el = document.getElementById(elId);
+  if (!data.length) { el.innerHTML = '<div class="empty"><div class="empty-text">No data yet</div></div>'; return; }
+  const max = Math.max(1, ...data.map(d => d[countKey]));
+  el.innerHTML = data.slice(0, 10).map(d => `
+    <div class="bar-row">
+      <div class="bar-label" title="${esc(String(d[labelKey]))}">${esc(String(d[labelKey]))}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d[countKey] / max * 100)}%"></div></div>
+      <div class="bar-count">${d[countKey]}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  SCRAPER
+// ═══════════════════════════════════════
+async function loadScrapeHistory() {
+  const data = await api('/api/admin/scrape-history');
+  const el = document.getElementById('scrape-history');
+  if (!data?.runs?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-text">No scrape runs yet</div></div>';
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Time</th><th>Brand</th><th>Category</th><th>Chunks Added</th><th>Status</th></tr></thead>
+    <tbody>${data.runs.map(r => `<tr>
+      <td class="td-muted td-mono">${fmtTime(r.created_at)}</td>
+      <td>${esc(r.brand || 'All')}</td>
+      <td>${esc(r.category || 'All')}</td>
+      <td class="td-mono">${r.chunks_added || 0}</td>
+      <td><span class="badge badge-${r.status === 'done' ? 'approved' : r.status === 'error' ? 'rejected' : 'pending'}">${esc(r.status)}</span></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function triggerScrape() {
+  const brand     = document.getElementById('scrape-brand').value;
+  const category  = document.getElementById('scrape-category').value;
+  const url       = document.getElementById('scrape-url').value.trim();
+  const threshold = parseInt(document.getElementById('scrape-threshold').value) || 7;
+
+  const btn = document.getElementById('scrape-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running…';
+
+  const log = document.getElementById('scraper-log');
+  log.innerHTML = `<span class="log-info">[INFO] Starting scrape…</span>
+Brand: ${brand || 'all'}  Category: ${category || 'all'}  Threshold: ${threshold}
+${url ? 'URL: ' + url : ''}
+
+`;
+
+  document.getElementById('scrape-status').textContent = 'Running…';
+
+  try {
+    const d = await api('/api/admin/scrape', {
+      method: 'POST',
+      body: JSON.stringify({ brand, category, url, threshold })
+    });
+
+    if (d?.ok) {
+      log.innerHTML += `<span class="log-ok">[OK] Scrape queued — run ingest pipeline on server to process.</span>\n`;
+      log.innerHTML += `<span class="log-info">[INFO] Check Railway logs for progress.</span>\n`;
+      document.getElementById('scrape-status').textContent = 'Queued ✓';
+      toast('Scrape job queued', 'ok');
+      setTimeout(loadScrapeHistory, 1000);
+    } else {
+      log.innerHTML += `<span class="log-err">[ERR] ${d?.error || 'Unknown error'}</span>\n`;
+      document.getElementById('scrape-status').textContent = 'Error';
+      toast('Scrape failed: ' + (d?.error || 'unknown'), 'err');
+    }
+  } catch(e) {
+    log.innerHTML += `<span class="log-err">[ERR] ${e.message}</span>\n`;
+    document.getElementById('scrape-status').textContent = 'Error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Scraper';
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearScraperLog() {
+  document.getElementById('scraper-log').textContent = 'Log cleared.\n';
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + 'd ago';
+  return d.toLocaleDateString();
+}
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  setTimeout(() => { el.className = ''; }, 3000);
+}
+
+function debounce(fn, delay) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+// ═══════════════════════════════════════
+//  AUTO LOGIN (if token stored)
+// ═══════════════════════════════════════
+if (adminToken) {
+  // Verify token is still valid
+  fetch('/api/admin/counts', {
+    headers: { 'Authorization': 'Bearer ' + adminToken }
+  }).then(r => {
+    if (r.ok) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('sidebar').style.display = 'flex';
+      document.getElementById('main').style.display = 'flex';
+      initDashboard();
+    } else {
+      adminToken = null;
+      sessionStorage.removeItem('adminToken');
+    }
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>
