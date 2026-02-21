@@ -967,7 +967,7 @@ const tools = [
   },
   {
     name: "search_knowledge_base",
-    description: "Search the equipment knowledge base (242 manuals, 13,000+ sections) for detailed specs, procedures, part numbers, and OEM data. Use this AFTER diagnostic classification to find specific details to support your diagnosis. Covers General Pump, AR Pumps, Kohler, Cat Pumps, Comet, Honda, Beckett, and more.",
+    description: "Search the equipment knowledge base (253 manuals, 13,200+ sections) for detailed specs, procedures, part numbers, and OEM data. Use this AFTER diagnostic classification to find specific details to support your diagnosis. Covers General Pump, AR Pumps, Kohler, Cat Pumps, Comet, Honda, Beckett, Alkota, and more.",
     input_schema: {
       type: "object",
       properties: {
@@ -1092,7 +1092,7 @@ Present test steps one at a time. Give safety warning FIRST. After each test, te
 After reaching a diagnosis during ANY diagnostic tree that involves electrical components, offer: "Want me to walk you through testing that with a meter?"
 
 ═══ KNOWLEDGE BASE ═══
-You have 242 indexed manuals. Use search_knowledge_base ONLY after diagnosis to find specific part numbers, torque specs, or procedures. Summarize in 1-2 sentences — never paste raw results.
+You have 253 indexed manuals. Use search_knowledge_base ONLY after diagnosis to find specific part numbers, torque specs, or procedures. Summarize in 1-2 sentences — never paste raw results.
 
 ═══ WEB SEARCH ═══
 You have web_search available. Use it when:
