@@ -1431,7 +1431,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     } else {
-      if (!checkAuth(req)) { denyAuth(res); return; }
+      if (!checkAuth(req) && !checkAdminAuth(req)) { denyAuth(res); return; }
     }
   }
 
