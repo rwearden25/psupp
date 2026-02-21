@@ -81,11 +81,23 @@ function initUserData() {
       )
     `);
 
+    userDb.exec(`
+      CREATE TABLE IF NOT EXISTS tips (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tip_text TEXT NOT NULL,
+        category TEXT,
+        context_query TEXT,
+        log_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     const diagCount = userDb.prepare('SELECT COUNT(*) as cnt FROM saved_diagnostics').get().cnt;
     const logCount = userDb.prepare('SELECT COUNT(*) as cnt FROM chat_logs').get().cnt;
     const feedbackCount = userDb.prepare('SELECT COUNT(*) as cnt FROM feedback').get().cnt;
     const gapCount = userDb.prepare('SELECT COUNT(*) as cnt FROM kb_gaps').get().cnt;
-    console.log(`User data: ${diagCount} saved diagnostics, ${logCount} chat logs, ${feedbackCount} feedback, ${gapCount} KB gaps`);
+    const tipCount = userDb.prepare('SELECT COUNT(*) as cnt FROM tips').get().cnt;
+    console.log(`User data: ${diagCount} saved diagnostics, ${logCount} chat logs, ${feedbackCount} feedback, ${gapCount} KB gaps, ${tipCount} tips`);
   } catch (e) {
     console.error('User data init error:', e.message);
   }
@@ -1370,6 +1382,32 @@ const server = http.createServer(async (req, res) => {
         if (userDb) {
           userDb.prepare('INSERT INTO feedback (log_id, rating, correction) VALUES (?, ?, ?)').run(log_id, rating, correction || null);
           console.log(`[Feedback] log_id=${log_id} rating=${rating > 0 ? '👍' : '👎'}${correction ? ' correction: ' + correction.substring(0, 80) : ''}`);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── POST /api/tips ───
+  if (req.method === 'POST' && url.pathname === '/api/tips') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { tip_text, category, context_query, log_id } = JSON.parse(body);
+        if (!tip_text || tip_text.trim().length < 5) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Tip text required (min 5 chars)' }));
+          return;
+        }
+        if (userDb) {
+          userDb.prepare('INSERT INTO tips (tip_text, category, context_query, log_id) VALUES (?, ?, ?, ?)').run(tip_text.trim(), category || null, context_query || null, log_id || null);
+          console.log(`[Tip] ${category ? '[' + category + '] ' : ''}${tip_text.trim().substring(0, 80)}`);
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));

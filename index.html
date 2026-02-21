@@ -180,6 +180,17 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .correction-box button{margin-top:0.3rem;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.75rem;font-size:0.75rem;font-family:var(--font-body);cursor:pointer}
 .correction-box button:hover{filter:brightness(1.1)}
 .correction-box .correction-sent{font-size:0.75rem;color:var(--success);font-family:var(--font-body)}
+.tip-btn-inline{background:none;border:none;color:var(--text-muted);font-size:0.72rem;cursor:pointer;font-family:var(--font-body);padding:0.15rem 0.3rem;margin-left:0.3rem;transition:color 0.15s}
+.tip-btn-inline:hover{color:var(--accent)}
+.tip-box{margin-top:0.4rem;margin-left:2.4rem;animation:fadeUp 0.2s ease}
+.tip-box textarea{width:100%;max-width:400px;min-height:60px;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;font-size:0.8rem;font-family:var(--font-body);resize:vertical;outline:none;transition:border-color 0.2s}
+.tip-box textarea:focus{border-color:var(--accent)}
+.tip-box select{border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.5rem;font-size:0.75rem;font-family:var(--font-body);margin-bottom:0.3rem;outline:none}
+.tip-box button{margin-top:0.3rem;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.75rem;font-size:0.75rem;font-family:var(--font-body);cursor:pointer}
+.tip-box button:hover{filter:brightness(1.1)}
+.tip-box .tip-sent{font-size:0.75rem;color:var(--success);font-family:var(--font-body)}
+.home-tip-btn{background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:0.8rem 1rem;cursor:pointer;display:flex;align-items:center;gap:0.6rem;color:var(--text-muted);font-size:0.82rem;font-family:var(--font-body);transition:all 0.15s;text-align:left;width:100%;max-width:560px;margin-top:0.75rem}
+.home-tip-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
 .save-btn:hover{border-color:#16a34a;color:#16a34a;background:rgba(22,163,74,0.06)}
 .save-btn.saved{border-color:#16a34a;color:#16a34a;cursor:default}
 .save-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -282,6 +293,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   body.android .msg-user .bubble{background:#34C759}
   .correction-box{margin-left:0}
   .feedback-row{margin-left:0}
+  .tip-box{margin-left:0}
   .login-box{width:calc(100vw - 2rem);padding:28px 24px}
 }
 
@@ -530,7 +542,7 @@ function showInjectorChart(){
   </div>`;
   MAIN.scrollTop=0;
 }
-function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧<svg class="pippie" width="42" height="58" viewBox="0 0 100 140"><rect x="28" y="45" width="44" height="60" rx="8" fill="#D4A843" stroke="#B8922E" stroke-width="2"/><rect x="33" y="51" width="14" height="6" rx="3" fill="#E8C75A" opacity="0.6"/><circle cx="50" cy="88" r="10" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/><circle cx="50" cy="88" r="7" fill="white"/><line x1="50" y1="88" x2="54" y2="83" stroke="#C4382A" stroke-width="1.5" stroke-linecap="round"/><circle cx="50" cy="88" r="1.5" fill="#333"/><path d="M 38 45 L 38 28 Q 38 22 44 22 L 56 22 Q 62 22 62 28 L 62 45" fill="none" stroke="#888" stroke-width="3" stroke-linecap="round"/><rect x="42" y="15" width="16" height="10" rx="3" fill="#C4382A" stroke="#A52E22" stroke-width="1.5"/><g class="pb"><ellipse cx="41" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="41" cy="63" r="4.5" fill="#22C55E"/><circle cx="41" cy="63" r="2" fill="#15803D"/><circle cx="39.5" cy="61" r="1.5" fill="white"/></g><g class="pb"><ellipse cx="59" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="59" cy="63" r="4.5" fill="#22C55E"/><circle cx="59" cy="63" r="2" fill="#15803D"/><circle cx="57.5" cy="61" r="1.5" fill="white"/></g><path d="M 42 76 Q 50 82 58 76" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="10" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="70" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="90" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="30" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><rect x="54" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><circle cx="46" cy="12" r="3.5" fill="#ddd" class="ps1" opacity="0"/><circle cx="54" cy="10" r="3" fill="#ddd" class="ps2" opacity="0"/></svg></div><h2>How can I help?</h2><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});safeFocus(document.getElementById('homeInput'));}
+function showHome(){setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧<svg class="pippie" width="42" height="58" viewBox="0 0 100 140"><rect x="28" y="45" width="44" height="60" rx="8" fill="#D4A843" stroke="#B8922E" stroke-width="2"/><rect x="33" y="51" width="14" height="6" rx="3" fill="#E8C75A" opacity="0.6"/><circle cx="50" cy="88" r="10" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/><circle cx="50" cy="88" r="7" fill="white"/><line x1="50" y1="88" x2="54" y2="83" stroke="#C4382A" stroke-width="1.5" stroke-linecap="round"/><circle cx="50" cy="88" r="1.5" fill="#333"/><path d="M 38 45 L 38 28 Q 38 22 44 22 L 56 22 Q 62 22 62 28 L 62 45" fill="none" stroke="#888" stroke-width="3" stroke-linecap="round"/><rect x="42" y="15" width="16" height="10" rx="3" fill="#C4382A" stroke="#A52E22" stroke-width="1.5"/><g class="pb"><ellipse cx="41" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="41" cy="63" r="4.5" fill="#22C55E"/><circle cx="41" cy="63" r="2" fill="#15803D"/><circle cx="39.5" cy="61" r="1.5" fill="white"/></g><g class="pb"><ellipse cx="59" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="59" cy="63" r="4.5" fill="#22C55E"/><circle cx="59" cy="63" r="2" fill="#15803D"/><circle cx="57.5" cy="61" r="1.5" fill="white"/></g><path d="M 42 76 Q 50 82 58 76" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="10" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="70" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="90" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="30" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><rect x="54" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><circle cx="46" cy="12" r="3.5" fill="#ddd" class="ps1" opacity="0"/><circle cx="54" cy="10" r="3" fill="#ddd" class="ps2" opacity="0"/></svg></div><h2>How can I help?</h2><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div><div class="mobile-quick" style="margin-top:0.75rem"><button class="home-tip-btn" onclick="showTipForm()" style="grid-column:1/-1"><span class="qicon">💡</span> Submit a Field Tip — share what works in the real world</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});safeFocus(document.getElementById('homeInput'));}
 
 /* ═══ SEARCH ═══ */
 function genResponse(query){const q=norm(query);let html='';let found=false;
@@ -1019,7 +1031,7 @@ function injectFeedbackButtons(afterEl, logId){
   if(msgDiv.parentElement.querySelector('.feedback-row')) return;
   const row = document.createElement('div');
   row.className = 'feedback-row';
-  row.innerHTML = `<span class="feedback-label">Helpful?</span><button class="fb-btn fb-up" onclick="sendFeedback(${logId}, 1, this)" title="Helpful">👍</button><button class="fb-btn fb-down" onclick="sendFeedback(${logId}, -1, this)" title="Not helpful">👎</button>`;
+  row.innerHTML = `<span class="feedback-label">Helpful?</span><button class="fb-btn fb-up" onclick="sendFeedback(${logId}, 1, this)" title="Helpful">👍</button><button class="fb-btn fb-down" onclick="sendFeedback(${logId}, -1, this)" title="Not helpful">👎</button><button class="tip-btn-inline" onclick="showInlineTip(${logId}, this)" title="Share a field tip">💡 Add a tip</button>`;
   // Insert after save button if present, otherwise after msg
   const saveBtn = msgDiv.nextElementSibling?.classList?.contains('save-btn') ? msgDiv.nextElementSibling : null;
   if(saveBtn) saveBtn.after(row); else msgDiv.after(row);
@@ -1057,6 +1069,52 @@ function submitCorrection(logId, btn){
   }).catch(()=>{});
   box.innerHTML = '<span class="correction-sent">✓ Correction saved — thank you!</span>';
   setTimeout(()=>{ box.style.opacity='0.5'; }, 2000);
+}
+
+function showInlineTip(logId, btn){
+  const row = btn.closest('.feedback-row');
+  const existing = row.parentElement.querySelector('.tip-box');
+  if(existing){existing.remove();return;}
+  const box = document.createElement('div');
+  box.className = 'tip-box';
+  box.innerHTML = `<select id="tipCat${logId}"><option value="">Category (optional)</option><option value="pressure">Pressure</option><option value="burner">Burner</option><option value="electrical">Electrical</option><option value="pump">Pump</option><option value="chemical">Chemical</option><option value="engine">Engine</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select><br><textarea placeholder="Share your field tip — what actually works?" id="tipText${logId}"></textarea><br><button onclick="submitTip(${logId}, this)">Submit Tip</button>`;
+  const corrBox = row.parentElement.querySelector('.correction-box');
+  if(corrBox) corrBox.after(box); else row.after(box);
+}
+
+function showTipForm(){
+  setActive('home');
+  ensureChatView();
+  const cm = document.getElementById('chatMessages');
+  cm.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:1rem 0"><h3 style="margin:0 0 0.5rem;font-family:var(--font-heading)">💡 Submit a Field Tip</h3><p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem">Share what you've learned in the field. Your tips help everyone troubleshoot faster.</p><select id="tipCatHome" style="border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.82rem;font-family:var(--font-body);width:100%;margin-bottom:0.5rem"><option value="">Select category</option><option value="pressure">Pressure Issues</option><option value="burner">Burner / Ignition</option><option value="electrical">Electrical</option><option value="pump">Pump / Valves</option><option value="chemical">Chemical / Soap</option><option value="engine">Engine</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select><textarea id="tipTextHome" placeholder="Example: When a Beckett burner won't fire, always check the CAD cell first — 9 times out of 10 it's just dirty." style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:0.6rem;font-size:0.82rem;font-family:var(--font-body);resize:vertical;outline:none;box-sizing:border-box"></textarea><button onclick="submitHomeTip()" style="margin-top:0.5rem;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0.6rem 1.2rem;font-size:0.85rem;font-family:var(--font-body);cursor:pointer;font-weight:600">Submit Tip 💡</button></div>`;
+  document.querySelector('.input-bar').classList.add('hidden');
+}
+
+function submitTip(logId, btn){
+  const box = btn.closest('.tip-box');
+  const text = document.getElementById('tipText'+logId).value.trim();
+  const cat = document.getElementById('tipCat'+logId).value;
+  if(!text || text.length < 5){alert('Please enter a tip (at least a few words).');return;}
+  fetch('/api/tips', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({tip_text: text, category: cat || null, log_id: logId})
+  }).catch(()=>{});
+  box.innerHTML = '<span class="tip-sent">✓ Tip submitted — thank you!</span>';
+  setTimeout(()=>{ box.style.opacity='0.5'; }, 2000);
+}
+
+function submitHomeTip(){
+  const text = document.getElementById('tipTextHome').value.trim();
+  const cat = document.getElementById('tipCatHome').value;
+  if(!text || text.length < 5){alert('Please enter a tip (at least a few words).');return;}
+  fetch('/api/tips', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({tip_text: text, category: cat || null})
+  }).catch(()=>{});
+  const cm = document.getElementById('chatMessages');
+  cm.innerHTML = `<div style="max-width:480px;margin:2rem auto;text-align:center"><div style="font-size:2rem;margin-bottom:0.5rem">✅</div><h3 style="margin:0 0 0.3rem;font-family:var(--font-heading)">Tip Submitted!</h3><p style="font-size:0.82rem;color:var(--text-muted)">Thanks for sharing your field knowledge. It helps everyone troubleshoot faster.</p><button onclick="showHome()" style="margin-top:1rem;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;font-family:var(--font-body);cursor:pointer">← Back to Home</button></div>`;
 }
 </script>
 
