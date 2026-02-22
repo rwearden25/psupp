@@ -2,9 +2,9 @@ node_modules/
 db/
 .archive/
 data/
-*.db
-*.db-shm
-*.db-wal
+userdata.db
+userdata.db-shm
+userdata.db-wal
 .env
 pump-agent/
 generator/

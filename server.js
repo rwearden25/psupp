@@ -7,9 +7,9 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const APP_PASSWORD = process.env.APP_PASSWORD || 'psupp2025';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'psupp-admin-2025';
-const DB_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'db');
-const DB_PATH = path.join(DB_DIR, 'knowledge.db');
-const USERDATA_PATH = path.join(DB_DIR, 'userdata.db');
+const DB_PATH = path.join(__dirname, 'knowledge.db');
+const USERDATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'db');
+const USERDATA_PATH = path.join(USERDATA_DIR, 'userdata.db');
 
 // ─── Auth Tokens ───
 const authTokens = new Map(); // token → { createdAt }
