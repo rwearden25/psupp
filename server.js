@@ -1284,16 +1284,30 @@ async function runAgent(userMessage, imageData, imageType, history) {
   let toolsUsed = [];
   let categoriesDetected = [];
   let kbGaps = [];
-  let turns = 5;
+  let turns = 8;
 
   while (turns-- > 0) {
     const resp = await callAnthropic(messages, true);  // web search always available as fallback
     if (resp.error) return { text: 'API Error: ' + (resp.error.message || JSON.stringify(resp.error)), sources: [] };
 
     const toolCalls = (resp.content || []).filter(b => b.type === 'tool_use');
+    const textParts = (resp.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+
     if (!toolCalls.length) {
       return {
-        text: (resp.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n'),
+        text: textParts,
+        sources: allSources,
+        used_web_search: usedWeb,
+        toolsUsed,
+        categoriesDetected,
+        kbGaps
+      };
+    }
+
+    // If this is the last turn, grab any text Claude included alongside tool calls
+    if (turns === 0 && textParts.trim()) {
+      return {
+        text: textParts,
         sources: allSources,
         used_web_search: usedWeb,
         toolsUsed,
@@ -1368,7 +1382,33 @@ async function runAgent(userMessage, imageData, imageType, history) {
     messages.push({ role: 'user', content: results });
   }
 
-  return { text: 'Could not compile a complete answer. Please rephrase.', sources: allSources, toolsUsed, categoriesDetected, kbGaps };
+  // If we ran out of tool turns, make one final call WITHOUT tools to force a text answer
+  console.log('  [Agent] Hit turn limit — forcing text-only response');
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 45000);
+    const finalResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 1200,
+        system: SYSTEM_PROMPT + '\n\nIMPORTANT: You have already gathered information using tools. Now provide your answer using what you have. Do NOT request any more tools.',
+        messages
+      })
+    });
+    clearTimeout(timer);
+    const finalData = await finalResp.json();
+    const finalText = (finalData.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    if (finalText.trim()) {
+      return { text: finalText, sources: allSources, used_web_search: usedWeb, toolsUsed, categoriesDetected, kbGaps };
+    }
+  } catch(e) {
+    console.error('  [Agent] Final text-only call failed:', e.message);
+  }
+
+  return { text: "I gathered some info but couldn't put together a complete answer. Could you rephrase or give me a bit more detail?", sources: allSources, toolsUsed, categoriesDetected, kbGaps };
 }
 
 // ═══════════════════════════════════════════════════════
