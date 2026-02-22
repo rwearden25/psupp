@@ -8,3 +8,5 @@ userdata.db-wal
 .env
 pump-agent/
 generator/
+knowledge.db-shm
+knowledge.db-wal
