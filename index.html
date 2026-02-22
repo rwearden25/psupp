@@ -593,6 +593,7 @@ let chatMessages=[];
 let chatHistory=[]; // plain text history sent to API for conversation context
 let chatMsgId=0;
 let inChat=false;
+let equipmentContext=null; // {type, brand, model} from intake form
 
 function ensureChatView(){
   if(!inChat){
@@ -603,8 +604,8 @@ function ensureChatView(){
   }
 }
 
-function exitChat(){inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
-function newChat(){chatMessages=[];chatHistory=[];chatMsgId=0;inChat=false;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
+function exitChat(){inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;equipmentContext=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
+function newChat(){chatMessages=[];chatHistory=[];chatMsgId=0;inChat=false;equipmentContext=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
   const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
   inChat=true;
 }
@@ -646,17 +647,20 @@ function formatAIText(raw){
 
 function showSearch(query,img){setActive('home');
   ensureChatView();
+  // Prepend equipment context to first message in conversation
+  const prefix = getEquipmentPrefix();
+  const fullQuery = (chatHistory.length === 0 && prefix) ? prefix + query : query;
   const imgHtml=img?`<img src="data:${img.mediaType};base64,${img.data}" class="img-in-chat" alt="Uploaded photo"/><br>`:'';
   addChatMsg('user', imgHtml+esc(query));
   addChatMsg('bot', `<span class="ai-loading">🔍 Searching…</span>`);
   const myId=chatMsgId;
   
   // Build request with conversation history
-  const body={message:query, history:chatHistory};
+  const body={message:fullQuery, history:chatHistory};
   if(img){body.image=img.data;body.image_type=img.mediaType;}
   
   // Track user message in history for next request
-  chatHistory.push({role:'user', content:query});
+  chatHistory.push({role:'user', content:fullQuery});
   
   authFetch('/api/chat', {
     method: 'POST',
@@ -687,12 +691,120 @@ function showSearch(query,img){setActive('home');
   });
 }
 
+/* ═══ EQUIPMENT INTAKE FORM ═══ */
+const DIAG_TOPICS = new Set(['pressure','burner','service','chemical','pilot','electrical','leak','noise','packing','overheating','rough','pulsation','maintenance','multimeter']);
+
+function showIntakeForm(topic, afterFn) {
+  ensureChatView();
+  const topicLabels={pressure:'Low Pressure',burner:'Burner Issues',service:'Service & Repair',chemical:'Chemical Issues',pilot:'Pilot Light',electrical:'Electrical',leak:'Leaks',noise:'Noise',packing:'Packing Failure',overheating:'Overheating',rough:'Rough Running',pulsation:'Pulsation',maintenance:'Maintenance',multimeter:'Multimeter Assistant'};
+  const label = topicLabels[topic] || topic;
+
+  addChatMsg('bot', `<p>Let's diagnose <strong>${esc(label)}</strong>. Quick info about the machine helps me narrow it down faster.</p>
+    <div class="intake-card">
+      <h4>🔧 Equipment Info</h4>
+      <div class="intake-row">
+        <div class="intake-field">
+          <label>Equipment Type</label>
+          <select id="intake-type">
+            <option value="">— select —</option>
+            <option value="hot-water-gas">Hot Water — Gas Engine</option>
+            <option value="hot-water-electric">Hot Water — Electric</option>
+            <option value="cold-water-gas">Cold Water — Gas Engine</option>
+            <option value="cold-water-electric">Cold Water — Electric</option>
+            <option value="steam">Steam Cleaner</option>
+            <option value="other">Other / Not Sure</option>
+          </select>
+        </div>
+        <div class="intake-field">
+          <label>Brand</label>
+          <select id="intake-brand">
+            <option value="">— select —</option>
+            <option value="Alkota">Alkota</option>
+            <option value="General Pump">General Pump</option>
+            <option value="Cat Pumps">Cat Pumps</option>
+            <option value="AR North America">AR North America</option>
+            <option value="Comet">Comet</option>
+            <option value="Honda">Honda</option>
+            <option value="Kohler">Kohler</option>
+            <option value="Briggs & Stratton">Briggs & Stratton</option>
+            <option value="Beckett">Beckett</option>
+            <option value="Hotsy">Hotsy</option>
+            <option value="Landa">Landa</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="intake-field" style="margin-bottom:0.5rem">
+        <label>Model Number <span style="font-weight:400;text-transform:none">(if known)</span></label>
+        <input type="text" id="intake-model" placeholder="e.g. TS2021, GX390, 5HG30GSC">
+      </div>
+      <div class="intake-actions">
+        <button class="intake-go" onclick="submitIntake('${topic}')">Continue →</button>
+        <button class="intake-skip" onclick="skipIntake('${topic}')">Skip</button>
+      </div>
+    </div>`);
+  scrollBottom();
+}
+
+function submitIntake(topic) {
+  const typeEl = document.getElementById('intake-type');
+  const brandEl = document.getElementById('intake-brand');
+  const modelEl = document.getElementById('intake-model');
+  const type = typeEl?.value || '';
+  const brand = brandEl?.value || '';
+  const model = modelEl?.value?.trim() || '';
+
+  if (type || brand || model) {
+    equipmentContext = { type, brand, model };
+    // Show a confirmation tag
+    const parts = [];
+    if (type && type !== 'other') parts.push(type.replace(/-/g,' '));
+    if (brand && brand !== 'other') parts.push(brand);
+    if (model) parts.push(model);
+    addChatMsg('user', `<span class="equip-tag">🔧 ${esc(parts.join(' · '))}</span>`);
+  }
+  continueToTopic(topic);
+}
+
+function skipIntake(topic) {
+  equipmentContext = null;
+  continueToTopic(topic);
+}
+
+function continueToTopic(topic) {
+  // Now show the normal topic options
+  _startTopicOptions(topic);
+}
+
+function getEquipmentPrefix() {
+  if (!equipmentContext) return '';
+  const parts = [];
+  if (equipmentContext.type) parts.push('Equipment: ' + equipmentContext.type.replace(/-/g,' '));
+  if (equipmentContext.brand && equipmentContext.brand !== 'other') parts.push('Brand: ' + equipmentContext.brand);
+  if (equipmentContext.model) parts.push('Model: ' + equipmentContext.model);
+  if (!parts.length) return '';
+  return '[' + parts.join(', ') + '] ';
+}
+
 /* ═══ CONVERSATIONAL FLOW ═══ */
 function startTopic(topic){
   const topicLabels={pressure:'Low Pressure',oil:'Oil Lookup',burner:'Burner Issues',service:'Service & Repair',chemical:'Chemical Issues',find:'Find a Pump',pilot:'Pilot Light',maintenance:'Maintenance',leak:'Leaks',noise:'Noise',packing:'Packing Failure',overheating:'Overheating',rough:'Rough Running',pulsation:'Pulsation',valves:'Valve Service',plungers:'Plunger Replacement',vpackings:'V-Packing Replacement',catalog:'Product Catalog',accessories:'Accessories',system:'System Design',warranty:'Warranty',electrical:'Electrical',coils:'Coils & Heat Exchangers',nozzles:'Spray Nozzles',unloaders:'Unloaders',checklist:'Pre-Service Checklist',installation:'Installation',startup:'Start-Up Procedure',nozzle:'Nozzle Calculator',injector:'Injector Sizing',multimeter:'Multimeter Assistant'};
-  const label=topicLabels[topic]||topic;
   setActive('home');
+
+  // Diagnostic topics → show intake form first
+  if (DIAG_TOPICS.has(topic)) {
+    showIntakeForm(topic);
+    return;
+  }
+
+  // Non-diagnostic topics → go straight to options
   ensureChatView();
+  _startTopicOptions(topic);
+}
+
+function _startTopicOptions(topic){
+  const topicLabels={pressure:'Low Pressure',oil:'Oil Lookup',burner:'Burner Issues',service:'Service & Repair',chemical:'Chemical Issues',find:'Find a Pump',pilot:'Pilot Light',maintenance:'Maintenance',leak:'Leaks',noise:'Noise',packing:'Packing Failure',overheating:'Overheating',rough:'Rough Running',pulsation:'Pulsation',valves:'Valve Service',plungers:'Plunger Replacement',vpackings:'V-Packing Replacement',catalog:'Product Catalog',accessories:'Accessories',system:'System Design',warranty:'Warranty',electrical:'Electrical',coils:'Coils & Heat Exchangers',nozzles:'Spray Nozzles',unloaders:'Unloaders',checklist:'Pre-Service Checklist',installation:'Installation',startup:'Start-Up Procedure',nozzle:'Nozzle Calculator',injector:'Injector Sizing',multimeter:'Multimeter Assistant'};
+  const label=topicLabels[topic]||topic;
 
   const topicOptions={
     pressure:[
@@ -1319,6 +1431,22 @@ function submitHomeTip(){
 </div><!-- end appContent -->
 <style>
 .pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;z-index:200;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
+
+/* ═══ EQUIPMENT INTAKE FORM ═══ */
+.intake-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-top:0.75rem}
+.intake-card h4{font-size:0.85rem;font-weight:600;color:var(--accent);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem}
+.intake-row{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.6rem}
+@media(max-width:500px){.intake-row{grid-template-columns:1fr}}
+.intake-field label{display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:0.2rem}
+.intake-field select,.intake-field input{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.65rem;color:var(--text);font-family:var(--font-body);font-size:0.82rem;outline:none}
+.intake-field select:focus,.intake-field input:focus{border-color:var(--accent)}
+.intake-actions{display:flex;gap:0.5rem;margin-top:0.75rem}
+.intake-actions button{padding:0.5rem 1rem;border-radius:8px;border:1px solid var(--border);font-size:0.82rem;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
+.intake-actions .intake-go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;flex:1}
+.intake-actions .intake-go:hover{background:#1d4ed8}
+.intake-actions .intake-skip{background:transparent;color:var(--text-muted)}
+.intake-actions .intake-skip:hover{border-color:var(--accent);color:var(--accent)}
+.equip-tag{display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent-dim);color:var(--accent);font-size:0.7rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:6px;font-family:var(--font-body)}
 .pwa-install-bar.show{transform:translateY(0)}
 .pwa-install-bar .install-text{font-size:0.85rem;color:var(--text)}
 .pwa-install-bar .install-text small{color:var(--text-muted);display:block;font-size:0.72rem}
