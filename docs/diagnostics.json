@@ -1,0 +1,800 @@
+{
+  "_version": "2.0",
+  "_description": "Layer 1 Diagnostic Logic — P-Supp Equipment Support AI",
+  "_usage": "AI maps user symptoms to categories, then walks the matching tree(s) to provide structured diagnosis",
+
+  "simple_rules": {
+    "_description": "Quick triage: ask this FIRST before going deeper. Based on Rockhold Ranch training methodology.",
+    "questions": [
+      {"condition": "No water moving at all?", "go_to": "flow", "level": 2, "label": "Flow Level"},
+      {"condition": "Water moves but pressure is weak?", "go_to": "flow", "level": 1, "label": "Pressure Level"},
+      {"condition": "Water not heating / no hot water?", "go_to": "heat", "level": 3, "label": "Heat Level"},
+      {"condition": "Machine completely dead / won't run?", "go_to": "electrical", "level": 4, "label": "Electrical Level"},
+      {"condition": "Machine surging or pulsating?", "go_to": "flow", "level": "1-2", "label": "Flow/Supply Level"},
+      {"condition": "Burner clicks but no fire?", "go_to": "heat", "level": 3, "label": "Burner Level"},
+      {"condition": "Trips breaker when started?", "go_to": "electrical", "level": 4, "label": "Electrical Level"},
+      {"condition": "Soap / chemical not pulling?", "go_to": "chemical", "level": 2, "label": "Chemical Level"},
+      {"condition": "Vibration in hose?", "go_to": "noise", "level": "1-2", "label": "Pump/Supply Level"}
+    ],
+    "levels": {
+      "1": {"name": "Pressure Level", "description": "Pump, unloader, valves, seals — mechanical components", "difficulty": "Basic"},
+      "2": {"name": "Flow/Supply Level", "description": "Water supply, inlet filter, air leaks, hose restrictions", "difficulty": "Basic"},
+      "3": {"name": "Burner/Heat Level", "description": "Ignition, fuel delivery, combustion, CAD cell, electrodes", "difficulty": "Intermediate"},
+      "4": {"name": "Electrical Level", "description": "Power, contactors, safety chain, motor, wiring", "difficulty": "Advanced — multimeter required"}
+    }
+  },
+
+  "intent_map": {
+    "flow": {
+      "keywords": ["surge", "surging", "pulsation", "pulsating", "pulse", "low pressure", "no pressure", "lost pressure", "losing pressure", "intermittent pressure", "fluctuating", "drops out", "cuts out", "low flow", "no flow", "weak stream", "won't build pressure", "pressure drop", "water hammer"],
+      "label": "Flow / Pressure Issue",
+      "difficulty_level": 1,
+      "difficulty_label": "Level 1 — Pressure"
+    },
+    "heat": {
+      "keywords": ["no heat", "won't heat", "not hot", "cold water", "lukewarm", "won't stay hot", "overheating", "too hot", "steam", "dry steam", "slow to heat", "temperature", "temp control", "thermostat"],
+      "label": "Heat / Temperature Issue",
+      "difficulty_level": 3,
+      "difficulty_label": "Level 3 — Burner/Heat"
+    },
+    "burner": {
+      "keywords": ["won't fire", "no fire", "no flame", "flame out", "flame failure", "burner", "ignition", "won't ignite", "delayed ignition", "smoke", "black smoke", "white smoke", "soot", "fumes", "exhaust", "fuel", "nozzle gauge", "electrode", "transformer", "cad cell", "combustion", "clicks but no fire", "clicks no fire"],
+      "label": "Burner / Combustion Issue",
+      "difficulty_level": 3,
+      "difficulty_label": "Level 3 — Burner"
+    },
+    "electrical": {
+      "keywords": ["won't start", "wont start", "no power", "trips breaker", "trips the breaker", "breaker trips", "gfi", "gfci", "tripping", "fuse", "blown fuse", "no voltage", "dead", "contactor", "relay", "switch", "pressure switch", "vacuum switch", "cam switch", "wiring", "electrical", "motor won't run", "motor wont run", "motor hums", "breaker", "machine dead", "completely dead", "nothing works"],
+      "label": "Electrical Issue",
+      "difficulty_level": 4,
+      "difficulty_label": "Level 4 — Electrical"
+    },
+    "chemical": {
+      "keywords": ["soap", "chemical", "detergent", "injector", "not pulling", "won't pull", "wont pull", "not drawing", "won't draw", "wont draw", "no soap", "no chemical", "dilution", "too weak", "weak chemical", "soap not pulling", "chemical injector", "downstream injector"],
+      "label": "Chemical / Soap Issue",
+      "difficulty_level": 2,
+      "difficulty_label": "Level 2 — Flow/Supply"
+    },
+    "leak": {
+      "keywords": ["leak", "leaking", "drip", "dripping", "water leak", "oil leak", "fuel leak", "seeping", "weeping", "water under", "oil under", "puddle", "spray from", "mist from"],
+      "label": "Leak Issue",
+      "difficulty_level": 1,
+      "difficulty_label": "Level 1 — Mechanical"
+    },
+    "noise": {
+      "keywords": ["knocking", "knock", "chattering", "chatter", "squealing", "squeal", "grinding", "vibration", "vibrating", "rattling", "rattle", "banging", "loud", "noisy", "humming", "whining", "vibration in hose"],
+      "label": "Noise / Vibration Issue",
+      "difficulty_level": "1-2",
+      "difficulty_label": "Level 1-2 — Pump/Supply"
+    },
+    "engine": {
+      "keywords": ["engine won't start", "engine wont start", "engine stalls", "engine surges", "engine dies", "low rpm", "high rpm", "smoking", "backfire", "hard start", "cranks but won't start", "cranks but wont start", "pull cord", "electric start", "choke", "carburetor", "governor", "throttle", "wont start", "won't start"],
+      "label": "Engine Issue",
+      "difficulty_level": 2,
+      "difficulty_label": "Level 2 — Engine"
+    },
+    "maintenance": {
+      "keywords": ["oil change", "oil type", "what oil", "which oil", "pump oil", "how often", "maintenance", "winterize", "winterizing", "storage", "break in", "service interval", "filter change", "when to replace", "maintenance schedule", "service schedule", "grease", "lubrication"],
+      "label": "Maintenance / Service",
+      "difficulty_level": 1,
+      "difficulty_label": "Level 1 — Routine"
+    }
+  },
+
+  "trees": {
+
+    "flow": {
+      "name": "Flow & Pressure Diagnostic",
+      "level": "L1",
+      "entry": "no_or_low_pressure",
+      "nodes": {
+        "no_or_low_pressure": {
+          "question": "Is the pump producing ANY pressure?",
+          "yes": "low_pressure_root",
+          "no": "no_pressure_root"
+        },
+        "no_pressure_root": {
+          "question": "Is the pump turning / engine running?",
+          "yes": "pump_turning_no_pressure",
+          "no": "not_running",
+          "diagnosis_if_no": "The pump isn't running. Check engine/motor first — see Engine diagnostic tree."
+        },
+        "not_running": {
+          "diagnosis": "Pump is not turning. Start with the Engine or Electrical diagnostic tree to get the unit running first.",
+          "cross_ref": ["engine", "electrical"]
+        },
+        "pump_turning_no_pressure": {
+          "question": "Is water flowing through the pump (coming out the nozzle at all)?",
+          "yes": "flow_but_no_pressure",
+          "no": "no_flow_at_all"
+        },
+        "no_flow_at_all": {
+          "diagnosis": "No water flow at all. Check in this order:",
+          "checks": [
+            {"step": 1, "action": "Verify water supply is on and connected", "detail": "Garden hose connected, faucet open, adequate supply (check GPM rating)"},
+            {"step": 2, "action": "Check inlet filter/strainer", "detail": "Remove and clean. Clogged strainer is the #1 cause of no-flow."},
+            {"step": 3, "action": "Check for kinked or collapsed suction hose", "detail": "Replace if soft/collapsing under vacuum. Use wire-reinforced hose."},
+            {"step": 4, "action": "Bleed air from the pump", "detail": "Disconnect high-pressure hose from gun, turn on water, squeeze trigger to purge air for 30 seconds."},
+            {"step": 5, "action": "Check inlet/discharge valves", "detail": "Stuck valves prevent flow. Remove, clean, inspect springs and seats. Replace if worn."},
+            {"step": 6, "action": "Check unloader valve", "detail": "Stuck unloader can prevent flow. See unloader diagnostic procedures."}
+          ]
+        },
+        "flow_but_no_pressure": {
+          "question": "Did the pressure drop suddenly or gradually over time?",
+          "sudden": "sudden_pressure_loss",
+          "gradual": "gradual_pressure_loss"
+        },
+        "sudden_pressure_loss": {
+          "diagnosis": "Sudden pressure loss — something broke or failed:",
+          "checks": [
+            {"step": 1, "action": "Check the nozzle", "detail": "A blown-out or missing nozzle gives zero pressure. Replace with correct size."},
+            {"step": 2, "action": "Check the unloader valve", "detail": "If stuck in bypass, all water recirculates. Adjust or rebuild unloader."},
+            {"step": 3, "action": "Check high-pressure hose and fittings", "detail": "A blown hose or loose fitting bleeds all pressure."},
+            {"step": 4, "action": "Check the gun/wand assembly", "detail": "Worn gun valve won't hold pressure."},
+            {"step": 5, "action": "Check for broken belt or coupler", "detail": "If drive belt broke, pump turns but has no load. Inspect belt tension and condition."}
+          ]
+        },
+        "gradual_pressure_loss": {
+          "diagnosis": "Gradual pressure loss — wear or buildup:",
+          "checks": [
+            {"step": 1, "action": "Check nozzle for wear", "detail": "Worn nozzle orifice enlarges over time → pressure drops. Replace nozzle."},
+            {"step": 2, "action": "Check inlet/discharge valves", "detail": "Worn valve seats and springs cause progressive pressure loss. Rebuild valve assemblies."},
+            {"step": 3, "action": "Check pump packings", "detail": "Worn packings leak water past plungers. Look for water dripping under the manifold. Replace packing kit."},
+            {"step": 4, "action": "Check RPM", "detail": "Engine/motor RPM may have dropped. Verify with tachometer against pump spec plate."},
+            {"step": 5, "action": "Check belt condition", "detail": "Worn or glazed belt slips → reduced RPM at pump. Tighten or replace."}
+          ]
+        },
+        "low_pressure_root": {
+          "question": "Is the pressure pulsating/surging, or just low and steady?",
+          "pulsating": "pulsation_root",
+          "low_steady": "low_steady_pressure"
+        },
+        "pulsation_root": {
+          "diagnosis": "Pulsation / surging — the pump is losing prime intermittently:",
+          "checks": [
+            {"step": 1, "action": "Check for air leaks on the suction side", "detail": "Any loose fitting, cracked hose, or bad o-ring on the inlet side pulls air. Tighten all connections, replace worn o-rings."},
+            {"step": 2, "action": "Check inlet filter/strainer", "detail": "Partially clogged strainer restricts flow → pump starves → pulsates."},
+            {"step": 3, "action": "Check water supply volume", "detail": "If supply GPM < pump GPM, the pump cavitates and surges. Need adequate supply."},
+            {"step": 4, "action": "Check inlet/discharge valves", "detail": "A sticking valve causes uneven flow. Remove, clean, check for foreign material. Replace if seats are worn."},
+            {"step": 5, "action": "Check pulsation dampener", "detail": "If equipped, check precharge (typically 60-80% of working pressure). Recharge or replace if bladder is ruptured."},
+            {"step": 6, "action": "Check suction hose size and length", "detail": "Suction hose must be at least as large as pump inlet port. Max 20ft suction lift. Avoid 90° elbows, restrictions."}
+          ],
+          "oem_note": "Per General Pump specs: suction at inlet manifold must be limited to lifting less than 20 feet of water or -8.5 PSI vacuum."
+        },
+        "low_steady_pressure": {
+          "diagnosis": "Low but steady pressure:",
+          "checks": [
+            {"step": 1, "action": "Check nozzle size", "detail": "Oversized nozzle = low pressure. Use nozzle chart to match GPM/PSI rating."},
+            {"step": 2, "action": "Check RPM", "detail": "Low RPM = low pressure. Verify engine/motor speed against pump spec plate."},
+            {"step": 3, "action": "Verify unloader is adjusted correctly", "detail": "Unloader set too low limits max pressure. Adjust per manufacturer specs."},
+            {"step": 4, "action": "Check for internal bypass", "detail": "Worn packings, leaking valves, or worn plungers allow internal leak-by."},
+            {"step": 5, "action": "Check relief valve", "detail": "Stuck or improperly adjusted relief valve bleeds off pressure. Clean and adjust; check for worn seat. Kit available."},
+            {"step": 6, "action": "Check belt slippage", "detail": "Belt slipping under load = RPM drops only when trigger pulled. Tighten or replace belt."}
+          ]
+        }
+      }
+    },
+
+    "heat": {
+      "name": "Heat & Temperature Diagnostic",
+      "level": "L1",
+      "entry": "heat_problem_type",
+      "nodes": {
+        "heat_problem_type": {
+          "question": "What is the heat symptom?",
+          "options": {
+            "no_heat": "no_heat_root",
+            "not_hot_enough": "low_heat",
+            "overheating": "overheating_root",
+            "intermittent_heat": "intermittent_heat"
+          }
+        },
+        "no_heat_root": {
+          "question": "Is the burner firing at all?",
+          "yes": "firing_but_no_heat",
+          "no": "burner_not_firing",
+          "cross_ref_no": "See Burner diagnostic tree"
+        },
+        "burner_not_firing": {
+          "diagnosis": "Burner not firing → Use the Burner diagnostic tree for ignition troubleshooting.",
+          "cross_ref": ["burner"]
+        },
+        "firing_but_no_heat": {
+          "diagnosis": "Burner fires but water isn't getting hot:",
+          "checks": [
+            {"step": 1, "action": "Check water flow rate", "detail": "Flow too high for burner BTU rating → water can't heat fast enough. Reduce flow or verify GPM matches unit specs."},
+            {"step": 2, "action": "Check coil condition", "detail": "Scale buildup inside coil reduces heat transfer. Descale coil with approved descaler."},
+            {"step": 3, "action": "Check for coil bypass", "detail": "If coil has a leak (pinhole), water bypasses the heating path. Smoke test the coil."},
+            {"step": 4, "action": "Check incoming water temperature", "detail": "Very cold incoming water (winter) may exceed burner capacity. Temperature rise is fixed by BTU output."},
+            {"step": 5, "action": "Check burner flame quality", "detail": "Weak flame = low fuel pressure or wrong nozzle size. Check fuel pressure (oil burner: ~125 PSI)."}
+          ]
+        },
+        "low_heat": {
+          "diagnosis": "Water is warm but not hot enough:",
+          "checks": [
+            {"step": 1, "action": "Check temperature control setting", "detail": "Verify thermostat/temp control is set to desired temperature."},
+            {"step": 2, "action": "Check fuel pressure", "detail": "Low fuel pressure = reduced BTU output. Oil burner should be ~125 PSI."},
+            {"step": 3, "action": "Check for scale in coil", "detail": "Scale acts as insulation, reducing heat transfer. Descale if needed."},
+            {"step": 4, "action": "Check fuel type", "detail": "Wrong fuel type affects BTU output. Use manufacturer-specified fuel only."},
+            {"step": 5, "action": "Check exhaust/venting", "detail": "Restricted exhaust reduces combustion efficiency. Inspect exhaust stack and flue."}
+          ]
+        },
+        "overheating_root": {
+          "diagnosis": "Overheating / dry steam — SAFETY: Overheating can damage the coil and is a safety hazard.",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check water flow immediately", "detail": "Insufficient water flow is the #1 cause of overheating. Verify supply GPM matches pump GPM."},
+            {"step": 2, "action": "Check temperature control", "detail": "Failed thermostat won't shut off the burner. Test temp control; replace if inoperative."},
+            {"step": 3, "action": "Check high-limit safety switch", "detail": "The high-limit switch should kill the burner if temp exceeds safe range. If it's not tripping, it may be bypassed or failed."},
+            {"step": 4, "action": "Check for coil restriction", "detail": "Scale or debris restricting flow through the coil causes localized overheating."},
+            {"step": 5, "action": "Check incoming water temp", "detail": "Hot incoming water + burner = overshoot. Reduce incoming water temp if possible."}
+          ]
+        },
+        "intermittent_heat": {
+          "diagnosis": "Heat comes and goes:",
+          "checks": [
+            {"step": 1, "action": "Check thermostat operation", "detail": "Cycling thermostat with too narrow a band causes on/off heating. Check differential setting."},
+            {"step": 2, "action": "Check burner for flame dropout", "detail": "If burner flame drops out and re-ignites, see Burner diagnostic tree for flame retention."},
+            {"step": 3, "action": "Check cad cell (oil burner)", "detail": "Dirty or failing cad cell causes nuisance lockouts. Clean lens with soft cloth; replace if resistance is wrong."},
+            {"step": 4, "action": "Check fuel supply consistency", "detail": "Air in fuel line, low fuel tank, or clogged fuel filter causes intermittent firing."},
+            {"step": 5, "action": "Check electrical connections", "detail": "Loose wires at contactor, thermostat, or burner cause intermittent operation."}
+          ]
+        }
+      }
+    },
+
+    "burner": {
+      "name": "Burner / Combustion Diagnostic",
+      "level": "L1",
+      "safety_warning": "⚠️ Burner diagnostics involve fuel, ignition, and combustion. Ensure adequate ventilation. Keep fire extinguisher accessible. If you smell fuel but see no flame, STOP and ventilate the area before proceeding.",
+      "entry": "burner_type",
+      "nodes": {
+        "burner_type": {
+          "question": "What type of burner?",
+          "options": {
+            "oil_burner": "oil_burner_root",
+            "gas_burner": "gas_burner_root",
+            "not_sure": "identify_burner"
+          }
+        },
+        "identify_burner": {
+          "diagnosis": "Identify burner type: Oil burners have a fuel pump, fuel nozzle, and transformer. Gas burners have a gas valve, burner jets, and a pilot or electronic ignition. Check for a fuel tank (oil) or gas line connection (gas)."
+        },
+        "oil_burner_root": {
+          "question": "What is the oil burner doing?",
+          "options": {
+            "no_fire": "oil_no_fire",
+            "fires_then_dies": "oil_flame_dropout",
+            "smoke": "oil_smoke",
+            "motor_wont_run": "oil_motor_fail",
+            "delayed_ignition": "oil_delayed_ignition",
+            "low_fuel_pressure": "oil_low_fuel_pressure"
+          }
+        },
+        "oil_no_fire": {
+          "diagnosis": "Oil burner running but no fire:",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check fuel supply", "detail": "Is the fuel tank full? Is the fuel valve open? Is the fuel filter clean?"},
+            {"step": 2, "action": "Check fuel pump operation", "detail": "Fuel pump should produce ~125 PSI. Test with fuel pressure gauge."},
+            {"step": 3, "action": "Check fuel nozzle", "detail": "Clogged nozzle = no atomization = no fire. Replace fuel nozzle."},
+            {"step": 4, "action": "Check ignition transformer", "detail": "Should produce strong spark across electrodes. Test transformer output. Replace if weak/dead."},
+            {"step": 5, "action": "Check electrode alignment", "detail": "Electrodes must be properly gapped and positioned. Use nozzle gauge for positioning."},
+            {"step": 6, "action": "Check vacuum switch", "detail": "Vacuum switch must engage for fuel to flow. Verify switch is closing."},
+            {"step": 7, "action": "Check air supply", "detail": "Blocked air intake or locked blower prevents combustion air. Inspect air bands and blower wheel."}
+          ]
+        },
+        "oil_flame_dropout": {
+          "diagnosis": "Oil burner fires then loses flame (lockout):",
+          "checks": [
+            {"step": 1, "action": "Check cad cell", "detail": "Dirty or failing cad cell doesn't sense flame → primary control locks out. Clean lens, check resistance (light: <1600Ω, dark: >50kΩ)."},
+            {"step": 2, "action": "Check drawer assembly position", "detail": "Incorrect drawer position affects flame retention. Set using nozzle gauge."},
+            {"step": 3, "action": "Check fuel nozzle", "detail": "Partially clogged nozzle gives weak flame that can't sustain. Replace."},
+            {"step": 4, "action": "Check fuel pressure", "detail": "Low fuel pressure = weak flame. Should be ~125 PSI. Check fuel filter, pump, lines."},
+            {"step": 5, "action": "Check air adjustment", "detail": "Too much air blows flame out. Gradually close air bands until flame stabilizes."},
+            {"step": 6, "action": "Check for draft/wind", "detail": "External wind can blow out flame. Check for wind shields and exhaust cap."}
+          ]
+        },
+        "oil_smoke": {
+          "question": "What color is the smoke?",
+          "options": {
+            "black_smoke": "oil_black_smoke",
+            "white_smoke": "oil_white_smoke"
+          }
+        },
+        "oil_black_smoke": {
+          "diagnosis": "Black smoke = incomplete combustion (not enough air or too much fuel):",
+          "checks": [
+            {"step": 1, "action": "Open air bands gradually", "detail": "Black smoke means fuel-rich. Increase air until smoke clears. Smoke test should read 1-2."},
+            {"step": 2, "action": "Check fuel nozzle size", "detail": "Oversized nozzle delivers too much fuel. Verify correct nozzle size for unit."},
+            {"step": 3, "action": "Check for blocked air intake", "detail": "Dirty blower wheel, blocked air inlet, or restricted air cone limits combustion air."},
+            {"step": 4, "action": "Check fuel type", "detail": "Do NOT use low-sulfur premium diesel — additives won't burn properly, causing smoke/soot. Use #2 diesel (or 60/40 #2/#1 blend in cold weather)."},
+            {"step": 5, "action": "Check coil for soot buildup", "detail": "Heavy soot restricts airflow through coil. Descale and clean coil."}
+          ]
+        },
+        "oil_white_smoke": {
+          "diagnosis": "White smoke = too much air:",
+          "checks": [
+            {"step": 1, "action": "Close air bands gradually", "detail": "White smoke means air-rich. Reduce air until smoke clears."},
+            {"step": 2, "action": "Check fuel nozzle", "detail": "Undersized nozzle with too much air gives white smoke. Verify correct nozzle size."},
+            {"step": 3, "action": "Perform smoke test", "detail": "Target smoke reading of 1-2 on the Bacharach scale."}
+          ]
+        },
+        "oil_motor_fail": {
+          "diagnosis": "Burner motor won't run:",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check voltage to motor", "detail": "Use multimeter to verify voltage at motor terminals. Should match motor nameplate."},
+            {"step": 2, "action": "Check thermal overload", "detail": "Motor thermal overload may have tripped. Reset and test."},
+            {"step": 3, "action": "Check cam switch", "detail": "Cam switch controls burner motor circuit. Test continuity; replace if failed."},
+            {"step": 4, "action": "Check contactor", "detail": "Main contactor may not be pulling in. Check coil voltage and contact condition."},
+            {"step": 5, "action": "Check wiring connections", "detail": "Loose or corroded connections prevent power to motor. Inspect all terminals."}
+          ]
+        },
+        "oil_delayed_ignition": {
+          "diagnosis": "⚠️ DANGER: Delayed ignition means fuel accumulates before igniting — this causes a dangerous explosion-like fireball. Fix immediately.",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check drawer assembly position", "detail": "Most common cause. Set proper position using nozzle gauge."},
+            {"step": 2, "action": "Check electrode alignment", "detail": "Misaligned electrodes delay spark ignition of fuel spray. Realign per specs."},
+            {"step": 3, "action": "Check ignition transformer", "detail": "Weak transformer gives inconsistent spark. Test output; replace if needed."},
+            {"step": 4, "action": "Check fuel nozzle spray pattern", "detail": "Bad spray pattern from worn nozzle. Replace."}
+          ]
+        },
+        "oil_low_fuel_pressure": {
+          "diagnosis": "Low fuel pressure (should be ~125 PSI for most oil burners):",
+          "checks": [
+            {"step": 1, "action": "Replace fuel filter", "detail": "Clogged fuel filter is the most common cause of low pressure."},
+            {"step": 2, "action": "Check for fuel line leaks", "detail": "Air leak on suction side of fuel pump drops pressure. Check all connections."},
+            {"step": 3, "action": "Check fuel line condition", "detail": "Damaged, kinked, or deteriorated fuel line restricts flow."},
+            {"step": 4, "action": "Check fuel nozzle", "detail": "Partially clogged nozzle restricts flow. Replace."},
+            {"step": 5, "action": "Check fuel viscosity", "detail": "In cold weather, use 60% #2 diesel / 40% #1 diesel blend to prevent gelling."},
+            {"step": 6, "action": "Check shaft coupler", "detail": "Slipping coupler between motor and fuel pump reduces pump output. Tighten or replace."}
+          ]
+        },
+        "gas_burner_root": {
+          "question": "What is the gas burner doing?",
+          "options": {
+            "wont_reach_temp": "gas_low_temp",
+            "overheating": "gas_overheating",
+            "smoking": "gas_smoking",
+            "fumes": "gas_fumes",
+            "poor_combustion": "gas_poor_combustion"
+          }
+        },
+        "gas_low_temp": {
+          "diagnosis": "Gas heater won't reach operating temperature:",
+          "checks": [
+            {"step": 1, "action": "Check fuel pressure", "detail": "Verify gas pressure matches MODEL SPECIFICATIONS."},
+            {"step": 2, "action": "Check combustion quality", "detail": "Poor combustion reduces BTU output. See Poor Combustion checks."},
+            {"step": 3, "action": "Check fuel type", "detail": "Verify correct fuel type per MODEL SPECIFICATIONS."},
+            {"step": 4, "action": "Check temperature control", "detail": "Test thermostat/temp control operation. Replace if inoperative."},
+            {"step": 5, "action": "Check incoming water temperature", "detail": "Very cold incoming water may exceed heater capacity."}
+          ]
+        },
+        "gas_overheating": {
+          "diagnosis": "Gas heater overheating / dry steam:",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check water flow", "detail": "Insufficient flow is the primary cause. Increase flow and pressure. Check coil back pressure."},
+            {"step": 2, "action": "Check temperature control", "detail": "Failed thermostat won't shut off gas. Test and replace."},
+            {"step": 3, "action": "Check fuel pressure", "detail": "Excessive fuel pressure = too much heat. Verify per MODEL SPECIFICATIONS."},
+            {"step": 4, "action": "Check incoming water temp", "detail": "Hot incoming water + full burner = overshoot."}
+          ]
+        },
+        "gas_smoking": {
+          "diagnosis": "Gas heater smoking:",
+          "checks": [
+            {"step": 1, "action": "Check fuel type", "detail": "Use fuel specified in MODEL SPECIFICATIONS only."},
+            {"step": 2, "action": "Check burner jets", "detail": "Improper, loose, or missing jets cause poor combustion. Remove and replace per BURNER ASSEMBLY."},
+            {"step": 3, "action": "Check gas pressure", "detail": "Too much gas pressure overfires the burner. Verify correct pressure."}
+          ]
+        },
+        "gas_fumes": {
+          "diagnosis": "Gas heater fumes (exhaust burns eyes):",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check fuel pressure", "detail": "Improper fuel pressure causes incomplete combustion producing CO and irritant fumes."},
+            {"step": 2, "action": "Check venting/exhaust", "detail": "Improper venting per ANSI Z223.1 / NFPA codes. Inspect exhaust stack, ensure proper draft."},
+            {"step": 3, "action": "Check combustion air supply", "detail": "Inadequate fresh air to burner causes incomplete combustion. Ensure adequate ventilation."}
+          ]
+        },
+        "gas_poor_combustion": {
+          "diagnosis": "Gas heater poor combustion:",
+          "checks": [
+            {"step": 1, "action": "Check fuel pressure", "detail": "Low gas pressure = weak flame. Verify per MODEL SPECIFICATIONS."},
+            {"step": 2, "action": "Check fuel supply", "detail": "Incorrect fuel type or inadequate supply. Verify."},
+            {"step": 3, "action": "Check venting", "detail": "Per National Fuel Gas Code (ANSI Z223.1 / NFPA 54). Improper venting restricts combustion."},
+            {"step": 4, "action": "Check burner jets", "detail": "Wrong size, loose, or damaged jets. Replace per BURNER ASSEMBLY specs."}
+          ]
+        }
+      }
+    },
+
+    "electrical": {
+      "name": "Electrical Diagnostic",
+      "level": "L1",
+      "safety_warning": "⚠️ This involves live voltage. Continue only if qualified. Disconnect power before working on wiring. Use proper lockout/tagout procedures.",
+      "entry": "electrical_symptom",
+      "nodes": {
+        "electrical_symptom": {
+          "question": "What is the electrical symptom?",
+          "options": {
+            "wont_start": "elec_wont_start",
+            "trips_breaker": "elec_trips_breaker",
+            "intermittent": "elec_intermittent",
+            "motor_hums": "elec_motor_hums"
+          }
+        },
+        "elec_wont_start": {
+          "diagnosis": "Unit won't start — electrical chain check:",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check power source", "detail": "Verify voltage at outlet/disconnect with multimeter. Confirm correct voltage (120V or 240V per unit specs)."},
+            {"step": 2, "action": "Check GFCI/breaker", "detail": "GFCI may have tripped. Reset GFCI. Check breaker at panel."},
+            {"step": 3, "action": "Check main switch/key switch", "detail": "Verify switch is ON and functional. Test continuity across switch terminals."},
+            {"step": 4, "action": "Check cam switch / controls", "detail": "Cam switch selects operating mode. Test continuity in each position. Corroded or failed cam switch is a common cause on older units."},
+            {"step": 5, "action": "Check pressure switch / flow switch", "detail": "These interlock switches prevent startup if no flow/pressure. Test continuity when actuated."},
+            {"step": 6, "action": "Check contactor/relay", "detail": "Contactor should pull in when start conditions are met. Check coil voltage and contacts."},
+            {"step": 7, "action": "Check safety switches", "detail": "High-limit, thermostat, and other safety interlocks must all be closed for the circuit to complete."},
+            {"step": 8, "action": "Check motor connections", "detail": "Verify all wiring connections are tight. Check for burnt or corroded terminals."},
+            {"step": 9, "action": "Check relays and wiring", "detail": "Inspect all relays for proper operation. Check wiring for damage, corrosion, or loose connections."},
+            {"step": 10, "action": "Check thermal overload", "detail": "Motor overload may have tripped. Reset and test. If trips again, motor may be failing."}
+          ],
+          "technician_rules": [
+            "Follow power from TOP to BOTTOM — start at the source and work downstream",
+            "If voltage disappears at a point, the problem is ABOVE that point",
+            "Voltage shows WHERE power stops. Continuity shows WHICH switch failed.",
+            "Always test upstream first — never replace an igniter or solenoid until the safety chain is verified"
+          ]
+        },
+        "elec_trips_breaker": {
+          "diagnosis": "Trips breaker or GFCI — indicates overcurrent or ground fault:",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check for water in electrical components", "detail": "Moisture in junction boxes, switches, or motor causes ground faults. Dry out and seal."},
+            {"step": 2, "action": "Check wire insulation", "detail": "Damaged insulation causes shorts. Inspect all wiring for cuts, abrasion, heat damage."},
+            {"step": 3, "action": "Check motor windings", "detail": "Shorted motor windings draw excessive current. Megger test motor insulation."},
+            {"step": 4, "action": "Check circuit capacity", "detail": "Unit may be on an undersized circuit. Verify breaker amp rating matches motor FLA."},
+            {"step": 5, "action": "Check for locked rotor", "detail": "Seized pump or motor bearing draws locked rotor amps → trips breaker. Rotate shaft by hand to check."},
+            {"step": 6, "action": "Isolate the fault", "detail": "Disconnect loads one at a time (pump motor, burner motor, controls) to identify which circuit is faulting."}
+          ]
+        },
+        "elec_intermittent": {
+          "diagnosis": "Intermittent electrical operation — starts then stops, or works sometimes:",
+          "checks": [
+            {"step": 1, "action": "Check all wire connections", "detail": "Vibration loosens connections over time. Tighten all terminal screws and lugs."},
+            {"step": 2, "action": "Check pressure/vacuum switches", "detail": "Marginal switches chatter on/off. Test with multimeter while operating. Replace if intermittent."},
+            {"step": 3, "action": "Check contactor contacts", "detail": "Pitted or burnt contacts cause intermittent power delivery. Replace contactor if contacts are damaged."},
+            {"step": 4, "action": "Check thermal overload", "detail": "If motor is overheating, thermal overload cycles on/off. Investigate root cause of overheating."},
+            {"step": 5, "action": "Check power supply", "detail": "Low or fluctuating supply voltage causes intermittent operation. Test voltage under load."}
+          ]
+        },
+        "elec_motor_hums": {
+          "diagnosis": "Motor hums but won't turn:",
+          "checks": [
+            {"step": 1, "action": "Check for mechanical binding", "detail": "Rotate shaft by hand. If it won't turn, pump or motor bearing is seized."},
+            {"step": 2, "action": "Check start capacitor (single-phase motors)", "detail": "Failed start capacitor prevents motor from spinning up. Check for bulging or leaking capacitor. Replace."},
+            {"step": 3, "action": "Check voltage", "detail": "Low voltage can prevent starting. Check voltage at motor terminals under load."},
+            {"step": 4, "action": "Check centrifugal switch (single-phase)", "detail": "Stuck centrifugal switch prevents start winding from engaging. Inspect and clean or replace."}
+          ]
+        }
+      }
+    },
+
+    "leak": {
+      "name": "Leak Diagnostic",
+      "level": "L1",
+      "entry": "leak_type",
+      "nodes": {
+        "leak_type": {
+          "question": "What type of fluid is leaking?",
+          "options": {
+            "water": "water_leak_root",
+            "oil": "oil_leak_root",
+            "fuel": "fuel_leak_root"
+          }
+        },
+        "water_leak_root": {
+          "question": "Where is the water leaking from?",
+          "options": {
+            "under_manifold": "water_under_manifold",
+            "from_pump_body": "water_pump_body",
+            "high_pressure_side": "water_hp_leak",
+            "from_unloader": "water_unloader_leak"
+          }
+        },
+        "water_under_manifold": {
+          "diagnosis": "Water leaking from under the pump manifold:",
+          "checks": [
+            {"step": 1, "action": "Check pump packings", "detail": "Worn packings are the most common cause. Water drips from weep holes under manifold. Replace packing kit."},
+            {"step": 2, "action": "Check plungers", "detail": "Cracked or scored plungers damage packings rapidly. Inspect plungers when replacing packings; replace if scored."},
+            {"step": 3, "action": "Check o-rings on plunger retainer", "detail": "Worn o-rings allow water past the retainer. Replace as part of packing service."}
+          ]
+        },
+        "water_pump_body": {
+          "diagnosis": "Water leaking from pump body/crankcase area:",
+          "checks": [
+            {"step": 1, "action": "Check crankcase piston rod seals", "detail": "Worn rod seals let water enter crankcase. Replace seals. Note: milky oil = water in crankcase."},
+            {"step": 2, "action": "Check manifold o-rings", "detail": "O-rings between manifold and crankcase may be worn. Replace when disassembling."},
+            {"step": 3, "action": "Check for cracked manifold", "detail": "Freeze damage can crack manifold. Inspect carefully. Replace if cracked."}
+          ]
+        },
+        "water_hp_leak": {
+          "diagnosis": "Water leaking from high-pressure side:",
+          "checks": [
+            {"step": 1, "action": "Check hose connections", "detail": "Loose fittings or worn o-rings at hose connections. Tighten or replace o-rings."},
+            {"step": 2, "action": "Check high-pressure hose", "detail": "Worn or damaged hose. Replace — do not repair HP hose."},
+            {"step": 3, "action": "Check valve caps", "detail": "Valve caps on manifold may be loose. Torque to spec."},
+            {"step": 4, "action": "Check discharge hose", "detail": "Leaky discharge hose bleeds pressure. Replace."}
+          ]
+        },
+        "water_unloader_leak": {
+          "diagnosis": "Water leaking from unloader area:",
+          "checks": [
+            {"step": 1, "action": "Check unloader o-rings/seals", "detail": "Internal seals wear over time. Rebuild unloader with seal kit."},
+            {"step": 2, "action": "Check unloader spring tension", "detail": "Incorrect adjustment can cause bypass leaking. Adjust per specs."},
+            {"step": 3, "action": "Check bypass hose/line", "detail": "Bypass return line may be leaking at connections."}
+          ]
+        },
+        "oil_leak_root": {
+          "question": "Where is the oil leaking from?",
+          "options": {
+            "under_crankcase": "oil_under_crankcase",
+            "crankshaft_area": "oil_crankshaft",
+            "rear_cover": "oil_rear_cover",
+            "between_sections": "oil_between_sections"
+          }
+        },
+        "oil_under_crankcase": {
+          "diagnosis": "Oil leaking from underside of crankcase:",
+          "checks": [
+            {"step": 1, "action": "Check crankcase piston rod seals", "detail": "Worn seals. Replace."},
+            {"step": 2, "action": "Check piston rod condition", "detail": "Scored piston rod damages seals. Replace rod if scored."},
+            {"step": 3, "action": "Check oil drain plug", "detail": "Loose or worn drain plug o-ring. Tighten or replace o-ring."}
+          ]
+        },
+        "oil_crankshaft": {
+          "diagnosis": "Oil leaking at crankshaft area:",
+          "checks": [
+            {"step": 1, "action": "Check crankshaft oil seal", "detail": "Worn or improperly installed oil seal. Remove seal retainer and replace seal and o-ring."},
+            {"step": 2, "action": "Check bearing condition", "detail": "Bad bearing damages seal. Replace bearing and any damaged spacer or cover."},
+            {"step": 3, "action": "Check for overfilled oil", "detail": "Too much oil forces past seals. Drain to proper level."}
+          ]
+        },
+        "oil_rear_cover": {
+          "diagnosis": "Oil leaking at rear portion of crankcase:",
+          "checks": [
+            {"step": 1, "action": "Check rear cover o-ring", "detail": "Damaged o-ring. Replace."},
+            {"step": 2, "action": "Check drain plug o-ring", "detail": "Worn o-ring. Replace."},
+            {"step": 3, "action": "Check sight glass o-ring", "detail": "Worn o-ring around sight glass. Replace."}
+          ]
+        },
+        "oil_between_sections": {
+          "diagnosis": "Oil leak between crankcase and pumping section:",
+          "checks": [
+            {"step": 1, "action": "Check crankcase piston rod seals", "detail": "Worn seals. Replace."},
+            {"step": 2, "action": "Check o-rings on plunger retainer", "detail": "Worn o-rings. Replace."}
+          ]
+        },
+        "fuel_leak_root": {
+          "diagnosis": "⚠️ FUEL LEAK — FIRE HAZARD. Shut down the unit immediately. Do not operate until the leak is repaired.",
+          "safety_flag": true,
+          "checks": [
+            {"step": 1, "action": "Check fuel line connections", "detail": "Tighten all fuel line fittings. Replace any cracked or deteriorated fuel lines."},
+            {"step": 2, "action": "Check fuel filter housing", "detail": "Loose filter housing or cracked bowl. Tighten or replace."},
+            {"step": 3, "action": "Check fuel pump seals", "detail": "Leaking fuel pump shaft seal. Replace fuel pump or seal."},
+            {"step": 4, "action": "Check fuel tank", "detail": "Inspect tank for cracks, rust-through, or failed welds."}
+          ]
+        }
+      }
+    },
+
+    "noise": {
+      "name": "Noise & Vibration Diagnostic",
+      "level": "L1",
+      "entry": "noise_type",
+      "nodes": {
+        "noise_type": {
+          "question": "What type of noise?",
+          "options": {
+            "knocking": "knocking_root",
+            "chattering": "chattering_root",
+            "squealing": "squealing_root",
+            "vibration": "vibration_root"
+          }
+        },
+        "knocking_root": {
+          "diagnosis": "Loud knocking noise in pump:",
+          "checks": [
+            {"step": 1, "action": "Check pulley/coupling", "detail": "Loose pulley on crankshaft. Check key and tighten setscrew."},
+            {"step": 2, "action": "Check connecting rod bearings", "detail": "Broken or worn bearing on connecting rod(s). Replace bearing or rod."},
+            {"step": 3, "action": "Check valves", "detail": "Valve stuck open/shut or not opening enough. Replace bad valve."},
+            {"step": 4, "action": "Check for air in system", "detail": "Air suction causes knocking/hammering. Check inlet plumbing for air leaks."},
+            {"step": 5, "action": "Check crankshaft bearings", "detail": "Excessive play in crankshaft = worn main bearings. Replace."}
+          ]
+        },
+        "chattering_root": {
+          "diagnosis": "Chattering/rapid clicking noise:",
+          "checks": [
+            {"step": 1, "action": "Check unloader valve", "detail": "Chattering unloader = incorrect spring tension or worn internals. Adjust or rebuild."},
+            {"step": 2, "action": "Check pressure switch", "detail": "Rapidly cycling pressure switch chatters. Adjust or replace."},
+            {"step": 3, "action": "Check valves", "detail": "Worn valve springs cause chattering as valves bounce. Replace valve assembly."}
+          ]
+        },
+        "squealing_root": {
+          "diagnosis": "Squealing noise:",
+          "checks": [
+            {"step": 1, "action": "Check drive belt", "detail": "Loose or glazed belt squeals under load. Tighten, dress, or replace belt."},
+            {"step": 2, "action": "Check bearings", "detail": "Dry or failing bearings squeal. Check pump and motor bearings. Replace if noisy."},
+            {"step": 3, "action": "Check pulley alignment", "detail": "Misaligned pulleys cause belt squeal. Realign using straightedge."}
+          ]
+        },
+        "vibration_root": {
+          "diagnosis": "Excessive vibration:",
+          "checks": [
+            {"step": 1, "action": "Check mounting bolts", "detail": "Loose mounting allows unit to vibrate. Tighten all mounting hardware."},
+            {"step": 2, "action": "Check pulley/coupler alignment", "detail": "Misalignment causes vibration. Realign."},
+            {"step": 3, "action": "Check for air suction", "detail": "Air entering inlet causes irregular pump stroke → vibration."},
+            {"step": 4, "action": "Check pulsation dampener", "detail": "Failed or uncharged dampener allows pressure pulses to transmit. Check precharge."},
+            {"step": 5, "action": "Check for worn components", "detail": "Worn bearings, bent shaft, or unbalanced blower wheel cause vibration."}
+          ]
+        }
+      }
+    },
+
+    "engine": {
+      "name": "Engine Diagnostic",
+      "level": "L1",
+      "entry": "engine_symptom",
+      "nodes": {
+        "engine_symptom": {
+          "question": "What is the engine doing?",
+          "options": {
+            "wont_start": "eng_wont_start",
+            "starts_then_dies": "eng_starts_dies",
+            "surges": "eng_surges",
+            "low_power": "eng_low_power",
+            "smoking": "eng_smoking"
+          }
+        },
+        "eng_wont_start": {
+          "diagnosis": "Engine won't start:",
+          "checks": [
+            {"step": 1, "action": "Check fuel", "detail": "Is the fuel tank full? Is the fuel valve on? Is the fuel fresh (not stale)?"},
+            {"step": 2, "action": "Check choke", "detail": "Cold engine needs choke closed. Hot engine needs choke open. Check choke cable/linkage."},
+            {"step": 3, "action": "Check spark plug", "detail": "Remove and inspect. Clean or replace if fouled, cracked, or worn. Gap per spec."},
+            {"step": 4, "action": "Check air filter", "detail": "Clogged air filter prevents starting. Clean or replace."},
+            {"step": 5, "action": "Check oil level", "detail": "Many engines have a low-oil shutdown switch. Fill to proper level."},
+            {"step": 6, "action": "Check kill switch/interlock", "detail": "Safety interlocks may prevent starting. Verify all switches are in correct position."},
+            {"step": 7, "action": "Check starter/pull cord", "detail": "Electric start: check battery, solenoid, starter motor. Pull start: check recoil mechanism."}
+          ]
+        },
+        "eng_starts_dies": {
+          "diagnosis": "Engine starts then dies:",
+          "checks": [
+            {"step": 1, "action": "Check choke", "detail": "Engine may need choke for warmup. Gradually open choke as engine warms."},
+            {"step": 2, "action": "Check fuel flow", "detail": "Restricted fuel flow from clogged filter, pinched line, or bad fuel cap vent."},
+            {"step": 3, "action": "Check carburetor", "detail": "Dirty carburetor jets. Clean carburetor or use carb cleaner."},
+            {"step": 4, "action": "Check oil level", "detail": "Low oil shutdown triggers after brief running. Check and fill oil."},
+            {"step": 5, "action": "Check for stale fuel", "detail": "Old fuel gums up carburetor. Drain old fuel, clean carb, refill with fresh fuel."}
+          ]
+        },
+        "eng_surges": {
+          "diagnosis": "Engine surges (RPM goes up and down):",
+          "checks": [
+            {"step": 1, "action": "Check governor linkage", "detail": "Bent, binding, or disconnected governor linkage causes hunting. Inspect and adjust."},
+            {"step": 2, "action": "Check fuel supply", "detail": "Intermittent fuel supply causes surging. Check filter, fuel lines, tank vent."},
+            {"step": 3, "action": "Check carburetor", "detail": "Dirty idle circuit or main jet causes lean surging. Clean carburetor."},
+            {"step": 4, "action": "Check air filter", "detail": "Partially clogged air filter causes intermittent rich/lean cycling."},
+            {"step": 5, "action": "Check for load variation", "detail": "If unloader is cycling rapidly, pump load varies causing engine to surge. Check unloader operation."}
+          ]
+        },
+        "eng_low_power": {
+          "diagnosis": "Engine running but low power/RPM:",
+          "checks": [
+            {"step": 1, "action": "Check throttle setting", "detail": "Ensure throttle is at full (run) position."},
+            {"step": 2, "action": "Check air filter", "detail": "Dirty air filter restricts airflow. Clean or replace."},
+            {"step": 3, "action": "Check spark plug", "detail": "Worn or fouled plug reduces combustion efficiency."},
+            {"step": 4, "action": "Check governor/carburetor", "detail": "Incorrect governor adjustment or dirty carburetor limits RPM."},
+            {"step": 5, "action": "Check for overload", "detail": "Pump may be overloading engine. Check pressure and RPM against specs."},
+            {"step": 6, "action": "Check valve clearance", "detail": "Incorrect valve clearance reduces power. Adjust per engine service manual."}
+          ]
+        },
+        "eng_smoking": {
+          "question": "What color smoke?",
+          "options": {
+            "black": "eng_black_smoke",
+            "white_blue": "eng_white_blue_smoke"
+          }
+        },
+        "eng_black_smoke": {
+          "diagnosis": "Black smoke from engine = running rich:",
+          "checks": [
+            {"step": 1, "action": "Check choke", "detail": "Choke stuck closed. Open choke and check choke cable/linkage."},
+            {"step": 2, "action": "Check air filter", "detail": "Extremely dirty air filter. Replace."},
+            {"step": 3, "action": "Check carburetor", "detail": "Float stuck, needle valve leaking, or incorrect adjustment. Clean and rebuild carb."}
+          ]
+        },
+        "eng_white_blue_smoke": {
+          "diagnosis": "White/blue smoke from engine = burning oil:",
+          "checks": [
+            {"step": 1, "action": "Check oil level", "detail": "Overfilled oil gets pushed into combustion chamber. Drain to proper level."},
+            {"step": 2, "action": "Check breather", "detail": "Clogged crankcase breather pressurizes crankcase, pushing oil past seals."},
+            {"step": 3, "action": "Check for worn piston rings", "detail": "Worn rings allow oil past pistons. Engine may need rebuild."},
+            {"step": 4, "action": "Check valve seals", "detail": "Worn valve guide seals allow oil into combustion chamber. Replace seals."}
+          ]
+        }
+      }
+    },
+
+    "chemical": {
+      "name": "Chemical / Soap Diagnostic",
+      "level": "L2",
+      "entry": "chem_symptom",
+      "nodes": {
+        "chem_symptom": {
+          "question": "What is happening with the chemical system?",
+          "options": {
+            "not_pulling": "chem_not_pulling",
+            "too_weak": "chem_too_weak",
+            "injector_leaking": "chem_injector_leak"
+          }
+        },
+        "chem_not_pulling": {
+          "question": "Are you using a low-pressure (soap) nozzle?",
+          "yes": "chem_has_soap_nozzle",
+          "no": "chem_no_soap_nozzle"
+        },
+        "chem_no_soap_nozzle": {
+          "diagnosis": "Downstream injectors ONLY work with a low-pressure (soap) nozzle installed. The high-pressure nozzle creates too much back-pressure for the venturi to draw chemical.",
+          "checks": [
+            {"step": 1, "action": "Install the low-pressure soap nozzle (usually black tip)", "detail": "Soap nozzle has a larger orifice — drops system pressure enough for the injector to create suction."},
+            {"step": 2, "action": "Verify the nozzle is correct size for your machine", "detail": "Too small a soap nozzle still creates too much back-pressure. Size must match GPM rating."}
+          ]
+        },
+        "chem_has_soap_nozzle": {
+          "question": "Is the chemical pickup tube submerged in chemical?",
+          "yes": "chem_tube_submerged",
+          "no": "chem_tube_not_submerged"
+        },
+        "chem_tube_not_submerged": {
+          "diagnosis": "Chemical pickup tube not reaching chemical. Verify tube is in the container and below the liquid level.",
+          "checks": [
+            {"step": 1, "action": "Check pickup tube length", "detail": "Tube must reach the bottom of the chemical container."},
+            {"step": 2, "action": "Check for kinks in pickup tube", "detail": "Kinked or collapsed tubing restricts draw."}
+          ]
+        },
+        "chem_tube_submerged": {
+          "diagnosis": "Soap nozzle installed and tube is submerged but still not pulling — check injector:",
+          "checks": [
+            {"step": 1, "action": "Check injector for clogs", "detail": "Remove injector and clean. Chemical residue and debris clog the internal orifice and check ball."},
+            {"step": 2, "action": "Check for air leaks in suction line", "detail": "Any air leak between injector and pickup tube breaks the siphon. Check all connections and replace cracked tubing."},
+            {"step": 3, "action": "Check injector orientation", "detail": "Arrow on injector body must point in flow direction (toward gun). Installed backwards = no draw."},
+            {"step": 4, "action": "Check injector check ball", "detail": "Worn or stuck check ball prevents suction. Replace or rebuild injector."},
+            {"step": 5, "action": "Check chemical viscosity", "detail": "Very thick chemicals may not draw through small orifice. Dilute the concentrate first, or use upstream injector for thick products."},
+            {"step": 6, "action": "Check hose length", "detail": "Long hose runs (>100 ft) create back-pressure that reduces chemical draw. Shorten hose or upgrade to upstream injector."}
+          ]
+        },
+        "chem_too_weak": {
+          "diagnosis": "Chemical is drawing but too diluted:",
+          "checks": [
+            {"step": 1, "action": "Check dilution ratio at the injector", "detail": "Most downstream injectors draw at 10:1 to 20:1 ratio. If you need stronger application, adjust the metering valve if present."},
+            {"step": 2, "action": "Check injector orifice size", "detail": "A larger orifice draws more chemical. Some injectors have adjustable draw rates."},
+            {"step": 3, "action": "Reduce hose length", "detail": "Every 50 feet of hose reduces draw rate. Shorter hose = more chemical."},
+            {"step": 4, "action": "Pre-mix chemical stronger", "detail": "If injector is at max draw, increase the concentrate strength at the bucket."},
+            {"step": 5, "action": "Consider upstream injection", "detail": "Upstream injectors draw at higher ratios (5:1 to 10:1). Better for thick chemicals or long hose runs."}
+          ]
+        },
+        "chem_injector_leak": {
+          "diagnosis": "Chemical injector leaking:",
+          "checks": [
+            {"step": 1, "action": "Check o-rings on injector fittings", "detail": "Worn o-rings at quick-connect or threaded fittings. Replace."},
+            {"step": 2, "action": "Check injector body for cracks", "detail": "Chemical corrosion or freeze damage. Replace injector."},
+            {"step": 3, "action": "Check barb fitting on pickup tube", "detail": "Loose barb connection. Re-seat and clamp."}
+          ]
+        }
+      }
+    }
+  }
+}

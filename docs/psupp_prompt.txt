@@ -1,0 +1,136 @@
+BUILD PROMPT — Pressure Washer Equipment Support AI System
+=============================================================
+
+Build a complete AI-powered customer support and diagnostics application for pressure washer 
+and pump equipment. The system serves technicians and customers by searching equipment manuals, 
+diagnosing issues, looking up parts/specs, and answering questions with AI. When local documentation 
+doesn't have the answer, it falls back to web search.
+
+## ARCHITECTURE
+
+Three components:
+
+### 1. PDF Ingestion Pipeline (`ingest_pdfs.py`)
+A Python CLI tool that processes a folder of PDF manuals (800MB+, hundreds of documents) into a 
+SQLite FTS5 database for instant full-text search.
+
+Requirements:
+- Recursively scans folders for PDFs
+- Extracts text using pdfplumber (primary) with pypdf fallback
+- Extracts tables from PDFs alongside text
+- Intelligent chunking: splits on section headers first, then paragraphs, with ~800 word max 
+  chunks and 100 word overlap between chunks
+- Auto-detects document brand from content (General Pump, Cat Pumps, Alkota, Honda, 
+  Briggs & Stratton, AR Pumps, Comet, Udor, Giant, Karcher — extensible pattern matching)
+- Auto-detects document type (service_manual, owner_manual, parts_list, data_sheet, 
+  troubleshooting, catalog, installation, safety)
+- Auto-detects document title from first page content
+- Classifies each chunk by type: text, troubleshooting, specs, maintenance, procedure, 
+  safety, parts, table
+- SHA256 file hashing for deduplication — re-running skips already-ingested files
+- SQLite FTS5 with porter stemming and unicode tokenizer
+- Triggers keep FTS index in sync with chunks table automatically
+- WAL journal mode and optimized PRAGMA settings for fast bulk inserts
+- CLI supports: ingest folders, --reset to rebuild, --search for queries, --model for 
+  model number lookup, --stats for database statistics, --brand filter
+- Prints progress with emoji indicators showing each file processed, chunk counts, 
+  and brand/type detection results
+- Final summary shows time elapsed, success/skip/fail counts, total chunks, word count, DB size
+
+Database schema:
+- `documents` table: id, filename, filepath, file_hash (unique), file_size, page_count, 
+  title, brand, doc_type, ingested_at, metadata (JSON)
+- `chunks` table: id, doc_id (FK), page_num, section, content, chunk_type, word_count
+- `chunks_fts` virtual table: FTS5 on content, section, chunk_type with content sync triggers
+- Indexes on: chunks.doc_id, chunks.section, chunks.type, documents.brand, documents.file_hash
+
+### 2. Search API + AI Agent (`search_api.py`)
+A Flask REST API that serves the knowledge base and integrates Claude AI with web search fallback.
+
+Requirements:
+- Auto-installs missing packages (flask, flask-cors, anthropic)
+- CORS enabled for React frontend
+- Reads ANTHROPIC_API_KEY from environment variable
+- Configurable: database path, port, host, Claude model via CLI args
+
+Core logic — the `/api/ask` endpoint:
+1. User submits a question (with optional brand filter)
+2. System searches SQLite FTS5 for relevant chunks (instant, <1ms)
+3. If 3+ chunks found → sends top 8 chunks as context to Claude WITHOUT web search
+4. If fewer than 3 chunks found → sends whatever context exists to Claude WITH web search 
+   tool enabled so Claude can supplement from the web
+5. Returns: AI answer, local source citations, web citations (if used), metadata
+
+Claude integration:
+- System prompt: pressure washer/pump equipment support specialist role
+- Rules: prioritize local KB, cite sources with document name and page, use web search 
+  only when local context is insufficient, never share manufacturer contact info 
+  (phone/fax/email/address/URLs) from documents, be specific with part numbers and 
+  torque specs, systematic troubleshooting approach
+- Web search tool: `{"type": "web_search_20250305", "name": "web_search"}`
+- Supports conversation history for multi-turn chat
+- Supports streaming via Server-Sent Events (SSE) for real-time chat display
+
+Endpoints:
+- POST /api/ask — AI-powered Q&A (main endpoint)
+  Body: {"question": "...", "brand": "Cat Pumps", "stream": false, "history": []}
+  Returns: {"answer": "...", "local_sources": [...], "web_citations": [...], 
+            "used_web_search": bool, "local_chunks_found": int}
+
+- GET /api/search?q=...&limit=20&brand=...&type=... — Direct FTS5 search (no AI)
+- POST /api/search — Same as above with JSON body
+- GET /api/model/<model_number> — Model number lookup (tries exact phrase, then fuzzy)
+- GET /api/stats — Database statistics (doc count, chunk count, words, brands, types)
+- GET /api/brands — List all brands with document counts
+- GET /api/documents?brand=... — List all ingested documents
+- GET /api/document/<id>/chunks — Get all chunks for a document
+- GET /api/health — Health check with AI/web search status
+
+Startup banner shows: database path, document/chunk counts, AI status, web search status, 
+model name, URL, and endpoint list.
+
+### 3. React Chat Frontend
+A React-based chat UI that connects to the search API.
+
+Requirements:
+- Clean, professional interface suitable for shop floor tablets and desktop browsers
+- Chat-style message display with user bubbles and AI response bubbles
+- Real-time streaming display (words appear as Claude generates them) via SSE
+- Brand filter dropdown (populated from /api/brands)
+- Source citations displayed below AI responses (local KB sources with document name 
+  and page, web sources with links)
+- Visual indicator when web search is being used vs local KB only
+- Model number quick-lookup feature
+- Search bar that can do either AI Q&A or direct FTS5 search
+- Mobile responsive
+- Works offline against the API (no external CDN dependencies in production)
+
+## TECH STACK
+- Python 3.10+ (compatible with 3.14)
+- SQLite with FTS5 extension (built into Python stdlib)
+- pdfplumber for PDF text/table extraction
+- pypdf as fallback PDF reader
+- Flask + flask-cors for API
+- Anthropic Python SDK for Claude AI
+- Claude's built-in web_search_20250305 tool for web fallback
+- React for frontend
+
+## KEY DESIGN DECISIONS
+- SQLite FTS5 chosen over vector databases for speed: sub-millisecond keyword search, 
+  no embedding generation cost, no external services needed
+- Web search only activates when local KB has insufficient results (< 3 chunks), 
+  keeping API costs low
+- File deduplication via SHA256 hash means the ingestion pipeline is idempotent — 
+  safe to re-run anytime
+- Chunking preserves section context so Claude gets well-structured source material
+- Streaming support so the chat UI feels responsive even on complex queries
+- The system works without an API key (direct FTS5 search still works), 
+  AI features just require the key
+
+## SAMPLE QUERIES THE SYSTEM HANDLES
+- "Why is my Cat Pumps 67DX losing pressure?" → local KB troubleshooting table
+- "What's the torque spec for the valve plugs on a 67DX?" → local KB procedure
+- "Honda GX160 spark plug gap?" → local KB maintenance section
+- "What oil should I use in my General Pump TS2021?" → local KB oil recommendations
+- "How do I winterize my pressure washer?" → may need web search if not in local docs
+- "What's the difference between AR and Cat Pumps for commercial use?" → web search

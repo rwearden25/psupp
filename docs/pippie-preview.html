@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pippie on Home Screen Preview</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root { --bg:#f5f7fa; --surface:#ffffff; --border:#d8dce5; --text:#1a1d24; --text-muted:#5f6b7a; --accent:#2563eb; --accent-dim:rgba(37,99,235,0.08); --font-body:'DM Sans',sans-serif; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+
+.frame { width:700px; background:var(--surface); border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.1); overflow:hidden; }
+header { border-bottom:1px solid var(--border); padding:1rem 2rem; display:flex; align-items:center; gap:1rem; }
+.logo { width:46px; height:46px; background:var(--accent); color:#fff; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; }
+header h1 { font-size:1.1rem; }
+header span { font-size:0.78rem; color:var(--text-muted); }
+
+.welcome { max-width:640px; margin:0 auto; padding:3rem 2rem; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.welcome-icon { font-size:2.5rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.3rem; justify-content:center; }
+.welcome h2 { font-size:1.5rem; margin-bottom:0.5rem; }
+.home-hint { color:var(--text-muted); font-size:0.82rem; margin-top:0.5rem; }
+.home-search-box { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:0.25rem; display:flex; align-items:center; width:100%; max-width:520px; margin-top:1rem; box-shadow:0 2px 16px rgba(0,0,0,0.04); }
+.home-search-box input { flex:1; border:none; background:none; padding:0.7rem 1rem; font-size:0.92rem; outline:none; }
+.search-send { border:none; background:var(--accent); color:white; width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:1rem; margin-right:4px; }
+
+@keyframes pippie-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes pippie-blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}
+@keyframes pippie-steam{0%{opacity:0.8;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-12px) scale(1.5)}}
+.pippie{animation:pippie-bounce 2s ease-in-out infinite}
+.pb{animation:pippie-blink 3s infinite;transform-origin:center}
+.ps1{animation:pippie-steam 2s ease-out infinite}
+.ps2{animation:pippie-steam 2s ease-out 0.7s infinite}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <div class="logo">P-S</div>
+    <div><h1>P-Supp Tool</h1><span>Diagnostics, Service & Reference</span></div>
+  </header>
+  <div class="welcome">
+    <div class="welcome-icon">
+      🔧
+      <svg class="pippie" width="42" height="58" viewBox="0 0 100 140">
+        <rect x="28" y="45" width="44" height="60" rx="8" fill="#D4A843" stroke="#B8922E" stroke-width="2"/>
+        <rect x="33" y="51" width="14" height="6" rx="3" fill="#E8C75A" opacity="0.6"/>
+        <circle cx="50" cy="88" r="10" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/>
+        <circle cx="50" cy="88" r="7" fill="white"/>
+        <line x1="50" y1="88" x2="54" y2="83" stroke="#C4382A" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="50" cy="88" r="1.5" fill="#333"/>
+        <path d="M 38 45 L 38 28 Q 38 22 44 22 L 56 22 Q 62 22 62 28 L 62 45" fill="none" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+        <rect x="42" y="15" width="16" height="10" rx="3" fill="#C4382A" stroke="#A52E22" stroke-width="1.5"/>
+        <g class="pb"><ellipse cx="41" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="41" cy="63" r="4.5" fill="#22C55E"/><circle cx="41" cy="63" r="2" fill="#15803D"/><circle cx="39.5" cy="61" r="1.5" fill="white"/></g>
+        <g class="pb"><ellipse cx="59" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="59" cy="63" r="4.5" fill="#22C55E"/><circle cx="59" cy="63" r="2" fill="#15803D"/><circle cx="57.5" cy="61" r="1.5" fill="white"/></g>
+        <path d="M 42 76 Q 50 82 58 76" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+        <rect x="8" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/>
+        <circle cx="10" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/>
+        <rect x="70" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/>
+        <circle cx="90" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/>
+        <rect x="30" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/>
+        <rect x="54" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/>
+        <circle cx="46" cy="12" r="3.5" fill="#ddd" class="ps1" opacity="0"/>
+        <circle cx="54" cy="10" r="3" fill="#ddd" class="ps2" opacity="0"/>
+      </svg>
+    </div>
+    <h2>How can I help?</h2>
+    <div class="home-search-box">
+      <input type="text" placeholder="Describe your issue or search models…" />
+      <button class="search-send">➤</button>
+    </div>
+    <p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p>
+  </div>
+</div>
+</body>
+</html>
