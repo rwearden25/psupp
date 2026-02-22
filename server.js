@@ -1466,7 +1466,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     } else {
-      if (!checkAuth(req)) { denyAuth(res); return; }
+      // Accept either regular OR admin tokens for non-admin routes
+      if (!checkAuth(req) && !checkAdminAuth(req)) { denyAuth(res); return; }
     }
   }
 
