@@ -1,0 +1,1100 @@
+P-SUPP EXPANDED TRAINING CORPUS Format: Intent | Question | Response |
+Tags INTENT: RoofCleaning_Intent_1 | Q: Customer asking about roof
+cleaning concern #1. | A: Explain our professional roof cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: roof_cleaning,
+education, estimate INTENT: DrivewayCleaning_Intent_2 | Q: Customer
+asking about driveway cleaning concern #2. | A: Explain our professional
+driveway cleaning process using proper pressure, detergents, and safe
+methods. Set realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT: ConcreteCleaning_Intent_3
+| Q: Customer asking about concrete cleaning concern #3. | A: Explain
+our professional concrete cleaning process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: concrete_cleaning, education, estimate INTENT:
+CommercialWashing_Intent_4 | Q: Customer asking about commercial washing
+concern #4. | A: Explain our professional commercial washing process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: commercial_washing,
+education, estimate INTENT: FleetWashing_Intent_5 | Q: Customer asking
+about fleet washing concern #5. | A: Explain our professional fleet
+washing process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+fleet_washing, education, estimate INTENT: GumRemoval_Intent_6 | Q:
+Customer asking about gum removal concern #6. | A: Explain our
+professional gum removal process using proper pressure, detergents, and
+safe methods. Set realistic expectations and offer an on-site quote. |
+TAGS: gum_removal, education, estimate INTENT: GraffitiRemoval_Intent_7
+| Q: Customer asking about graffiti removal concern #7. | A: Explain our
+professional graffiti removal process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: graffiti_removal, education, estimate INTENT:
+RustTreatment_Intent_8 | Q: Customer asking about rust treatment concern
+#8. | A: Explain our professional rust treatment process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: rust_treatment, education, estimate
+INTENT: OilStainTreatment_Intent_9 | Q: Customer asking about oil stain
+treatment concern #9. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_10
+| Q: Customer asking about house washing concern #10. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_11 | Q: Customer asking about roof cleaning concern
+#11. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_12 | Q: Customer asking about driveway
+cleaning concern #12. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_13 | Q: Customer asking about concrete cleaning
+concern #13. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_14 | Q: Customer
+asking about commercial washing concern #14. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_15 | Q: Customer asking about fleet washing concern
+#15. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_16 | Q: Customer asking about gum removal
+concern #16. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_17 | Q: Customer asking about
+graffiti removal concern #17. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_18 |
+Q: Customer asking about rust treatment concern #18. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_19 | Q: Customer asking about oil stain
+treatment concern #19. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_20
+| Q: Customer asking about house washing concern #20. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_21 | Q: Customer asking about roof cleaning concern
+#21. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_22 | Q: Customer asking about driveway
+cleaning concern #22. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_23 | Q: Customer asking about concrete cleaning
+concern #23. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_24 | Q: Customer
+asking about commercial washing concern #24. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_25 | Q: Customer asking about fleet washing concern
+#25. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_26 | Q: Customer asking about gum removal
+concern #26. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_27 | Q: Customer asking about
+graffiti removal concern #27. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_28 |
+Q: Customer asking about rust treatment concern #28. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_29 | Q: Customer asking about oil stain
+treatment concern #29. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_30
+| Q: Customer asking about house washing concern #30. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_31 | Q: Customer asking about roof cleaning concern
+#31. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_32 | Q: Customer asking about driveway
+cleaning concern #32. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_33 | Q: Customer asking about concrete cleaning
+concern #33. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_34 | Q: Customer
+asking about commercial washing concern #34. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_35 | Q: Customer asking about fleet washing concern
+#35. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_36 | Q: Customer asking about gum removal
+concern #36. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_37 | Q: Customer asking about
+graffiti removal concern #37. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_38 |
+Q: Customer asking about rust treatment concern #38. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_39 | Q: Customer asking about oil stain
+treatment concern #39. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_40
+| Q: Customer asking about house washing concern #40. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_41 | Q: Customer asking about roof cleaning concern
+#41. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_42 | Q: Customer asking about driveway
+cleaning concern #42. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_43 | Q: Customer asking about concrete cleaning
+concern #43. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_44 | Q: Customer
+asking about commercial washing concern #44. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_45 | Q: Customer asking about fleet washing concern
+#45. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_46 | Q: Customer asking about gum removal
+concern #46. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_47 | Q: Customer asking about
+graffiti removal concern #47. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_48 |
+Q: Customer asking about rust treatment concern #48. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_49 | Q: Customer asking about oil stain
+treatment concern #49. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_50
+| Q: Customer asking about house washing concern #50. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_51 | Q: Customer asking about roof cleaning concern
+#51. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_52 | Q: Customer asking about driveway
+cleaning concern #52. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_53 | Q: Customer asking about concrete cleaning
+concern #53. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_54 | Q: Customer
+asking about commercial washing concern #54. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_55 | Q: Customer asking about fleet washing concern
+#55. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_56 | Q: Customer asking about gum removal
+concern #56. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_57 | Q: Customer asking about
+graffiti removal concern #57. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_58 |
+Q: Customer asking about rust treatment concern #58. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_59 | Q: Customer asking about oil stain
+treatment concern #59. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_60
+| Q: Customer asking about house washing concern #60. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_61 | Q: Customer asking about roof cleaning concern
+#61. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_62 | Q: Customer asking about driveway
+cleaning concern #62. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_63 | Q: Customer asking about concrete cleaning
+concern #63. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_64 | Q: Customer
+asking about commercial washing concern #64. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_65 | Q: Customer asking about fleet washing concern
+#65. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_66 | Q: Customer asking about gum removal
+concern #66. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_67 | Q: Customer asking about
+graffiti removal concern #67. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_68 |
+Q: Customer asking about rust treatment concern #68. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_69 | Q: Customer asking about oil stain
+treatment concern #69. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_70
+| Q: Customer asking about house washing concern #70. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_71 | Q: Customer asking about roof cleaning concern
+#71. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_72 | Q: Customer asking about driveway
+cleaning concern #72. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_73 | Q: Customer asking about concrete cleaning
+concern #73. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_74 | Q: Customer
+asking about commercial washing concern #74. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_75 | Q: Customer asking about fleet washing concern
+#75. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_76 | Q: Customer asking about gum removal
+concern #76. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_77 | Q: Customer asking about
+graffiti removal concern #77. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_78 |
+Q: Customer asking about rust treatment concern #78. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_79 | Q: Customer asking about oil stain
+treatment concern #79. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_80
+| Q: Customer asking about house washing concern #80. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_81 | Q: Customer asking about roof cleaning concern
+#81. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_82 | Q: Customer asking about driveway
+cleaning concern #82. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_83 | Q: Customer asking about concrete cleaning
+concern #83. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_84 | Q: Customer
+asking about commercial washing concern #84. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_85 | Q: Customer asking about fleet washing concern
+#85. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_86 | Q: Customer asking about gum removal
+concern #86. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_87 | Q: Customer asking about
+graffiti removal concern #87. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_88 |
+Q: Customer asking about rust treatment concern #88. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_89 | Q: Customer asking about oil stain
+treatment concern #89. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_90
+| Q: Customer asking about house washing concern #90. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_91 | Q: Customer asking about roof cleaning concern
+#91. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_92 | Q: Customer asking about driveway
+cleaning concern #92. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_93 | Q: Customer asking about concrete cleaning
+concern #93. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_94 | Q: Customer
+asking about commercial washing concern #94. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_95 | Q: Customer asking about fleet washing concern
+#95. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_96 | Q: Customer asking about gum removal
+concern #96. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_97 | Q: Customer asking about
+graffiti removal concern #97. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_98 |
+Q: Customer asking about rust treatment concern #98. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_99 | Q: Customer asking about oil stain
+treatment concern #99. | A: Explain our professional oil stain treatment
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_100
+| Q: Customer asking about house washing concern #100. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_101 | Q: Customer asking about roof cleaning concern
+#101. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_102 | Q: Customer asking about driveway
+cleaning concern #102. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_103 | Q: Customer asking about concrete cleaning
+concern #103. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_104 | Q: Customer
+asking about commercial washing concern #104. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_105 | Q: Customer asking about fleet washing concern
+#105. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_106 | Q: Customer asking about gum removal
+concern #106. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_107 | Q: Customer asking about
+graffiti removal concern #107. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_108 |
+Q: Customer asking about rust treatment concern #108. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_109 | Q: Customer asking about oil stain
+treatment concern #109. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_110
+| Q: Customer asking about house washing concern #110. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_111 | Q: Customer asking about roof cleaning concern
+#111. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_112 | Q: Customer asking about driveway
+cleaning concern #112. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_113 | Q: Customer asking about concrete cleaning
+concern #113. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_114 | Q: Customer
+asking about commercial washing concern #114. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_115 | Q: Customer asking about fleet washing concern
+#115. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_116 | Q: Customer asking about gum removal
+concern #116. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_117 | Q: Customer asking about
+graffiti removal concern #117. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_118 |
+Q: Customer asking about rust treatment concern #118. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_119 | Q: Customer asking about oil stain
+treatment concern #119. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_120
+| Q: Customer asking about house washing concern #120. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_121 | Q: Customer asking about roof cleaning concern
+#121. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_122 | Q: Customer asking about driveway
+cleaning concern #122. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_123 | Q: Customer asking about concrete cleaning
+concern #123. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_124 | Q: Customer
+asking about commercial washing concern #124. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_125 | Q: Customer asking about fleet washing concern
+#125. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_126 | Q: Customer asking about gum removal
+concern #126. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_127 | Q: Customer asking about
+graffiti removal concern #127. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_128 |
+Q: Customer asking about rust treatment concern #128. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_129 | Q: Customer asking about oil stain
+treatment concern #129. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_130
+| Q: Customer asking about house washing concern #130. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_131 | Q: Customer asking about roof cleaning concern
+#131. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_132 | Q: Customer asking about driveway
+cleaning concern #132. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_133 | Q: Customer asking about concrete cleaning
+concern #133. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_134 | Q: Customer
+asking about commercial washing concern #134. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_135 | Q: Customer asking about fleet washing concern
+#135. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_136 | Q: Customer asking about gum removal
+concern #136. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_137 | Q: Customer asking about
+graffiti removal concern #137. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_138 |
+Q: Customer asking about rust treatment concern #138. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_139 | Q: Customer asking about oil stain
+treatment concern #139. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_140
+| Q: Customer asking about house washing concern #140. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_141 | Q: Customer asking about roof cleaning concern
+#141. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_142 | Q: Customer asking about driveway
+cleaning concern #142. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_143 | Q: Customer asking about concrete cleaning
+concern #143. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_144 | Q: Customer
+asking about commercial washing concern #144. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_145 | Q: Customer asking about fleet washing concern
+#145. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_146 | Q: Customer asking about gum removal
+concern #146. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_147 | Q: Customer asking about
+graffiti removal concern #147. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_148 |
+Q: Customer asking about rust treatment concern #148. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_149 | Q: Customer asking about oil stain
+treatment concern #149. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_150
+| Q: Customer asking about house washing concern #150. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_151 | Q: Customer asking about roof cleaning concern
+#151. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_152 | Q: Customer asking about driveway
+cleaning concern #152. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_153 | Q: Customer asking about concrete cleaning
+concern #153. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_154 | Q: Customer
+asking about commercial washing concern #154. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_155 | Q: Customer asking about fleet washing concern
+#155. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_156 | Q: Customer asking about gum removal
+concern #156. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_157 | Q: Customer asking about
+graffiti removal concern #157. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_158 |
+Q: Customer asking about rust treatment concern #158. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_159 | Q: Customer asking about oil stain
+treatment concern #159. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_160
+| Q: Customer asking about house washing concern #160. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_161 | Q: Customer asking about roof cleaning concern
+#161. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_162 | Q: Customer asking about driveway
+cleaning concern #162. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_163 | Q: Customer asking about concrete cleaning
+concern #163. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_164 | Q: Customer
+asking about commercial washing concern #164. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_165 | Q: Customer asking about fleet washing concern
+#165. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_166 | Q: Customer asking about gum removal
+concern #166. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_167 | Q: Customer asking about
+graffiti removal concern #167. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_168 |
+Q: Customer asking about rust treatment concern #168. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_169 | Q: Customer asking about oil stain
+treatment concern #169. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_170
+| Q: Customer asking about house washing concern #170. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_171 | Q: Customer asking about roof cleaning concern
+#171. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_172 | Q: Customer asking about driveway
+cleaning concern #172. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_173 | Q: Customer asking about concrete cleaning
+concern #173. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_174 | Q: Customer
+asking about commercial washing concern #174. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_175 | Q: Customer asking about fleet washing concern
+#175. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_176 | Q: Customer asking about gum removal
+concern #176. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_177 | Q: Customer asking about
+graffiti removal concern #177. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_178 |
+Q: Customer asking about rust treatment concern #178. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_179 | Q: Customer asking about oil stain
+treatment concern #179. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_180
+| Q: Customer asking about house washing concern #180. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_181 | Q: Customer asking about roof cleaning concern
+#181. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_182 | Q: Customer asking about driveway
+cleaning concern #182. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_183 | Q: Customer asking about concrete cleaning
+concern #183. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_184 | Q: Customer
+asking about commercial washing concern #184. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_185 | Q: Customer asking about fleet washing concern
+#185. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_186 | Q: Customer asking about gum removal
+concern #186. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_187 | Q: Customer asking about
+graffiti removal concern #187. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_188 |
+Q: Customer asking about rust treatment concern #188. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_189 | Q: Customer asking about oil stain
+treatment concern #189. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_190
+| Q: Customer asking about house washing concern #190. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_191 | Q: Customer asking about roof cleaning concern
+#191. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_192 | Q: Customer asking about driveway
+cleaning concern #192. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_193 | Q: Customer asking about concrete cleaning
+concern #193. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_194 | Q: Customer
+asking about commercial washing concern #194. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_195 | Q: Customer asking about fleet washing concern
+#195. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_196 | Q: Customer asking about gum removal
+concern #196. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_197 | Q: Customer asking about
+graffiti removal concern #197. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_198 |
+Q: Customer asking about rust treatment concern #198. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_199 | Q: Customer asking about oil stain
+treatment concern #199. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_200
+| Q: Customer asking about house washing concern #200. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_201 | Q: Customer asking about roof cleaning concern
+#201. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_202 | Q: Customer asking about driveway
+cleaning concern #202. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_203 | Q: Customer asking about concrete cleaning
+concern #203. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_204 | Q: Customer
+asking about commercial washing concern #204. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_205 | Q: Customer asking about fleet washing concern
+#205. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_206 | Q: Customer asking about gum removal
+concern #206. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_207 | Q: Customer asking about
+graffiti removal concern #207. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_208 |
+Q: Customer asking about rust treatment concern #208. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_209 | Q: Customer asking about oil stain
+treatment concern #209. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_210
+| Q: Customer asking about house washing concern #210. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_211 | Q: Customer asking about roof cleaning concern
+#211. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_212 | Q: Customer asking about driveway
+cleaning concern #212. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_213 | Q: Customer asking about concrete cleaning
+concern #213. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_214 | Q: Customer
+asking about commercial washing concern #214. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_215 | Q: Customer asking about fleet washing concern
+#215. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_216 | Q: Customer asking about gum removal
+concern #216. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_217 | Q: Customer asking about
+graffiti removal concern #217. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_218 |
+Q: Customer asking about rust treatment concern #218. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_219 | Q: Customer asking about oil stain
+treatment concern #219. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_220
+| Q: Customer asking about house washing concern #220. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_221 | Q: Customer asking about roof cleaning concern
+#221. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_222 | Q: Customer asking about driveway
+cleaning concern #222. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_223 | Q: Customer asking about concrete cleaning
+concern #223. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_224 | Q: Customer
+asking about commercial washing concern #224. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_225 | Q: Customer asking about fleet washing concern
+#225. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_226 | Q: Customer asking about gum removal
+concern #226. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_227 | Q: Customer asking about
+graffiti removal concern #227. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_228 |
+Q: Customer asking about rust treatment concern #228. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_229 | Q: Customer asking about oil stain
+treatment concern #229. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_230
+| Q: Customer asking about house washing concern #230. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_231 | Q: Customer asking about roof cleaning concern
+#231. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_232 | Q: Customer asking about driveway
+cleaning concern #232. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_233 | Q: Customer asking about concrete cleaning
+concern #233. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_234 | Q: Customer
+asking about commercial washing concern #234. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_235 | Q: Customer asking about fleet washing concern
+#235. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_236 | Q: Customer asking about gum removal
+concern #236. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_237 | Q: Customer asking about
+graffiti removal concern #237. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_238 |
+Q: Customer asking about rust treatment concern #238. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_239 | Q: Customer asking about oil stain
+treatment concern #239. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_240
+| Q: Customer asking about house washing concern #240. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate INTENT:
+RoofCleaning_Intent_241 | Q: Customer asking about roof cleaning concern
+#241. | A: Explain our professional roof cleaning process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: roof_cleaning, education, estimate
+INTENT: DrivewayCleaning_Intent_242 | Q: Customer asking about driveway
+cleaning concern #242. | A: Explain our professional driveway cleaning
+process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+driveway_cleaning, education, estimate INTENT:
+ConcreteCleaning_Intent_243 | Q: Customer asking about concrete cleaning
+concern #243. | A: Explain our professional concrete cleaning process
+using proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: concrete_cleaning,
+education, estimate INTENT: CommercialWashing_Intent_244 | Q: Customer
+asking about commercial washing concern #244. | A: Explain our
+professional commercial washing process using proper pressure,
+detergents, and safe methods. Set realistic expectations and offer an
+on-site quote. | TAGS: commercial_washing, education, estimate INTENT:
+FleetWashing_Intent_245 | Q: Customer asking about fleet washing concern
+#245. | A: Explain our professional fleet washing process using proper
+pressure, detergents, and safe methods. Set realistic expectations and
+offer an on-site quote. | TAGS: fleet_washing, education, estimate
+INTENT: GumRemoval_Intent_246 | Q: Customer asking about gum removal
+concern #246. | A: Explain our professional gum removal process using
+proper pressure, detergents, and safe methods. Set realistic
+expectations and offer an on-site quote. | TAGS: gum_removal, education,
+estimate INTENT: GraffitiRemoval_Intent_247 | Q: Customer asking about
+graffiti removal concern #247. | A: Explain our professional graffiti
+removal process using proper pressure, detergents, and safe methods. Set
+realistic expectations and offer an on-site quote. | TAGS:
+graffiti_removal, education, estimate INTENT: RustTreatment_Intent_248 |
+Q: Customer asking about rust treatment concern #248. | A: Explain our
+professional rust treatment process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: rust_treatment, education, estimate INTENT:
+OilStainTreatment_Intent_249 | Q: Customer asking about oil stain
+treatment concern #249. | A: Explain our professional oil stain
+treatment process using proper pressure, detergents, and safe methods.
+Set realistic expectations and offer an on-site quote. | TAGS:
+oil_stain_treatment, education, estimate INTENT: HouseWashing_Intent_250
+| Q: Customer asking about house washing concern #250. | A: Explain our
+professional house washing process using proper pressure, detergents,
+and safe methods. Set realistic expectations and offer an on-site quote.
+| TAGS: house_washing, education, estimate

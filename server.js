@@ -2,68 +2,15 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const bcrypt = require('bcrypt');
+const auth = require('./auth');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
-const APP_PASSWORD = process.env.APP_PASSWORD || 'psupp2025';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'psupp-admin-2025';
 const DB_PATH = path.join(__dirname, 'knowledge.db');
 const USERDATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'db');
 const USERDATA_PATH = path.join(USERDATA_DIR, 'userdata.db');
-
-// ─── Auth Tokens ───
-const authTokens = new Map(); // token → { createdAt }
-const TOKEN_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const crypto = require('crypto');
-
-function generateToken() {
-  const token = crypto.randomBytes(32).toString('hex');
-  authTokens.set(token, { createdAt: Date.now() });
-  // Cleanup expired tokens
-  if (authTokens.size > 200) {
-    const now = Date.now();
-    for (const [t, v] of authTokens) { if (now - v.createdAt > TOKEN_TTL) authTokens.delete(t); }
-  }
-  return token;
-}
-
-function checkAuth(req) {
-  const auth = req.headers['authorization'] || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token || !authTokens.has(token)) return false;
-  const entry = authTokens.get(token);
-  if (Date.now() - entry.createdAt > TOKEN_TTL) { authTokens.delete(token); return false; }
-  return true;
-}
-
-function denyAuth(res) {
-  res.writeHead(401, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Unauthorized' }));
-}
-
-// ─── Admin Auth ───
-const adminTokens = new Map();
-
-function generateAdminToken() {
-  const token = 'adm_' + crypto.randomBytes(32).toString('hex');
-  adminTokens.set(token, { createdAt: Date.now() });
-  if (adminTokens.size > 50) {
-    const now = Date.now();
-    for (const [t, v] of adminTokens) {
-      if (now - v.createdAt > TOKEN_TTL) adminTokens.delete(t);
-    }
-  }
-  return token;
-}
-
-function checkAdminAuth(req) {
-  const auth = req.headers['authorization'] || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token || !adminTokens.has(token)) return false;
-  const entry = adminTokens.get(token);
-  if (Date.now() - entry.createdAt > TOKEN_TTL) { adminTokens.delete(token); return false; }
-  return true;
-}
 
 // ═══════════════════════════════════════════════════════
 //  User Data Database (writable — saved diagnostics)
@@ -181,6 +128,9 @@ function initUserData() {
 }
 
 initUserData();
+
+// ─── Initialize Auth System (uses userdata DB) ───
+auth.init(userDb);
 
 // ─── MIME TYPES ───
 const mimeTypes = {
@@ -1715,69 +1665,23 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
 
-  // ─── POST /api/admin/login (public) ───
-  if (req.method === 'POST' && url.pathname === '/api/admin/login') {
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
-      try {
-        const { password } = JSON.parse(body);
-        if (password === ADMIN_PASSWORD) {
-          const token = generateAdminToken();
-          console.log(`[Admin] Login from ${req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress}`);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true, token }));
-        } else {
-          console.log(`[Admin] Failed login attempt`);
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Invalid admin password' }));
-        }
-      } catch(e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Bad request' }));
-      }
-    });
-    return;
-  }
+  // ─── Auth Routes (login, logout, user management) ───
+  const handled = await auth.handleAuthRoutes(req, res, url);
+  if (handled) return;
 
-  // ─── POST /api/login (public — no auth needed) ───
-  if (req.method === 'POST' && url.pathname === '/api/login') {
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
-      try {
-        const { password } = JSON.parse(body);
-        if (password === APP_PASSWORD) {
-          const token = generateToken();
-          console.log(`[Auth] Login success from ${req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress}`);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true, token }));
-        } else {
-          console.log(`[Auth] Login failed from ${req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress}`);
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Invalid password' }));
-        }
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Bad request' }));
-      }
-    });
-    return;
-  }
+  // ─── Auth gate: all /api/ routes except health require auth ───
+  if (url.pathname.startsWith('/api/') && url.pathname !== '/api/health') {
+    const user = auth.getUser(req);
+    if (!user) { auth.deny(res); return; }
 
-  // ─── Auth gate: all /api/ routes except health + login require auth ───
-  if (url.pathname.startsWith('/api/') && url.pathname !== '/api/health' && url.pathname !== '/api/admin/login' && url.pathname !== '/api/login') {
-    // Admin routes use admin tokens
-    if (url.pathname.startsWith('/api/admin/')) {
-      if (!checkAdminAuth(req)) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Admin auth required' }));
-        return;
-      }
-    } else {
-      // Accept either regular OR admin tokens for non-admin routes
-      if (!checkAuth(req) && !checkAdminAuth(req)) { denyAuth(res); return; }
+    // Admin routes require admin role
+    if (url.pathname.startsWith('/api/admin/') && !auth.hasRole(user, 'admin')) {
+      auth.denyRole(res, 'admin');
+      return;
     }
+
+    // Attach user to request for downstream handlers
+    req.authUser = user;
   }
 
   // ─── GET /api/admin/counts ───
@@ -1927,13 +1831,26 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.' }));
       return;
     }
+
+    // ─── Role-based query limit ───
+    const user = req.authUser;
+    if (user) {
+      const ql = auth.checkQueryLimit(user);
+      if (!ql.allowed) {
+        res.writeHead(429, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: ql.error, limit: ql.limit, used: ql.used }));
+        return;
+      }
+      req.queriesRemaining = ql.remaining;
+    }
+
     let body = '', size = 0;
     req.on('data', c => { size += c.length; if (size > 25e6) { req.destroy(); return; } body += c; });
     req.on('end', async () => {
       try {
         const { message, image, image_type, history, session_id } = JSON.parse(body);
         if (!message && !image) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Missing message' })); return; }
-        console.log(`[Chat] ${image ? '📷 ' : ''}${(message || '').substring(0, 100)}${history?.length ? ` (${history.length} prev)` : ''}`);
+        console.log(`[Chat] ${user ? user.username + ' ' : ''}${image ? '📷 ' : ''}${(message || '').substring(0, 100)}${history?.length ? ` (${history.length} prev)` : ''}`);
         const t0 = Date.now();
         const result = await runAgent(message || 'Identify this equipment.', image, image_type, history);
         const elapsed = Date.now() - t0;
@@ -1977,7 +1894,8 @@ const server = http.createServer(async (req, res) => {
           reply: result.text,
           sources: result.sources || [],
           used_web_search: result.used_web_search || false,
-          log_id: logId
+          log_id: logId,
+          queriesRemaining: req.queriesRemaining !== undefined ? req.queriesRemaining : undefined
         }));
       } catch (e) {
         console.error('Chat error:', e);
@@ -2462,10 +2380,14 @@ ${convoHtml}
     return;
   }
 
-  // ─── Static Files ───
-  let filePath = url.pathname === '/' ? '/index.html' : url.pathname === '/admin' ? '/admin.html' : url.pathname;
-  filePath = path.join(__dirname, filePath);
-  if (!filePath.startsWith(__dirname)) { res.writeHead(403); res.end('Forbidden'); return; }
+  // ─── Static Files (served from public/) ───
+  const PUBLIC_DIR = path.join(__dirname, 'public');
+  let filePath = url.pathname === '/' ? '/index.html'
+    : url.pathname === '/admin' ? '/admin.html'
+    : url.pathname === '/login' ? '/login.html'
+    : url.pathname;
+  filePath = path.join(PUBLIC_DIR, filePath);
+  if (!filePath.startsWith(PUBLIC_DIR)) { res.writeHead(403); res.end('Forbidden'); return; }
 
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
@@ -2488,6 +2410,8 @@ server.listen(PORT, () => {
   console.log(`  Web search:  ✅ Always available as fallback`);
   console.log(`  User data:   ${userDb ? `✅ ${savedCount} saved diagnostics` : '❌ Not available'}`);
   console.log(`  AI:          ${API_KEY ? '✅ Enabled' : '❌ Set ANTHROPIC_API_KEY'}`);
-  console.log(`  Auth:        ✅ Server-side (${process.env.APP_PASSWORD ? 'env var' : 'default password'})`);
+  const authUserCount = userDb ? userDb.prepare("SELECT COUNT(*) as c FROM users").get().c : '?';
+  console.log(`  Auth:        ✅ 3-tier RBAC (tech/techp/admin) — ${authUserCount} users`);
+  console.log(`  Static:      public/ folder`);
   console.log('═══════════════════════════════════════════');
 });

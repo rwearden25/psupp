@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management — P-Supp Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0f14;
+  --surface: #141820;
+  --surface-2: #1a1f2b;
+  --surface-3: #222838;
+  --border: #2a3144;
+  --text: #e4e8f1;
+  --text-muted: #8892a8;
+  --accent: #f59e0b;
+  --accent-dim: rgba(245,158,11,0.12);
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --danger: #ef4444;
+  --radius: 12px;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar .mark { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 0.65rem; color: var(--bg); }
+.topbar h1 { font-size: 1rem; font-weight: 600; }
+.topbar .spacer { flex: 1; }
+.topbar a, .topbar button { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.78rem; cursor: pointer; text-decoration: none; font-family: var(--font-body); transition: all 0.15s; }
+.topbar a:hover, .topbar button:hover { border-color: var(--accent); color: var(--text); }
+
+.container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+
+/* PERMISSION MATRIX BANNER */
+.perm-banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.perm-col h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.perm-col ul { list-style: none; font-size: 0.78rem; color: var(--text-muted); }
+.perm-col li { padding: 0.15rem 0; }
+.perm-col li::before { content: '•'; margin-right: 0.4rem; }
+.perm-col.admin h3 { color: var(--accent); }
+.perm-col.techp h3 { color: var(--green); }
+.perm-col.tech h3 { color: var(--blue); }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.card h2 { font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); }
+td { padding: 0.65rem 0.75rem; border-bottom: 1px solid rgba(42,49,68,0.5); vertical-align: middle; }
+tr:hover td { background: rgba(245,158,11,0.03); }
+
+.role-badge {
+  display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px;
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.role-admin  { background: rgba(245,158,11,0.15); color: var(--accent); }
+.role-techp  { background: rgba(34,197,94,0.15); color: var(--green); }
+.role-tech   { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+.status-active   { color: var(--green); }
+.status-inactive { color: var(--danger); }
+
+.supervisor-tag {
+  font-size: 0.72rem; color: var(--text-muted);
+  background: var(--surface-2); padding: 0.1rem 0.4rem; border-radius: 4px;
+}
+
+.query-bar {
+  display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem;
+}
+.query-bar .bar {
+  width: 60px; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden;
+}
+.query-bar .bar-fill {
+  height: 100%; border-radius: 3px; transition: width 0.3s;
+}
+.bar-ok { background: var(--green); }
+.bar-warn { background: var(--accent); }
+.bar-full { background: var(--danger); }
+
+/* ACTIONS */
+.actions { display: flex; gap: 0.4rem; }
+.actions button {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.72rem; cursor: pointer;
+  font-family: var(--font-body); transition: all 0.15s;
+}
+.actions button:hover { border-color: var(--accent); color: var(--text); }
+.actions button.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 2rem; width: 100%; max-width: 440px;
+}
+.modal h3 { font-size: 1rem; margin-bottom: 1.25rem; }
+.modal .field { margin-bottom: 1rem; }
+.modal .field label { display: block; font-size: 0.72rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.3rem; }
+.modal .field input, .modal .field select {
+  width: 100%; padding: 0.6rem 0.8rem; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+  font-family: var(--font-body); font-size: 0.85rem; outline: none;
+}
+.modal .field input:focus, .modal .field select:focus { border-color: var(--accent); }
+.modal .field select option { background: var(--surface-2); }
+.modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.modal-actions button {
+  flex: 1; padding: 0.65rem; border-radius: 8px; font-family: var(--font-body);
+  font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: var(--bg); border: none; font-weight: 600; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+
+.supervision-note {
+  font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; font-style: italic;
+}
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 0.75rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; z-index: 300;
+  transform: translateY(100px); opacity: 0; transition: all 0.3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--danger); color: var(--danger); }
+
+@media (max-width: 768px) {
+  .perm-banner { grid-template-columns: 1fr; }
+  table { font-size: 0.75rem; }
+  .actions { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark">P</div>
+  <h1>User Management</h1>
+  <div class="spacer"></div>
+  <a href="/">← Back to App</a>
+  <button onclick="logout()">Sign Out</button>
+</div>
+
+<div class="container">
+
+  <!-- PERMISSION MATRIX OVERVIEW -->
+  <div class="perm-banner">
+    <div class="perm-col tech">
+      <h3><span class="role-badge role-tech">TECH</span> Standard</h3>
+      <ul>
+        <li>Own chat history only</li>
+        <li>Own service records only</li>
+        <li>Submit tips (no edit)</li>
+        <li>20 queries/day limit</li>
+      </ul>
+    </div>
+    <div class="perm-col techp">
+      <h3><span class="role-badge role-techp">TECHP</span> Power</h3>
+      <ul>
+        <li>Own + supervised techs' chats</li>
+        <li>Supervised techs' service records</li>
+        <li>Edit &amp; approve team tips</li>
+        <li>50 queries/day</li>
+      </ul>
+    </div>
+    <div class="perm-col admin">
+      <h3><span class="role-badge role-admin">ADMIN</span> Full</h3>
+      <ul>
+        <li>All users' chat history</li>
+        <li>All service &amp; analytics</li>
+        <li>Manage users &amp; KB</li>
+        <li>Unlimited everything</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- USER TABLE -->
+  <div class="card">
+    <h2>👥 All Users <button class="btn-primary" style="margin-left:auto; padding:0.35rem 1rem; font-size:0.78rem; border-radius:8px; cursor:pointer; border:none; background:var(--accent); color:var(--bg); font-weight:600;" onclick="openCreateModal()">+ Add User</button></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Supervisor</th>
+          <th>Queries Today</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="userTable"></tbody>
+    </table>
+  </div>
+
+  <!-- LOGIN LOG -->
+  <div class="card">
+    <h2>📋 Recent Login Activity</h2>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>User</th><th>Role</th><th>Result</th><th>IP</th></tr>
+      </thead>
+      <tbody id="loginLog"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <h3 id="modalTitle">Create User</h3>
+    <input type="hidden" id="editUserId">
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="modalUsername" placeholder="e.g. tech4">
+    </div>
+    <div class="field" id="passwordField">
+      <label>Password</label>
+      <input type="password" id="modalPassword" placeholder="Min 8 characters">
+    </div>
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="modalFullName" placeholder="e.g. John Smith">
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="modalRole" onchange="toggleSupervisorField()">
+        <option value="tech">Tech — Standard Technician</option>
+        <option value="techp">TechP — Power Technician</option>
+        <option value="admin">Admin — Full Access</option>
+      </select>
+    </div>
+    <div class="field" id="supervisorField">
+      <label>Supervisor (for Tech users)</label>
+      <select id="modalSupervisor">
+        <option value="">— None —</option>
+      </select>
+      <div class="supervision-note">Tech users can only see data from their own sessions. Their supervisor (TechP) can view their work.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="modalSaveBtn" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reset Password</h3>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">Resetting password for: <strong id="resetUsername"></strong></p>
+    <input type="hidden" id="resetUserId">
+    <div class="field">
+      <label>New Password</label>
+      <input type="password" id="resetPassword" placeholder="Min 8 characters">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeResetModal()">Cancel</button>
+      <button class="btn-primary" onclick="doResetPassword()">Reset Password</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allUsers = [];
+let techpUsers = [];
+
+// ─── Load Data ───
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/admin/users');
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 403) { document.body.innerHTML = '<h1 style="color:#ef4444;text-align:center;margin-top:4rem;">Access Denied — Admin Only</h1>'; return; }
+    allUsers = await res.json();
+    techpUsers = allUsers.filter(u => u.role === 'techp');
+    renderUsers();
+    populateSupervisorDropdown();
+  } catch (err) {
+    toast('Failed to load users', 'error');
+  }
+}
+
+async function loadLoginLog() {
+  try {
+    const res = await fetch('/api/admin/login-log?limit=25');
+    const logs = await res.json();
+    const tbody = document.getElementById('loginLog');
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td style="font-family:var(--font-mono);font-size:0.72rem;">${formatTime(l.timestamp)}</td>
+        <td>${l.full_name || l.username}</td>
+        <td><span class="role-badge role-${l.role || 'tech'}">${(l.role || '?').toUpperCase()}</span></td>
+        <td style="color:${l.success ? 'var(--green)' : 'var(--danger)'}">${l.success ? '✓ Success' : '✗ Failed'}</td>
+        <td style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted)">${l.ip || '—'}</td>
+      </tr>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('userTable');
+  tbody.innerHTML = allUsers.map(u => {
+    const isActive = u.active;
+    const queryHtml = u.role === 'tech' ? renderQueryBar(u, 20) : u.role === 'techp' ? renderQueryBar(u, 50) : '<span style="color:var(--text-muted);font-size:0.75rem">Unlimited</span>';
+    const supervisorHtml = u.supervisor_name
+      ? `<span class="supervisor-tag">${u.supervisor_name}</span>`
+      : (u.role === 'tech' ? '<span style="color:var(--danger);font-size:0.72rem">⚠ Unassigned</span>' : '—');
+
+    return `
+      <tr style="${!isActive ? 'opacity:0.45' : ''}">
+        <td>
+          <div style="font-weight:500">${u.full_name || u.username}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono)">${u.username}</div>
+        </td>
+        <td><span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span></td>
+        <td>${supervisorHtml}</td>
+        <td>${queryHtml}</td>
+        <td class="${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Disabled'}</td>
+        <td style="font-size:0.75rem;color:var(--text-muted)">${u.last_login ? formatTime(u.last_login) : 'Never'}</td>
+        <td>
+          <div class="actions">
+            <button onclick="openEditModal(${u.id})">Edit</button>
+            <button onclick="openResetModal(${u.id}, '${u.username}')">Reset PW</button>
+            <button class="danger" onclick="toggleActive(${u.id}, ${isActive ? 0 : 1})">${isActive ? 'Disable' : 'Enable'}</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderQueryBar(user, limit) {
+  const used = user.queriesUsed || 0;
+  const pct = Math.min((used / limit) * 100, 100);
+  const cls = pct >= 100 ? 'bar-full' : pct >= 75 ? 'bar-warn' : 'bar-ok';
+  return `
+    <div class="query-bar">
+      <div class="bar"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <span>${used}/${limit}</span>
+    </div>
+  `;
+}
+
+// ─── Create / Edit Modal ───
+function openCreateModal() {
+  document.getElementById('modalTitle').textContent = 'Create User';
+  document.getElementById('modalSaveBtn').textContent = 'Create User';
+  document.getElementById('editUserId').value = '';
+  document.getElementById('modalUsername').value = '';
+  document.getElementById('modalUsername').disabled = false;
+  document.getElementById('modalPassword').value = '';
+  document.getElementById('passwordField').style.display = '';
+  document.getElementById('modalFullName').value = '';
+  document.getElementById('modalRole').value = 'tech';
+  document.getElementById('modalSupervisor').value = '';
+  toggleSupervisorField();
+  document.getElementById('userModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('modalTitle').textContent = 'Edit User — ' + u.username;
+  document.getElementById('modalSaveBtn').textContent = 'Save Changes';
+  document.getElementById('editUserId').value = id;
+  document.getElementById('modalUsername').value = u.username;
+  document.getElementById('modalUsername').disabled = true;
+  document.getElementById('passwordField').style.display = 'none';
+  document.getElementById('modalFullName').value = u.full_name || '';
+  document.getElementById('modalRole').value = u.role;
+  document.getElementById('modalSupervisor').value = u.supervised_by || '';
+  toggleSupervisorField();
+  document.getElementById('userModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('userModal').classList.remove('open'); }
+
+function toggleSupervisorField() {
+  const role = document.getElementById('modalRole').value;
+  document.getElementById('supervisorField').style.display = role === 'tech' ? '' : 'none';
+}
+
+function populateSupervisorDropdown() {
+  const select = document.getElementById('modalSupervisor');
+  select.innerHTML = '<option value="">— None —</option>' +
+    techpUsers.map(u => `<option value="${u.id}">${u.username} — ${u.full_name || ''}</option>`).join('');
+}
+
+async function saveUser() {
+  const editId = document.getElementById('editUserId').value;
+  const isEdit = !!editId;
+
+  const payload = {
+    username: document.getElementById('modalUsername').value.trim(),
+    role: document.getElementById('modalRole').value,
+    full_name: document.getElementById('modalFullName').value.trim(),
+  };
+
+  if (!isEdit) {
+    payload.password = document.getElementById('modalPassword').value;
+    if (!payload.username || !payload.password) { toast('Username and password required', 'error'); return; }
+    if (payload.password.length < 8) { toast('Password must be 8+ characters', 'error'); return; }
+  }
+
+  if (payload.role === 'tech') {
+    const sv = document.getElementById('modalSupervisor').value;
+    if (sv) payload.supervised_by = parseInt(sv);
+  }
+
+  try {
+    const url = isEdit ? `/api/admin/users/${editId}` : '/api/admin/users';
+    const method = isEdit ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Failed', 'error'); return; }
+    toast(data.message || 'Saved!', 'success');
+    closeModal();
+    loadUsers();
+  } catch (err) { toast('Save failed', 'error'); }
+}
+
+// ─── Reset Password ───
+function openResetModal(id, username) {
+  document.getElementById('resetUserId').value = id;
+  document.getElementById('resetUsername').textContent = username;
+  document.getElementById('resetPassword').value = '';
+  document.getElementById('resetModal').classList.add('open');
+}
+function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
+
+async function doResetPassword() {
+  const id = document.getElementById('resetUserId').value;
+  const pw = document.getElementById('resetPassword').value;
+  if (!pw || pw.length < 8) { toast('Password must be 8+ characters', 'error'); return; }
+
+  try {
+    const res = await fetch(`/api/admin/users/${id}/reset-password`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPassword: pw })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error, 'error'); return; }
+    toast('Password reset!', 'success');
+    closeResetModal();
+  } catch (err) { toast('Reset failed', 'error'); }
+}
+
+// ─── Toggle Active ───
+async function toggleActive(id, active) {
+  const label = active ? 'enable' : 'disable';
+  if (!confirm(`Are you sure you want to ${label} this account?`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: !!active })
+    });
+    if (!res.ok) { toast('Failed to update', 'error'); return; }
+    toast(`Account ${label}d`, 'success');
+    loadUsers();
+  } catch (err) { toast('Update failed', 'error'); }
+}
+
+// ─── Logout ───
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+// ─── Helpers ───
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts + (ts.includes('Z') ? '' : 'Z'));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+         d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Init ───
+loadUsers();
+loadLoginLog();
+// Refresh query usage every 30s
+setInterval(loadUsers, 30000);
+</script>
+</body>
+</html>

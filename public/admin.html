@@ -382,8 +382,10 @@
   <div class="login-box">
     <div class="login-logo">P-Supp</div>
     <div class="login-title">Admin <span>Dashboard</span></div>
-    <label class="login-label">Admin Password</label>
-    <input type="password" class="login-input" id="admin-pass" placeholder="Enter admin password" autocomplete="current-password">
+    <label class="login-label">Username</label>
+    <input type="text" class="login-input" id="admin-user" placeholder="Enter username" autocomplete="username">
+    <label class="login-label">Password</label>
+    <input type="password" class="login-input" id="admin-pass" placeholder="Enter password" autocomplete="current-password">
     <button class="login-btn" onclick="doLogin()">Sign In →</button>
     <div class="login-error" id="login-err"></div>
   </div>
@@ -427,7 +429,19 @@
     </div>
   </div>
 
+  <div class="nav-section">
+    <div class="nav-label">Management</div>
+    <div class="nav-item" onclick="showSection('users')" id="nav-users">
+      <span class="nav-icon">👥</span> Users
+      <span class="nav-badge green" id="users-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showSection('loginlog')" id="nav-loginlog">
+      <span class="nav-icon">🔒</span> Login Log
+    </div>
+  </div>
+
   <div class="sidebar-footer">
+    <a href="/" style="display:block;text-align:center;color:var(--accent);font-size:12px;text-decoration:none;margin-bottom:8px">← Back to App</a>
     <button class="logout-btn" onclick="doLogout()">Sign Out</button>
   </div>
 </nav>
@@ -641,6 +655,104 @@
       <div id="scrape-history"><div class="loading">Loading…</div></div>
     </div>
   </div>
+
+  <!-- USERS -->
+  <div class="section" id="section-users">
+    <div class="stat-grid" id="users-stats"></div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">User Accounts</div>
+        <button class="btn btn-primary" onclick="showUserForm()">＋ New User</button>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th style="width:70px">Role</th>
+              <th>Full Name</th>
+              <th style="width:100px">Supervisor</th>
+              <th style="width:100px">Queries Today</th>
+              <th style="width:110px">Last Login</th>
+              <th style="width:60px">Active</th>
+              <th style="width:130px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"><tr><td colspan="8"><div class="loading">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- User Form (hidden) -->
+    <div class="panel" id="user-form-panel" style="display:none">
+      <div class="panel-header">
+        <div class="panel-title" id="user-form-title">New User</div>
+        <button class="btn btn-ghost" onclick="hideUserForm()">✕ Cancel</button>
+      </div>
+      <div class="panel-body" style="padding:16px 18px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="uf-username" placeholder="e.g. jsmith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="uf-fullname" placeholder="e.g. John Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="uf-password" placeholder="Enter password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-select" id="uf-role">
+              <option value="tech">Tech (5/day)</option>
+              <option value="techp">Power Tech (15/day)</option>
+              <option value="admin">Admin (unlimited)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supervisor (for tech only)</label>
+            <select class="form-select" id="uf-supervisor">
+              <option value="">— none —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" class="form-input" id="uf-email" placeholder="e.g. jsmith@company.com">
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+          <button class="btn btn-ghost" onclick="hideUserForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN LOG -->
+  <div class="section" id="section-loginlog">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Login Activity</div>
+        <button class="btn btn-ghost" onclick="loadLoginLog()">↻ Refresh</button>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px">Time</th>
+              <th>Username</th>
+              <th style="width:70px">Role</th>
+              <th style="width:80px">Result</th>
+              <th>IP Address</th>
+            </tr>
+          </thead>
+          <tbody id="loginlog-tbody"><tr><td colspan="5"><div class="loading">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -650,10 +762,12 @@
 // ═══════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════
-let adminToken = sessionStorage.getItem('adminToken') || null;
+let adminToken = localStorage.getItem('authToken') || null;
 let currentSection = 'overview';
 let logsCurrentPage = 1;
 const LOGS_PER_PAGE = 30;
+let allUsers = [];
+let editUserId = null;
 
 const SECTION_META = {
   overview:  { title: 'Overview',           subtitle: 'System status at a glance' },
@@ -663,30 +777,39 @@ const SECTION_META = {
   kb:        { title: 'Knowledge Base',      subtitle: 'Indexed documents, brands, chunks' },
   analytics: { title: 'Analytics',           subtitle: 'Usage patterns and satisfaction' },
   scraper:   { title: 'Web Scraper',         subtitle: 'Pull manufacturer content into KB' },
+  users:     { title: 'User Management',     subtitle: 'Accounts, roles, and query limits' },
+  loginlog:  { title: 'Login Log',           subtitle: 'Authentication activity' },
 };
 
 // ═══════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════
 async function doLogin() {
+  const user = document.getElementById('admin-user').value.trim();
   const pass = document.getElementById('admin-pass').value;
-  if (!pass) return;
+  if (!user || !pass) { document.getElementById('login-err').textContent = 'Enter username and password'; return; }
   try {
-    const r = await fetch('/api/admin/login', {
+    const r = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass })
+      body: JSON.stringify({ username: user, password: pass })
     });
     const d = await r.json();
     if (d.token) {
+      // Only allow admin role
+      if (d.user.role !== 'admin') {
+        document.getElementById('login-err').textContent = 'Admin access required';
+        return;
+      }
       adminToken = d.token;
-      sessionStorage.setItem('adminToken', adminToken);
+      localStorage.setItem('authToken', adminToken);
+      localStorage.setItem('authUser', JSON.stringify(d.user));
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('sidebar').style.display = 'flex';
       document.getElementById('main').style.display = 'flex';
       initDashboard();
     } else {
-      document.getElementById('login-err').textContent = 'Invalid password';
+      document.getElementById('login-err').textContent = d.error || 'Invalid credentials';
     }
   } catch(e) {
     document.getElementById('login-err').textContent = 'Connection error';
@@ -694,13 +817,18 @@ async function doLogin() {
 }
 
 function doLogout() {
+  fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken } }).catch(()=>{});
   adminToken = null;
-  sessionStorage.removeItem('adminToken');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authUser');
   location.reload();
 }
 
 document.getElementById('admin-pass').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
+});
+document.getElementById('admin-user').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('admin-pass').focus();
 });
 
 // ═══════════════════════════════════════
@@ -741,6 +869,8 @@ function showSection(name) {
   if (name === 'kb')        loadKB();
   if (name === 'analytics') loadAnalytics();
   if (name === 'scraper')   loadScrapeHistory();
+  if (name === 'users')     loadUsers();
+  if (name === 'loginlog')  loadLoginLog();
 }
 
 // ═══════════════════════════════════════
@@ -759,6 +889,15 @@ async function loadBadges() {
   const gb = document.getElementById('gaps-badge');
   if (d.pending_tips > 0) { tb.textContent = d.pending_tips; tb.style.display = 'inline'; }
   if (d.kb_gaps > 0) { gb.textContent = d.kb_gaps; gb.style.display = 'inline'; }
+  // User count
+  try {
+    const users = await api('/api/admin/users');
+    if (users) {
+      const ub = document.getElementById('users-badge');
+      ub.textContent = users.length;
+      ub.style.display = 'inline';
+    }
+  } catch(e) {}
 }
 
 // ═══════════════════════════════════════
@@ -1195,6 +1334,144 @@ function clearScraperLog() {
 }
 
 // ═══════════════════════════════════════
+//  USERS
+// ═══════════════════════════════════════
+async function loadUsers() {
+  const users = await api('/api/admin/users');
+  if (!users) return;
+  allUsers = users;
+
+  const admins = users.filter(u => u.role === 'admin').length;
+  const techps = users.filter(u => u.role === 'techp').length;
+  const techs  = users.filter(u => u.role === 'tech').length;
+  const active = users.filter(u => u.active).length;
+
+  document.getElementById('users-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value blue">${users.length}</div><div class="stat-sub">${active} active</div></div>
+    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value yellow">${admins}</div></div>
+    <div class="stat-card"><div class="stat-label">Power Techs</div><div class="stat-value green">${techps}</div></div>
+    <div class="stat-card"><div class="stat-label">Technicians</div><div class="stat-value">${techs}</div></div>
+  `;
+
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-text">No users</div></div></td></tr>';
+    return;
+  }
+
+  const roleBadge = r => `<span class="badge badge-${r === 'admin' ? 'pending' : r === 'techp' ? 'approved' : 'gray'}">${r}</span>`;
+  const limit = r => r === 'admin' ? '∞' : r === 'techp' ? '15' : '5';
+
+  tbody.innerHTML = users.map(u => `
+    <tr style="${u.active ? '' : 'opacity:0.4'}">
+      <td><strong>${esc(u.username)}</strong></td>
+      <td>${roleBadge(u.role)}</td>
+      <td>${esc(u.full_name || '—')}</td>
+      <td class="td-muted">${esc(u.supervisor_name || '—')}</td>
+      <td class="td-mono">${u.queriesUsed || 0} / ${limit(u.role)}</td>
+      <td class="td-muted">${u.last_login ? fmtTime(u.last_login) : 'never'}</td>
+      <td>${u.active ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--red)">✕</span>'}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="editUser(${u.id})">Edit</button>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="resetUserPw(${u.id}, '${esc(u.username)}')">🔑</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:${u.active ? 'var(--red)' : 'var(--green)'}" onclick="toggleUserActive(${u.id}, ${u.active ? 0 : 1})">${u.active ? '✕' : '✓'}</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Populate supervisor dropdown for form
+  const supSel = document.getElementById('uf-supervisor');
+  supSel.innerHTML = '<option value="">— none —</option>' +
+    users.filter(u => u.role === 'techp').map(u => `<option value="${u.id}">${esc(u.username)} (${esc(u.full_name || '')})</option>`).join('');
+}
+
+function showUserForm(user) {
+  editUserId = user ? user.id : null;
+  document.getElementById('user-form-panel').style.display = 'block';
+  document.getElementById('user-form-title').textContent = user ? 'Edit User: ' + user.username : 'New User';
+  document.getElementById('uf-username').value = user ? user.username : '';
+  document.getElementById('uf-username').disabled = !!user;
+  document.getElementById('uf-fullname').value = user ? (user.full_name || '') : '';
+  document.getElementById('uf-password').value = '';
+  document.getElementById('uf-password').placeholder = user ? 'Leave blank to keep current' : 'Enter password';
+  document.getElementById('uf-role').value = user ? user.role : 'tech';
+  document.getElementById('uf-email').value = user ? (user.email || '') : '';
+  document.getElementById('uf-supervisor').value = user ? (user.supervised_by || '') : '';
+  document.getElementById('user-form-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideUserForm() {
+  editUserId = null;
+  document.getElementById('user-form-panel').style.display = 'none';
+}
+
+function editUser(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (u) showUserForm(u);
+}
+
+async function saveUser() {
+  const payload = {
+    username: document.getElementById('uf-username').value.trim(),
+    full_name: document.getElementById('uf-fullname').value.trim(),
+    role: document.getElementById('uf-role').value,
+    email: document.getElementById('uf-email').value.trim(),
+    supervised_by: document.getElementById('uf-supervisor').value ? parseInt(document.getElementById('uf-supervisor').value) : null
+  };
+  const pw = document.getElementById('uf-password').value;
+
+  if (!editUserId) {
+    // Creating
+    if (!payload.username) { toast('Username required', 'err'); return; }
+    if (!pw) { toast('Password required', 'err'); return; }
+    payload.password = pw;
+    const d = await api('/api/admin/users', { method: 'POST', body: JSON.stringify(payload) });
+    if (d?.ok) { toast('User created ✓', 'ok'); hideUserForm(); loadUsers(); }
+    else toast(d?.error || 'Error creating user', 'err');
+  } else {
+    // Editing
+    const d = await api(`/api/admin/users/${editUserId}`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (d?.ok) { toast('User updated ✓', 'ok'); hideUserForm(); loadUsers(); }
+    else toast(d?.error || 'Error updating user', 'err');
+  }
+}
+
+async function resetUserPw(id, username) {
+  const pw = prompt(`Reset password for "${username}":\nEnter new password:`);
+  if (!pw) return;
+  const d = await api(`/api/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ newPassword: pw }) });
+  if (d?.ok) toast('Password reset ✓ — user must change on next login', 'ok');
+  else toast(d?.error || 'Error resetting password', 'err');
+}
+
+async function toggleUserActive(id, active) {
+  const d = await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify({ active: !!active }) });
+  if (d?.ok) { toast(active ? 'User activated ✓' : 'User deactivated', 'ok'); loadUsers(); }
+  else toast(d?.error || 'Error', 'err');
+}
+
+// ═══════════════════════════════════════
+//  LOGIN LOG
+// ═══════════════════════════════════════
+async function loadLoginLog() {
+  const data = await api('/api/admin/login-log?limit=50');
+  const tbody = document.getElementById('loginlog-tbody');
+  if (!data?.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-text">No login activity</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(l => `
+    <tr>
+      <td class="td-mono td-muted">${fmtTime(l.timestamp)}</td>
+      <td><strong>${esc(l.username)}</strong>${l.full_name ? ' <span class="td-muted">(' + esc(l.full_name) + ')</span>' : ''}</td>
+      <td>${l.role ? `<span class="badge badge-${l.role === 'admin' ? 'pending' : l.role === 'techp' ? 'approved' : 'gray'}">${l.role}</span>` : '<span class="td-muted">—</span>'}</td>
+      <td>${l.success ? '<span style="color:var(--green)">✓ OK</span>' : '<span style="color:var(--red)">✕ Failed</span>'}</td>
+      <td class="td-mono td-muted">${esc(l.ip || '—')}</td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════
 function esc(s) {
@@ -1229,18 +1506,18 @@ function debounce(fn, delay) {
 //  AUTO LOGIN (if token stored)
 // ═══════════════════════════════════════
 if (adminToken) {
-  // Verify token is still valid
-  fetch('/api/admin/counts', {
+  // Verify token is still valid and user is admin
+  fetch('/api/auth/me', {
     headers: { 'Authorization': 'Bearer ' + adminToken }
-  }).then(r => {
-    if (r.ok) {
+  }).then(r => r.json()).then(d => {
+    if (d.authenticated && d.user.role === 'admin') {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('sidebar').style.display = 'flex';
       document.getElementById('main').style.display = 'flex';
       initDashboard();
     } else {
       adminToken = null;
-      sessionStorage.removeItem('adminToken');
+      localStorage.removeItem('authToken');
     }
   }).catch(() => {});
 }

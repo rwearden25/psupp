@@ -1,0 +1,30 @@
+P-SUPP TRAINING DATASET Format: Intent | Question | Recommended Response
+| Tags
+
+INTENT: Pricing Q: How much will this cost? A: Pricing depends on square
+footage, surface type, and soil level. Provide estimate using property
+details. TAGS: pricing, estimate
+
+INTENT: HouseWash_Method Q: Do you use high pressure on siding? A:
+No. We soft wash using low pressure and detergents to prevent damage.
+TAGS: safety, siding, softwash
+
+INTENT: RoofCleaning_Method Q: Are you going to pressure wash my roof?
+A: No. We use manufacturer-approved soft wash to kill algae without
+granule loss. TAGS: roof, arca, softwash
+
+INTENT: Expectations_Stains Q: Will oil stains come out completely? A:
+Some deep stains may not fully disappear, but we dramatically improve
+appearance. TAGS: concrete, limitations
+
+INTENT: Scheduling Q: Do I need to be home? A: No presence required if
+access and water are available. TAGS: logistics
+
+INTENT: MaintenancePlan Q: How often should I clean this? A: Most
+properties benefit from annual or semiannual service depending on
+environment. TAGS: recurring, maintenance
+
+INTENT: Differentiation Q: What’s the difference between you and a cheap
+guy with a machine? A: We use commercial equipment, proper chemistry,
+and safe methods that prevent damage and deliver longer-lasting results.
+TAGS: value, education

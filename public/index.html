@@ -43,8 +43,8 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .ref-table .nz-label{font-weight:600;background:var(--surface-2)}
 .logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.75rem;font-family:var(--font-body);color:var(--text-muted);cursor:pointer;transition:0.2s;white-space:nowrap}
 .logout-btn:hover{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,0.06)}
-.upload-btn{background:none;border:1px solid var(--border);border-radius:10px;padding:6px 12px;cursor:pointer;color:var(--text-muted);font-size:0.82rem;font-family:var(--font-body);transition:0.2s;display:flex;align-items:center;gap:0.3rem;white-space:nowrap}
-.upload-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.upload-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.35rem;padding:8px;border-radius:50%;transition:all 0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
+.upload-btn:hover{color:var(--accent);background:var(--accent-dim)}
 .img-preview-bar{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text-muted)}
 .img-preview-bar img{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
 .img-preview-bar .remove-img{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0 4px}
@@ -52,18 +52,19 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .typing-cursor::after{content:'▊';animation:blink 0.7s infinite;color:var(--accent);font-weight:300}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .input-bar{padding:0.75rem 2rem;border-top:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:fixed;bottom:0;left:0;right:0;z-index:99;transition:transform 0.15s ease-out;will-change:transform}
-.input-wrap{max-width:820px;margin:0 auto;display:flex;gap:0.5rem}
-.input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:16px;outline:none;transition:border-color 0.2s}
-.input-wrap input:focus{border-color:var(--accent)}
+.input-wrap{max-width:820px;margin:0 auto;display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:0 8px 0 0;transition:border-color 0.2s;gap:0}
+.input-wrap:focus-within{border-color:var(--accent);box-shadow:0 1px 6px rgba(37,99,235,0.1)}
+.input-wrap input{flex:1;background:none;border:none;border-radius:24px;padding:0.75rem 0.5rem 0.75rem 1.2rem;color:var(--text);font-family:var(--font-body);font-size:16px;outline:none}
+.input-wrap input:focus{border-color:transparent}
 .input-wrap input::placeholder{color:var(--text-muted)}
-.send-btn{border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.85rem;font-weight:600;font-family:var(--font-body);transition:all 0.15s;flex-shrink:0;padding:0 1rem;height:44px}
-.send-btn:hover{filter:brightness(1.15);transform:scale(1.04)}
+.send-btn{border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all 0.15s;flex-shrink:0;width:38px;height:38px;margin-left:2px}
+.send-btn:hover{filter:brightness(1.15);transform:scale(1.06)}
 .layout{display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden}
 @media(max-width:900px){.layout{grid-template-columns:1fr;order:2}.sidebar{display:none}.input-bar{position:relative;bottom:auto;left:auto;right:auto;order:3;flex-shrink:0;will-change:auto}.main{padding-bottom:1rem}}
 @media(max-width:600px){
   .upload-btn span.btn-label,.send-btn span.btn-label{display:none}
-  .send-btn{width:44px;padding:0}
-  .upload-btn{padding:6px 10px}
+  .send-btn{width:36px;height:36px}
+  .upload-btn{font-size:1.4rem;padding:6px}
   .nav-btn{font-size:0.78rem;padding:0.45rem 0.85rem}
   .input-bar{padding:0.6rem 1rem}
   .quick-actions{grid-template-columns:1fr 1fr}
@@ -237,9 +238,41 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .login-box input{width:100%;padding:12px 16px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:16px;font-family:var(--font-body);outline:none;transition:border-color 0.2s;box-sizing:border-box;margin-bottom:14px}
 .login-box input:focus{border-color:var(--accent)}
 .login-box input::placeholder{color:var(--text-muted)}
-.login-box button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
-.login-box button:hover{filter:brightness(1.15);transform:scale(1.02)}
+.login-box button:not(.pw-toggle){width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
+.login-box button:not(.pw-toggle):hover{filter:brightness(1.15);transform:scale(1.02)}
 .login-error{color:#f87171;font-size:0.78rem;margin-top:10px;display:none}
+.login-field-label{text-align:left;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px}
+.user-info{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted)}
+.role-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px}
+.role-admin{background:rgba(245,158,11,0.15);color:#f59e0b}
+.role-techp{background:rgba(34,197,94,0.15);color:#22c55e}
+.role-tech{background:rgba(59,130,246,0.15);color:#3b82f6}
+.query-counter{font-size:0.7rem;color:var(--text-muted);font-family:var(--font-mono)}
+.admin-link{font-size:0.75rem;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:4px 10px;border-radius:6px;transition:all 0.15s}
+.admin-link:hover{border-color:var(--accent);color:var(--text)}
+.ham-logout{color:#ef4444 !important}
+.ham-logout:hover{background:rgba(239,68,68,0.1) !important}
+.pw-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100000;font-family:var(--font-body)}
+.pw-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:380px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.pw-modal h3{font-size:1.1rem;margin-bottom:4px;color:var(--text)}
+.pw-modal .pw-subtitle{font-size:0.78rem;color:var(--text-muted);margin-bottom:20px}
+.pw-modal .pw-forced{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#f59e0b;margin-bottom:16px}
+.pw-modal input{width:100%;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:14px;font-family:var(--font-body);outline:none;box-sizing:border-box;margin-bottom:10px}
+.pw-modal input:focus{border-color:var(--accent)}
+.pw-modal .pw-btns{display:flex;gap:8px;margin-top:16px}
+.pw-modal .pw-btns button{flex:1;padding:10px;border-radius:8px;font-size:0.85rem;font-weight:600;font-family:var(--font-body);cursor:pointer;border:1px solid var(--border);transition:all 0.15s}
+.pw-modal .pw-btn-save{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pw-modal .pw-btn-save:hover{filter:brightness(1.15)}
+.pw-modal .pw-btn-cancel{background:var(--surface-2);color:var(--text)}
+.pw-modal .pw-btn-cancel:hover{background:var(--surface-3)}
+.pw-modal .pw-error{color:#f87171;font-size:0.75rem;margin-top:4px;display:none}
+.pw-modal .pw-success{color:#22c55e;font-size:0.75rem;margin-top:4px;display:none}
+.pw-wrap{position:relative;margin-bottom:14px}
+.pw-wrap input{width:100%;padding-right:44px;margin-bottom:0 !important}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0;line-height:1;width:24px;text-align:center}
+.pw-toggle:hover{color:var(--text)}
+.change-pw-link{font-size:0.75rem;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:var(--font-body);padding:4px 8px;border-radius:4px;transition:color 0.15s}
+.change-pw-link:hover{color:var(--text)}
 #appContent{display:none}
 #appContent.visible{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 
@@ -311,27 +344,126 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
   <div class="login-box">
     <div class="login-logo-box">P-S</div>
     <h2>P-Supp Tool</h2>
-    <p>Internal Access Only</p>
-    <input type="password" id="loginPass" placeholder="Enter team password" autocomplete="off" />
+    <p>Sign in with your credentials</p>
+    <div class="login-field-label">Username</div>
+    <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" autofocus />
+    <div class="login-field-label">Password</div>
+    <div class="pw-wrap">
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" />
+      <button type="button" class="pw-toggle" onclick="togglePw(this,'loginPass')">👁</button>
+    </div>
     <button onclick="tryLogin()">Sign In</button>
-    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+    <div class="login-error" id="loginError">Invalid credentials. Try again.</div>
   </div>
 </div>
 <script>
 function tryLogin(){
-  const i=document.getElementById('loginPass'),e=document.getElementById('loginError');
+  const u=document.getElementById('loginUser'),p=document.getElementById('loginPass'),e=document.getElementById('loginError');
   const btn=document.querySelector('.login-box button');
-  btn.disabled=true;btn.textContent='Signing in…';
-  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:i.value})})
+  if(!u.value.trim()||!p.value){e.textContent='Enter username and password';e.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Signing in…';e.style.display='none';
+  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u.value.trim(),password:p.value})})
     .then(r=>r.json()).then(d=>{
-      if(d.ok&&d.token){sessionStorage.setItem('authToken',d.token);unlockApp();}
-      else{e.style.display='block';i.value='';i.focus();}
+      if(d.ok&&d.token){
+        localStorage.setItem('authToken',d.token);
+        localStorage.setItem('authUser',JSON.stringify(d.user));
+        if(d.queryUsage)localStorage.setItem('queryUsage',JSON.stringify(d.queryUsage));
+        unlockApp();
+      }
+      else{e.textContent=d.error||'Login failed';e.style.display='block';p.value='';p.focus();}
       btn.disabled=false;btn.textContent='Sign In';
     }).catch(()=>{e.textContent='Connection error';e.style.display='block';btn.disabled=false;btn.textContent='Sign In';});
 }
-function unlockApp(){document.getElementById('loginGate').classList.add('hidden');document.getElementById('appContent').classList.add('visible');}
+function unlockApp(){
+  document.getElementById('loginGate').classList.add('hidden');
+  document.getElementById('appContent').classList.add('visible');
+  // Show role-specific UI
+  try {
+    const user = JSON.parse(localStorage.getItem('authUser')||'{}');
+    const nameEl = document.getElementById('userDisplayName');
+    const roleEl = document.getElementById('userRoleBadge');
+    const queryEl = document.getElementById('queryCounter');
+    const adminEl = document.getElementById('adminLink');
+    if(nameEl) nameEl.textContent = user.full_name || user.username || '';
+    if(roleEl){roleEl.textContent=user.role;roleEl.className='role-badge role-'+user.role;}
+    if(user.role==='admin'&&adminEl)adminEl.style.display='block';
+    // Query counter for tech/techp
+    const usage=JSON.parse(localStorage.getItem('queryUsage')||'null');
+    if(queryEl&&usage&&usage.remaining!==null){queryEl.textContent=usage.remaining+'/'+usage.limit+' left';queryEl.style.display='inline';}
+    else if(queryEl){queryEl.style.display='none';}
+  } catch(e){}
+}
+
+function showPwModal(forced){
+  const modal=document.getElementById('pwModal');
+  const forcedMsg=document.getElementById('pwForcedMsg');
+  const cancelBtn=document.getElementById('pwCancelBtn');
+  const errEl=document.getElementById('pwError');
+  const succEl=document.getElementById('pwSuccess');
+  modal.style.display='flex';
+  errEl.style.display='none';succEl.style.display='none';
+  document.getElementById('pwCurrent').value='';
+  document.getElementById('pwNew').value='';
+  document.getElementById('pwConfirm').value='';
+  if(forced){forcedMsg.style.display='block';cancelBtn.style.display='none';}
+  else{forcedMsg.style.display='none';cancelBtn.style.display='block';}
+}
+function closePwModal(){document.getElementById('pwModal').style.display='none';}
+function submitPwChange(){
+  const cur=document.getElementById('pwCurrent').value;
+  const nw=document.getElementById('pwNew').value;
+  const conf=document.getElementById('pwConfirm').value;
+  const errEl=document.getElementById('pwError');
+  const succEl=document.getElementById('pwSuccess');
+  errEl.style.display='none';succEl.style.display='none';
+  if(!cur){errEl.textContent='Enter current password';errEl.style.display='block';return;}
+  if(!nw){errEl.textContent='Enter a new password';errEl.style.display='block';return;}
+  if(nw!==conf){errEl.textContent='Passwords do not match';errEl.style.display='block';return;}
+  const token=localStorage.getItem('authToken');
+  fetch('/api/auth/change-password',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},
+    body:JSON.stringify({currentPassword:cur,newPassword:nw})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      succEl.textContent='Password updated!';succEl.style.display='block';
+      // Clear must_change_pw in stored user
+      const user=JSON.parse(localStorage.getItem('authUser')||'{}');
+      user.must_change_pw=false;
+      localStorage.setItem('authUser',JSON.stringify(user));
+      setTimeout(()=>{closePwModal();},1200);
+    } else {
+      errEl.textContent=d.error||'Failed to change password';errEl.style.display='block';
+    }
+  }).catch(()=>{errEl.textContent='Connection error';errEl.style.display='block';});
+}
+
+function togglePw(btn,id){const inp=document.getElementById(id);if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}else{inp.type='password';btn.textContent='👁';}}
+function doLogout(){localStorage.removeItem('authToken');localStorage.removeItem('authUser');localStorage.removeItem('queryUsage');location.reload();}
 document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+document.getElementById('loginUser').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginPass').focus();});
 </script>
+
+<!-- Change Password Modal -->
+<div id="pwModal" class="pw-modal-overlay" style="display:none">
+  <div class="pw-modal">
+    <h3>🔒 Change Password</h3>
+    <div class="pw-subtitle" id="pwSubtitle">Choose a new password</div>
+    <div class="pw-forced" id="pwForcedMsg" style="display:none">⚠ You must change your temporary password before continuing.</div>
+    <div class="login-field-label">Current Password</div>
+    <div class="pw-wrap"><input type="password" id="pwCurrent" placeholder="Current password" /><button type="button" class="pw-toggle" onclick="togglePw(this,'pwCurrent')">👁</button></div>
+    <div class="login-field-label">New Password</div>
+    <div class="pw-wrap"><input type="password" id="pwNew" placeholder="New password" /><button type="button" class="pw-toggle" onclick="togglePw(this,'pwNew')">👁</button></div>
+    <div class="login-field-label">Confirm New Password</div>
+    <div class="pw-wrap"><input type="password" id="pwConfirm" placeholder="Confirm new password" /><button type="button" class="pw-toggle" onclick="togglePw(this,'pwConfirm')">👁</button></div>
+    <div class="pw-error" id="pwError"></div>
+    <div class="pw-success" id="pwSuccess"></div>
+    <div class="pw-btns">
+      <button class="pw-btn-cancel" id="pwCancelBtn" onclick="closePwModal()">Cancel</button>
+      <button class="pw-btn-save" onclick="submitPwChange()">Update Password</button>
+    </div>
+  </div>
+</div>
 
 <div id="appContent">
 <div class="app">
@@ -339,28 +471,33 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
     <div class="logo" onclick="exitChat?exitChat():showHome()" style="cursor:pointer" title="Home">P-S</div>
     <div class="header-text" onclick="exitChat?exitChat():showHome()" style="cursor:pointer"><h1>P-Supp Tool</h1><span>Diagnostics, Service &amp; Reference</span></div>
     <div class="header-right">
+      <div class="user-info">
+        <span id="userDisplayName"></span>
+        <span id="userRoleBadge" class="role-badge"></span>
+        <span id="queryCounter" class="query-counter" style="display:none"></span>
+      </div>
       <div style="position:relative">
-        <button class="hamburger" onclick="document.getElementById('hamMenu').classList.toggle('open')" title="Reference Charts">
+        <button class="hamburger" onclick="document.getElementById('hamMenu').classList.toggle('open')" title="Menu">
           <span></span><span></span><span></span>
         </button>
         <div class="ham-menu" id="hamMenu">
-          <div style="display:flex;flex-direction:column;gap:0.5rem;min-width:180px">
-            <div style="font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding-bottom:0.25rem;border-bottom:1px solid var(--border)">Reference Charts</div>
-            <button class="ham-link" onclick="showNozzleChart();document.getElementById('hamMenu').classList.remove('open')">🎯 Nozzle Size Chart</button>
-            <button class="ham-link" onclick="showInjectorChart();document.getElementById('hamMenu').classList.remove('open')">💉 Injector Sizing Chart</button>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;min-width:200px">
+            <div style="font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding-bottom:0.25rem;border-bottom:1px solid var(--border)">Account</div>
+            <button class="ham-link" onclick="showPwModal(false);document.getElementById('hamMenu').classList.remove('open')">🔑 Change Password</button>
+            <button class="ham-link" id="adminLink" style="display:none" onclick="window.location.href='/admin';document.getElementById('hamMenu').classList.remove('open')">⚙ Admin Panel</button>
+            <button class="ham-link ham-logout" onclick="doLogout()">🚪 Logout</button>
           </div>
         </div>
       </div>
-      <button class="logout-btn" onclick="sessionStorage.removeItem('authToken');location.reload();">Logout</button>
     </div>
   </header>
   <div class="input-bar hidden">
     <div id="imgPreviewBar" class="img-preview-bar" style="display:none"><img id="imgThumb"/><span id="imgName"></span><button class="remove-img" onclick="clearImage()" title="Remove">✕</button></div>
     <div class="input-wrap">
     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageSelect(event)"/>
-    <button class="upload-btn" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷 <span class="btn-label">Photo</span></button>
     <input type="text" id="userInput" placeholder="Search models, troubleshoot issues, look up specs…" autocomplete="off"/>
-    <button class="send-btn" onclick="handleSend()" title="Send"><span class="btn-label">Send</span> ➤</button>
+    <button class="upload-btn" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button>
+    <button class="send-btn" onclick="handleSend()" title="Send">➤</button>
   </div></div>
   <div class="layout">
     <nav class="sidebar" id="sidebar"></nav>
@@ -373,13 +510,20 @@ const C=document.getElementById('contentArea'),I=document.getElementById('userIn
 const MAIN=C.parentElement; // .main is the scrollable container
 const SESSION_ID = 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2,8);
 function authFetch(url, opts = {}) {
-  const token = sessionStorage.getItem('authToken');
+  const token = localStorage.getItem('authToken');
   if (!opts.headers) opts.headers = {};
   if (typeof opts.headers === 'object' && !(opts.headers instanceof Headers)) {
     opts.headers['Authorization'] = 'Bearer ' + (token || '');
   }
   return fetch(url, opts).then(r => {
-    if (r.status === 401) { sessionStorage.removeItem('authToken'); location.reload(); }
+    if (r.status === 401) { localStorage.removeItem('authToken');localStorage.removeItem('authUser'); location.reload(); }
+    // Update query counter from 429 responses
+    if (r.status === 429) {
+      r.clone().json().then(d => {
+        const qc = document.getElementById('queryCounter');
+        if(qc){qc.textContent='0/'+d.limit+' left';qc.style.color='#ef4444';}
+      }).catch(()=>{});
+    }
     return r;
   });
 }
@@ -388,7 +532,7 @@ function safeFocus(el){ if(!isMobile && el) el.focus(); }
 if(isMobile){const ua=navigator.userAgent;if(/iPad|iPhone|iPod/.test(ua))document.body.classList.add('ios');else if(/Android/.test(ua))document.body.classList.add('android');}
 function scrollToMsg(el){if(el){const container=el.closest('.main')||MAIN;const top=el.offsetTop-container.offsetTop;container.scrollTo({top:top,behavior:'smooth'});}}
 function scrollBottom(){MAIN.scrollTop=MAIN.scrollHeight;}
-if(sessionStorage.getItem('authToken'))unlockApp();
+if(localStorage.getItem('authToken'))unlockApp();
 window.addEventListener('popstate',function(e){if(inChat){exitChat();}});
 
 /* ═══ IMAGE UPLOAD ═══ */
@@ -437,10 +581,6 @@ function buildSidebar(){
   h+=`<button class="sb-quick-btn" onclick="showNozzleChart()"><span class="qicon">🎯</span>Nozzle Size Chart</button>`;
   h+=`<button class="sb-quick-btn" onclick="showInjectorChart()"><span class="qicon">💉</span>Injector Sizing Chart</button>`;
   h+=`</div></div></div>`;
-  h+=`<div class="sb-section-label" style="padding:0.6rem 1rem 0.3rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Diagnostics</div>`;
-  h+=`<div class="sb-quick">`;
-  [['pressure','📉','Low Pressure'],['electrical','⚡','Electrical'],['burner','🔥','Burner'],['service','⚙️','Service & Repair']].forEach(([t,ic,lb])=>h+=`<button class="sb-quick-btn" onclick="startTopic('${t}')"><span class="qicon">${ic}</span>${lb}</button>`);
-  h+=`</div>`;
   h+=`<button class="home-btn" data-topic="saved-diags" onclick="showSavedDiags()"><span class="topic-icon">📋</span> My Diagnostics</button>`;
   SB.innerHTML=h;
 }
@@ -669,6 +809,14 @@ function showSearch(query,img){setActive('home');
   }).then(r=>r.json()).then(data=>{
     const el=document.getElementById('aiText'+myId);
     if(!el)return;
+    // Update query counter if present in response
+    if(data.queriesRemaining!==undefined){
+      const qc=document.getElementById('queryCounter');
+      const usage=JSON.parse(localStorage.getItem('queryUsage')||'{}');
+      if(qc&&usage.limit){qc.textContent=data.queriesRemaining+'/'+usage.limit+' left';qc.style.color=data.queriesRemaining<=3?'#ef4444':'';}
+      usage.remaining=data.queriesRemaining;usage.used=(usage.limit||20)-data.queriesRemaining;
+      localStorage.setItem('queryUsage',JSON.stringify(usage));
+    }
     if(data.reply){
       el.innerHTML=formatAIText(data.reply);
       // Track assistant reply in history for next request
