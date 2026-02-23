@@ -294,7 +294,7 @@
 
   /* ── LOG ENTRY ── */
   .log-row-expand { background: rgba(0,0,0,0.3); }
-  .log-detail { padding: 12px 16px; font-size: 12px; color: var(--muted); font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; }
+  .log-detail { padding: 12px 16px; font-size: 12px; color: var(--muted); font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 600px; overflow-y: auto; }
 
   /* ── SCRAPER ── */
   .scraper-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px; }
@@ -530,6 +530,7 @@
       <div class="panel-header">
         <div class="panel-title">Unanswered / Low-Confidence Queries</div>
         <button class="btn btn-ghost" onclick="loadGaps()">↻ Refresh</button>
+        <button class="btn btn-ghost" style="color:var(--red)" onclick="clearAllGaps()">🗑 Clear All</button>
       </div>
       <div class="panel-body">
         <table>
@@ -1061,7 +1062,7 @@ async function loadLogs() {
       <td colspan="5">
         <div class="log-detail"><span style="color:var(--accent)">USER:</span> ${esc(l.user_message || '')}
 
-<span style="color:var(--green)">AI:</span> ${esc((l.ai_reply || '').substring(0, 600))}${(l.ai_reply || '').length > 600 ? '\n…[truncated]' : ''}</div>
+<span style="color:var(--green)">AI:</span> ${esc(l.ai_reply || '')}</div>
       </td>
     </tr>
   `).join('');
@@ -1090,7 +1091,8 @@ async function loadGaps() {
   const data = await api('/api/admin/gaps?limit=100');
   const tbody = document.getElementById('gaps-tbody');
   if (!data?.gaps?.length) {
-    tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div></td></tr>';
+    document.getElementById('gaps-clear-btn')?.remove();
     return;
   }
   tbody.innerHTML = data.gaps.map(g => `
@@ -1100,9 +1102,23 @@ async function loadGaps() {
       <td class="td-muted">${fmtTime(g.created_at)}</td>
       <td>
         <button class="btn btn-ghost" style="font-size:11px" onclick="scrapeForGap('${esc(g.query || '')}')">→ Scrape</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:var(--red)" onclick="dismissGap(${g.id})">✕ Dismiss</button>
       </td>
     </tr>
   `).join('');
+}
+
+async function dismissGap(id) {
+  await fetch('/api/admin/gaps/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+  loadGaps();
+  loadBadges();
+}
+
+async function clearAllGaps() {
+  if (!confirm('Clear all KB gaps? This cannot be undone.')) return;
+  await fetch('/api/admin/gaps', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+  loadGaps();
+  loadBadges();
 }
 
 function scrapeForGap(query) {

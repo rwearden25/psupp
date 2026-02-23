@@ -169,13 +169,15 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 /* ─── SAVED DIAGNOSTICS ─── */
-.save-btn{display:inline-flex;align-items:center;gap:0.35rem;background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--text-muted);font-family:var(--font-body);margin-top:0.6rem;transition:all 0.15s}
-.feedback-row{display:flex;align-items:center;gap:0.4rem;margin-top:0.3rem;margin-left:2.4rem}
+.save-btn{display:inline-flex;align-items:center;gap:0.35rem;background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--text-muted);font-family:var(--font-body);transition:all 0.15s}
+.chat-actions-bar{display:none;align-items:center;gap:0.6rem;padding:0.6rem 1rem;border-top:1px solid var(--border);background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);position:sticky;bottom:0;z-index:10;flex-wrap:wrap;max-width:860px;margin:0 auto}
+.chat-actions-bar.visible{display:flex}
+.feedback-row{display:flex;align-items:center;gap:0.4rem}
 .feedback-label{font-size:0.72rem;color:var(--text-muted);font-family:var(--font-body)}
 .fb-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;cursor:pointer;font-size:0.85rem;transition:all 0.15s;line-height:1}
 .fb-btn:hover{background:var(--accent-dim);border-color:var(--accent)}
 .fb-btn.fb-active{background:var(--accent-dim);border-color:var(--accent)}
-.correction-box{margin-top:0.4rem;margin-left:2.4rem;animation:fadeUp 0.2s ease}
+.correction-box{margin-top:0.4rem;animation:fadeUp 0.2s ease}
 .correction-box textarea{width:100%;max-width:400px;min-height:60px;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;font-size:0.8rem;font-family:var(--font-body);resize:vertical;outline:none;transition:border-color 0.2s}
 .correction-box textarea:focus{border-color:var(--accent)}
 .correction-box button{margin-top:0.3rem;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.75rem;font-size:0.75rem;font-family:var(--font-body);cursor:pointer}
@@ -734,18 +736,20 @@ let chatHistory=[]; // plain text history sent to API for conversation context
 let chatMsgId=0;
 let inChat=false;
 let equipmentContext=null; // {type, brand, model} from intake form
+let latestLogId=null; // most recent AI response log ID for feedback
 
 function ensureChatView(){
   if(!inChat){
     inChat=true;
+    latestLogId=null;
     document.querySelector('.input-bar').classList.remove('hidden');
     history.pushState({view:'chat'},'','#chat');
-    C.innerHTML=`<div class="section-page"><div class="chat-nav"><button class="nav-btn" onclick="exitChat()">🏠 Home</button><button class="nav-btn primary" onclick="newChat()">＋ New Chat</button><button class="nav-btn" onclick="openSaveDialog()" style="margin-left:auto">💾 Save</button></div><div class="messages" id="chatMessages"></div></div>`;
+    C.innerHTML=`<div class="section-page"><div class="chat-nav"><button class="nav-btn" onclick="exitChat()">🏠 Home</button><button class="nav-btn primary" onclick="newChat()">＋ New Chat</button><button class="nav-btn" onclick="openSaveDialog()" style="margin-left:auto">💾 Save</button></div><div class="messages" id="chatMessages"></div><div class="chat-actions-bar" id="chatActionsBar"><button class="save-btn" onclick="openSaveDialog()">💾 Save Diagnosis</button><div class="feedback-row" id="chatFeedbackRow"><span class="feedback-label">Helpful?</span><button class="fb-btn fb-up" onclick="sendFeedback(latestLogId, 1, this)" title="Helpful">👍</button><button class="fb-btn fb-down" onclick="sendFeedback(latestLogId, -1, this)" title="Not helpful">👎</button><button class="tip-btn-inline" onclick="showInlineTip(latestLogId, this)" title="Share a field tip">💡 Add a tip</button></div></div></div>`;
   }
 }
 
-function exitChat(){inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;equipmentContext=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
-function newChat(){chatMessages=[];chatHistory=[];chatMsgId=0;inChat=false;equipmentContext=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
+function exitChat(){inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;equipmentContext=null;latestLogId=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';document.querySelector('.input-bar').classList.add('hidden');showHome();}
+function newChat(){chatMessages=[];chatHistory=[];chatMsgId=0;inChat=false;equipmentContext=null;latestLogId=null;I.placeholder='Search models, troubleshoot issues, look up specs\u2026';ensureChatView();
   const el=document.getElementById('chatMessages');if(el)el.innerHTML='';
   inChat=true;
 }
@@ -823,9 +827,8 @@ function showSearch(query,img){setActive('home');
       chatHistory.push({role:'assistant', content:data.reply});
       I.placeholder='Type your reply or ask a follow-up question...';
       safeFocus(I);
-      // Add save + feedback buttons after AI bubble
-      injectSaveButton(el);
-      if(data.log_id) injectFeedbackButtons(el, data.log_id);
+      // Add save + feedback bar at bottom of chat
+      showChatActionsBar(data.log_id);
       var userMsgs=document.querySelectorAll('.msg-user');
       var lastUser=userMsgs[userMsgs.length-1];
       if(lastUser)scrollToMsg(lastUser);
@@ -1417,35 +1420,28 @@ async function saveDiagEdit(id){
   }
 }
 
-// Inject save button after AI responds in chat
-function injectSaveButton(afterEl){
-  if(!afterEl) return;
-  // Find the parent .msg div and add save button after it
-  const msgDiv = afterEl.closest('.msg');
-  if(!msgDiv) return;
-  const existing = msgDiv.parentElement.querySelector('.save-btn');
-  if(existing) return;
-  const btn = document.createElement('button');
-  btn.className = 'save-btn';
-  btn.innerHTML = '💾 Save Diagnosis';
-  btn.onclick = openSaveDialog;
-  msgDiv.after(btn);
+// Persistent chat actions bar at bottom
+function showChatActionsBar(logId) {
+  if(logId) latestLogId = logId;
+  const bar = document.getElementById('chatActionsBar');
+  if(!bar) return;
+  bar.classList.add('visible');
+  // Reset feedback state for new response
+  const row = document.getElementById('chatFeedbackRow');
+  if(row) {
+    row.querySelector('.feedback-label').textContent = 'Helpful?';
+    row.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('fb-active'));
+  }
+  // Remove old correction/tip boxes
+  bar.querySelectorAll('.correction-box, .tip-box').forEach(el => el.remove());
 }
 
-function injectFeedbackButtons(afterEl, logId){
-  if(!afterEl || !logId) return;
-  const msgDiv = afterEl.closest('.msg');
-  if(!msgDiv) return;
-  if(msgDiv.parentElement.querySelector('.feedback-row')) return;
-  const row = document.createElement('div');
-  row.className = 'feedback-row';
-  row.innerHTML = `<span class="feedback-label">Helpful?</span><button class="fb-btn fb-up" onclick="sendFeedback(${logId}, 1, this)" title="Helpful">👍</button><button class="fb-btn fb-down" onclick="sendFeedback(${logId}, -1, this)" title="Not helpful">👎</button><button class="tip-btn-inline" onclick="showInlineTip(${logId}, this)" title="Share a field tip">💡 Add a tip</button>`;
-  // Insert after save button if present, otherwise after msg
-  const saveBtn = msgDiv.nextElementSibling?.classList?.contains('save-btn') ? msgDiv.nextElementSibling : null;
-  if(saveBtn) saveBtn.after(row); else msgDiv.after(row);
-}
+// Legacy stubs (now handled by persistent bar)
+function injectSaveButton(afterEl) {}
+function injectFeedbackButtons(afterEl, logId) { if(logId) showChatActionsBar(logId); }
 
 function sendFeedback(logId, rating, btn){
+  if(!logId) return;
   const row = btn.closest('.feedback-row');
   row.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('fb-active'));
   btn.classList.add('fb-active');
@@ -1456,13 +1452,14 @@ function sendFeedback(logId, rating, btn){
     body: JSON.stringify({log_id: logId, rating})
   }).catch(()=>{});
   // Show correction box on thumbs-down
-  const existing = row.parentElement.querySelector('.correction-box');
+  const bar = document.getElementById('chatActionsBar');
+  const existing = bar?.querySelector('.correction-box');
   if(existing) existing.remove();
   if(rating === -1){
     const box = document.createElement('div');
     box.className = 'correction-box';
     box.innerHTML = `<textarea placeholder="What should the answer have been? (optional)" id="corr${logId}"></textarea><br><button onclick="submitCorrection(${logId}, this)">Submit correction</button>`;
-    row.after(box);
+    bar.appendChild(box);
   }
 }
 
@@ -1480,14 +1477,14 @@ function submitCorrection(logId, btn){
 }
 
 function showInlineTip(logId, btn){
-  const row = btn.closest('.feedback-row');
-  const existing = row.parentElement.querySelector('.tip-box');
+  if(!logId) return;
+  const bar = document.getElementById('chatActionsBar');
+  const existing = bar?.querySelector('.tip-box');
   if(existing){existing.remove();return;}
   const box = document.createElement('div');
   box.className = 'tip-box';
   box.innerHTML = `<select id="tipCat${logId}"><option value="">Category (optional)</option><option value="pressure">Pressure</option><option value="burner">Burner</option><option value="electrical">Electrical</option><option value="pump">Pump</option><option value="chemical">Chemical</option><option value="engine">Engine</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select><br><textarea placeholder="Share your field tip — what actually works?" id="tipText${logId}"></textarea><br><button onclick="submitTip(${logId}, this)">Submit Tip</button>`;
-  const corrBox = row.parentElement.querySelector('.correction-box');
-  if(corrBox) corrBox.after(box); else row.after(box);
+  bar.appendChild(box);
 }
 
 function showTipForm(){

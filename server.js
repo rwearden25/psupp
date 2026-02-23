@@ -27,6 +27,7 @@ function initUserData() {
     userDb.exec(`
       CREATE TABLE IF NOT EXISTS saved_diagnostics (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
         title TEXT NOT NULL,
         machine_name TEXT,
         machine_brand TEXT,
@@ -100,6 +101,9 @@ function initUserData() {
     try { userDb.exec("ALTER TABLE tips ADD COLUMN approved_at DATETIME"); } catch(e) {}
     try { userDb.exec("ALTER TABLE tips ADD COLUMN rejected_reason TEXT"); } catch(e) {}
     try { userDb.exec("UPDATE tips SET status = 'pending' WHERE status IS NULL"); } catch(e) {}
+
+    // ─── Saved diagnostics migration: add username column ───
+    try { userDb.exec("ALTER TABLE saved_diagnostics ADD COLUMN username TEXT"); } catch(e) {}
 
     // ─── Scrape history table ───
     userDb.exec(`
@@ -370,37 +374,127 @@ function searchFTS(query, opts = {}) {
   }
 }
 
-// ─── MODEL LOOKUP ───
+// ─── MODEL LOOKUP (enhanced) ───
+// Known aliases: shorthand → canonical search terms
+const MODEL_ALIASES = {
+  'gx690': 'Honda GX690',  'gx630': 'Honda GX630',  'gx620': 'Honda GX620',
+  'gx390': 'Honda GX390',  'gx340': 'Honda GX340',  'gx270': 'Honda GX270',
+  'gx200': 'Honda GX200',  'gx160': 'Honda GX160',  'igx700': 'Honda iGX700',
+  'igx800': 'Honda iGX800', 'gx100': 'Honda GX100',
+  'vanguard': 'Briggs Vanguard', 'efi': 'Vanguard EFI',
+  'ch740': 'Kohler CH740',  'ch680': 'Kohler CH680',  'ch620': 'Kohler CH620',
+  'ch440': 'Kohler CH440',  'ch395': 'Kohler CH395',
+  'command pro': 'Kohler Command Pro',
+};
+
+// Brand prefixes to strip when searching (user types "BE HW4024" → search "HW4024")
+const BRAND_PREFIXES = ['be', 'ar', 'gp', 'cat', 'comet', 'honda', 'kohler', 'alkota', 'briggs', 'beckett', 'general pump', 'cat pumps', 'ar pumps'];
+
 function lookupModel(model) {
   if (!db) return [];
-  const clean = model.replace(/[^\w\-\.]/g, '').trim();
-  if (!clean) return [];
+  const raw = model.trim();
+  if (!raw) return [];
+
+  // Build list of search terms to try (in priority order)
+  const terms = [];
+
+  // 1. Check aliases first (case-insensitive)
+  const aliasKey = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (MODEL_ALIASES[aliasKey]) terms.push(MODEL_ALIASES[aliasKey]);
+
+  // 2. Original query cleaned
+  const clean = raw.replace(/[^\w\-\.\/]/g, ' ').trim();
+  if (clean) terms.push(clean);
+
+  // 3. Strip brand prefix ("BE HW4024HA12V" → "HW4024HA12V")
+  const lower = raw.toLowerCase();
+  for (const prefix of BRAND_PREFIXES) {
+    if (lower.startsWith(prefix + ' ') || lower.startsWith(prefix + '-')) {
+      const stripped = raw.substring(prefix.length).replace(/^[\s\-]+/, '').trim();
+      if (stripped && stripped.length >= 3) terms.push(stripped);
+    }
+  }
+
+  // 4. Split into individual words for multi-term search ("AR Pump 5.5 gpm 4000 psi")
+  const words = clean.split(/\s+/).filter(w => w.length >= 3);
+  if (words.length > 2) {
+    // Try model-like tokens (contain digits)
+    const modelTokens = words.filter(w => /\d/.test(w));
+    if (modelTokens.length) terms.push(modelTokens.join(' '));
+  }
+
+  // Dedupe terms
+  const seen = new Set();
+  const uniqueTerms = terms.filter(t => {
+    const k = t.toUpperCase();
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
 
   let results = [];
-  try {
-    results = db.prepare(`
-      SELECT c.content, c.chunk_type, c.section, c.page_num,
-             d.filename, d.title, d.brand, d.doc_type
-      FROM chunks_fts fts
-      JOIN chunks c ON c.id = fts.rowid
-      JOIN documents d ON d.id = c.doc_id
-      WHERE chunks_fts MATCH ? ORDER BY rank LIMIT 10
-    `).all(`"${clean}"`);
-  } catch (e) { /* ignore */ }
+  const seenContent = new Set();
 
-  if (results.length < 3) {
+  for (const term of uniqueTerms) {
+    if (results.length >= 10) break;
+    const ftsClean = term.replace(/[^\w\-\.]/g, ' ').trim();
+    if (!ftsClean) continue;
+
+    // Strategy A: FTS exact phrase match
     try {
-      const extra = db.prepare(`
+      const ftsResults = db.prepare(`
         SELECT c.content, c.chunk_type, c.section, c.page_num,
                d.filename, d.title, d.brand, d.doc_type
-        FROM chunks c JOIN documents d ON d.id = c.doc_id
-        WHERE UPPER(c.content) LIKE ? LIMIT 10
-      `).all(`%${clean.toUpperCase()}%`);
-      const seen = new Set(results.map(r => r.content));
-      for (const r of extra) { if (!seen.has(r.content)) results.push(r); }
-    } catch (e) { /* ignore */ }
+        FROM chunks_fts fts
+        JOIN chunks c ON c.id = fts.rowid
+        JOIN documents d ON d.id = c.doc_id
+        WHERE chunks_fts MATCH ? ORDER BY rank LIMIT 10
+      `).all(`"${ftsClean}"`);
+      for (const r of ftsResults) {
+        if (!seenContent.has(r.content)) { seenContent.add(r.content); results.push(r); }
+      }
+    } catch (e) { /* ignore FTS errors */ }
+
+    // Strategy B: FTS individual words (OR)
+    if (results.length < 3 && ftsClean.includes(' ')) {
+      try {
+        const orTerms = ftsClean.split(/\s+/).filter(w => w.length >= 3).join(' OR ');
+        if (orTerms) {
+          const orResults = db.prepare(`
+            SELECT c.content, c.chunk_type, c.section, c.page_num,
+                   d.filename, d.title, d.brand, d.doc_type
+            FROM chunks_fts fts
+            JOIN chunks c ON c.id = fts.rowid
+            JOIN documents d ON d.id = c.doc_id
+            WHERE chunks_fts MATCH ? ORDER BY rank LIMIT 10
+          `).all(orTerms);
+          for (const r of orResults) {
+            if (!seenContent.has(r.content)) { seenContent.add(r.content); results.push(r); }
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Strategy C: LIKE fallback
+    if (results.length < 3) {
+      try {
+        // Try the most specific token (longest with digits)
+        const bestToken = ftsClean.split(/\s+/)
+          .filter(w => /\d/.test(w))
+          .sort((a, b) => b.length - a.length)[0] || ftsClean.split(/\s+/)[0];
+        const extra = db.prepare(`
+          SELECT c.content, c.chunk_type, c.section, c.page_num,
+                 d.filename, d.title, d.brand, d.doc_type
+          FROM chunks c JOIN documents d ON d.id = c.doc_id
+          WHERE UPPER(c.content) LIKE ? LIMIT 10
+        `).all(`%${bestToken.toUpperCase()}%`);
+        for (const r of extra) {
+          if (!seenContent.has(r.content)) { seenContent.add(r.content); results.push(r); }
+        }
+      } catch (e) { /* ignore */ }
+    }
   }
-  return results.slice(0, 10);
+
+  return results.slice(0, 12);
 }
 
 // ─── FORMAT FOR CLAUDE ───
@@ -1571,9 +1665,27 @@ async function runAgent(userMessage, imageData, imageType, history) {
           break;
         }
         case 'search_knowledge_base': {
-          const r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 5 });
+          let r = searchFTS(tc.input.query, { brand: tc.input.brand, limit: 5 });
+          // If brand-filtered search found nothing, retry without brand filter
+          // This handles queries like "BE HW4024HA12V hot water burner" where BE isn't in KB
+          // but we have general hot water burner docs from Alkota/Beckett
+          if (r.length === 0 && tc.input.brand) {
+            r = searchFTS(tc.input.query, { limit: 5 });
+            if (r.length > 0) {
+              result = `Note: No "${tc.input.brand}" docs in knowledge base. Showing results from other brands that may be relevant:\n\n` + formatResults(r);
+              allSources.push(...formatSources(r));
+              break;
+            }
+          }
           if (r.length === 0) {
-            kbGaps.push({ query: tc.input.query, tool: 'search_knowledge_base', brand: tc.input.brand || null });
+            // Only log as gap if the query looks like a real technical question
+            // Skip short fragments, conversational follow-ups, and single words
+            const q = (tc.input.query || '').trim();
+            const wordCount = q.split(/\s+/).length;
+            const SKIP_PATTERNS = /^(yes|no|ok|okay|sure|thanks|continue|continues|bypass|help|what|how|why|more|next|back|done|got it|go ahead|keep going)/i;
+            if (wordCount >= 3 && !SKIP_PATTERNS.test(q)) {
+              kbGaps.push({ query: tc.input.query, tool: 'search_knowledge_base', brand: tc.input.brand || null });
+            }
           }
           result = formatResults(r); allSources.push(...formatSources(r)); break;
         }
@@ -1775,17 +1887,45 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ─── GET /api/admin/gaps ───
-  if (url.pathname === '/api/admin/gaps') {
+  if (url.pathname === '/api/admin/gaps' && req.method === 'GET') {
     try {
       const limit = parseInt(url.searchParams.get('limit')) || 100;
       const gaps  = userDb.prepare("SELECT * FROM kb_gaps ORDER BY created_at DESC LIMIT ?").all(limit);
       const total = userDb.prepare("SELECT COUNT(*) as cnt FROM kb_gaps").get().cnt;
+      // Grouped view: top recurring gaps by frequency
+      const grouped = userDb.prepare(`
+        SELECT query, tool_name, COUNT(*) as count, MAX(created_at) as last_seen,
+               GROUP_CONCAT(DISTINCT json_extract(context, '$.brand')) as brands
+        FROM kb_gaps
+        GROUP BY UPPER(query)
+        ORDER BY count DESC, last_seen DESC
+        LIMIT 30
+      `).all();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ gaps, total }));
+      res.end(JSON.stringify({ gaps, total, grouped }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
     }
+    return;
+  }
+
+  // ─── DELETE /api/admin/gaps/:id ───
+  const gapDeleteMatch = url.pathname.match(/^\/api\/admin\/gaps\/(\d+)$/);
+  if (req.method === 'DELETE' && gapDeleteMatch) {
+    try {
+      userDb.prepare('DELETE FROM kb_gaps WHERE id = ?').run(parseInt(gapDeleteMatch[1]));
+      jsonResponse(res, 200, { ok: true });
+    } catch(e) { jsonResponse(res, 500, { error: e.message }); }
+    return;
+  }
+
+  // ─── DELETE /api/admin/gaps (clear all) ───
+  if (req.method === 'DELETE' && url.pathname === '/api/admin/gaps') {
+    try {
+      userDb.prepare('DELETE FROM kb_gaps').run();
+      jsonResponse(res, 200, { ok: true, cleared: true });
+    } catch(e) { jsonResponse(res, 500, { error: e.message }); }
     return;
   }
 
@@ -1877,11 +2017,15 @@ const server = http.createServer(async (req, res) => {
             );
             logId = info.lastInsertRowid;
 
-            // Log KB gaps
+            // Log KB gaps (deduplicated — skip if same query logged in last 24h)
             if (result.kbGaps?.length > 0) {
               const gapStmt = userDb.prepare('INSERT INTO kb_gaps (query, tool_name, context) VALUES (?, ?, ?)');
+              const gapCheck = userDb.prepare('SELECT COUNT(*) as cnt FROM kb_gaps WHERE UPPER(query) = ? AND created_at > datetime("now", "-24 hours")');
               for (const gap of result.kbGaps) {
-                gapStmt.run(gap.query, gap.tool, JSON.stringify(gap));
+                const existing = gapCheck.get(gap.query.toUpperCase());
+                if (!existing || existing.cnt === 0) {
+                  gapStmt.run(gap.query, gap.tool, JSON.stringify(gap));
+                }
               }
             }
           }
@@ -2112,10 +2256,11 @@ const server = http.createServer(async (req, res) => {
         if (!d.title) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Title required' })); return; }
 
         const stmt = userDb.prepare(`INSERT INTO saved_diagnostics 
-          (title, machine_name, machine_brand, machine_model, machine_serial, category, severity, diagnosis, steps, parts_used, notes, conversation)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+          (username, title, machine_name, machine_brand, machine_model, machine_serial, category, severity, diagnosis, steps, parts_used, notes, conversation)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
         const result = stmt.run(
+          req.authUser?.username || 'unknown',
           d.title || 'Untitled Diagnostic',
           d.machine_name || null,
           d.machine_brand || null,
@@ -2145,7 +2290,12 @@ const server = http.createServer(async (req, res) => {
   // ─── GET /api/saved-diags ───
   if (req.method === 'GET' && url.pathname === '/api/saved-diags') {
     if (!userDb) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('[]'); return; }
-    const rows = userDb.prepare('SELECT id, title, machine_name, machine_brand, machine_model, category, severity, diagnosis, created_at FROM saved_diagnostics ORDER BY created_at DESC').all();
+    let rows;
+    if (req.authUser?.role === 'admin') {
+      rows = userDb.prepare('SELECT id, username, title, machine_name, machine_brand, machine_model, category, severity, diagnosis, created_at FROM saved_diagnostics ORDER BY created_at DESC').all();
+    } else {
+      rows = userDb.prepare('SELECT id, username, title, machine_name, machine_brand, machine_model, category, severity, diagnosis, created_at FROM saved_diagnostics WHERE username = ? ORDER BY created_at DESC').all(req.authUser?.username || '');
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(rows));
     return;
@@ -2157,6 +2307,10 @@ const server = http.createServer(async (req, res) => {
     if (!userDb) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
     const row = userDb.prepare('SELECT * FROM saved_diagnostics WHERE id = ?').get(id);
     if (!row) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+    // Ownership check: only owner or admin
+    if (req.authUser?.role !== 'admin' && row.username && row.username !== req.authUser?.username) {
+      res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Access denied' })); return;
+    }
     // Parse JSON fields
     try { row.steps = JSON.parse(row.steps); } catch(e) {}
     try { row.parts_used = JSON.parse(row.parts_used); } catch(e) {}
@@ -2176,8 +2330,12 @@ const server = http.createServer(async (req, res) => {
         if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Database not available' })); return; }
         const d = JSON.parse(body);
         if (!d.title) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Title required' })); return; }
-        const existing = userDb.prepare('SELECT id FROM saved_diagnostics WHERE id = ?').get(id);
+        const existing = userDb.prepare('SELECT id, username FROM saved_diagnostics WHERE id = ?').get(id);
         if (!existing) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+        // Ownership check
+        if (req.authUser?.role !== 'admin' && existing.username && existing.username !== req.authUser?.username) {
+          res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Access denied' })); return;
+        }
         userDb.prepare(`UPDATE saved_diagnostics SET
           title=?, machine_name=?, machine_brand=?, machine_model=?, machine_serial=?,
           category=?, severity=?, diagnosis=?, steps=?, parts_used=?, notes=?
@@ -2211,8 +2369,14 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'DELETE' && url.pathname.match(/^\/api\/saved-diags\/(\d+)$/)) {
     const id = url.pathname.match(/\/(\d+)$/)[1];
     if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Database not available' })); return; }
+    // Ownership check
+    const existing = userDb.prepare('SELECT username FROM saved_diagnostics WHERE id = ?').get(id);
+    if (!existing) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Not found' })); return; }
+    if (req.authUser?.role !== 'admin' && existing.username && existing.username !== req.authUser?.username) {
+      res.writeHead(403, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Access denied' })); return;
+    }
     userDb.prepare('DELETE FROM saved_diagnostics WHERE id = ?').run(id);
-    console.log(`[Delete] Diagnostic #${id}`);
+    console.log(`[Delete] Diagnostic #${id} by ${req.authUser?.username}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ deleted: true }));
     return;
@@ -2224,6 +2388,10 @@ const server = http.createServer(async (req, res) => {
     if (!userDb) { res.writeHead(404); res.end('Not found'); return; }
     const row = userDb.prepare('SELECT * FROM saved_diagnostics WHERE id = ?').get(id);
     if (!row) { res.writeHead(404); res.end('Not found'); return; }
+    // Ownership check
+    if (req.authUser?.role !== 'admin' && row.username && row.username !== req.authUser?.username) {
+      res.writeHead(403); res.end('Access denied'); return;
+    }
 
     try { row.steps = JSON.parse(row.steps); } catch(e) {}
     try { row.parts_used = JSON.parse(row.parts_used); } catch(e) {}
