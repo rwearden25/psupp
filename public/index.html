@@ -871,7 +871,7 @@ function formatAIText(raw){
       .replace(/\n/g,'<br>')
       .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
       .replace(/^/, '<p>') + '…</p>';
-    return `<div id="aiSh${_aiTruncId}">${shortHtml}<button class="show-more-btn" onclick="document.getElementById('aiSh${_aiTruncId}').style.display='none';document.getElementById('aiTr${_aiTruncId}').style.display='block'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--accent);font-family:var(--font-body);margin-top:0.5rem">Show full response \u25be</button></div><div id="aiTr${_aiTruncId}" style="display:none">${formatted}</div>`;
+    return `<div id="aiSh${_aiTruncId}">${shortHtml}<button class="show-more-btn" onclick="document.getElementById('aiSh${_aiTruncId}').style.display='none';document.getElementById('aiTr${_aiTruncId}').style.display='block'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--accent);font-family:var(--font-body);margin-top:0.5rem">Show full response ▾</button></div><div id="aiTr${_aiTruncId}" style="display:none">${formatted}</div>`;
   }
   return formatted;
 }
