@@ -232,8 +232,7 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 @media(max-width:500px){.save-row{grid-template-columns:1fr}.save-modal{padding:1rem}}
 #loginGate{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:var(--font-body)}
 #loginGate.hidden{display:none}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:44px;width:min(380px,calc(100vw - 2rem));text-align:center}
-@media(max-width:480px){.login-box{padding:28px 20px;border-radius:12px}}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:44px;width:380px;text-align:center}
 .login-box::before{content:'';position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:400px;height:300px;background:radial-gradient(ellipse,rgba(37,99,235,0.06) 0%,transparent 70%);pointer-events:none}
 .login-logo-box{width:64px;height:64px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:0.9rem;color:#fff;margin:0 auto 20px}
 .login-box h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-0.3px}
@@ -244,10 +243,6 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .login-box button:not(.pw-toggle){width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
 .login-box button:not(.pw-toggle):hover{filter:brightness(1.15);transform:scale(1.02)}
 .login-error{color:#f87171;font-size:0.78rem;margin-top:10px;display:none}
-.biometric-btn{width:100%;padding:11px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:0.85rem;font-weight:600;font-family:var(--font-body);cursor:pointer;display:none;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:10px;transition:all 0.15s}
-.biometric-btn:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
-.biometric-divider{display:none;align-items:center;gap:0.5rem;margin:6px 0 10px;font-size:0.72rem;color:var(--text-muted)}
-.biometric-divider::before,.biometric-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .login-field-label{text-align:left;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px}
 .user-info{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted)}
 .role-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px}
@@ -351,11 +346,6 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
     <div class="login-logo-box">P-S</div>
     <h2>P-Supp Tool</h2>
     <p>Sign in with your credentials</p>
-    <!-- Biometric / saved credential button (shown if browser has saved creds) -->
-    <button class="biometric-btn" id="biometricBtn" onclick="signInWithBiometric()">
-      <span id="biometricIcon">🔐</span> <span id="biometricLabel">Sign in with Face ID</span>
-    </button>
-    <div class="biometric-divider" id="biometricDivider">or enter password</div>
     <div class="login-field-label">Username</div>
     <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" autofocus />
     <div class="login-field-label">Password</div>
@@ -370,81 +360,21 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 <script>
 function tryLogin(){
   const u=document.getElementById('loginUser'),p=document.getElementById('loginPass'),e=document.getElementById('loginError');
-  const btn=document.querySelector('.login-box button:not(.pw-toggle):not(.biometric-btn)');
+  const btn=document.querySelector('.login-box button');
   if(!u.value.trim()||!p.value){e.textContent='Enter username and password';e.style.display='block';return;}
   btn.disabled=true;btn.textContent='Signing in…';e.style.display='none';
-  const username=u.value.trim(), password=p.value;
-  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})})
+  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u.value.trim(),password:p.value})})
     .then(r=>r.json()).then(d=>{
       if(d.ok&&d.token){
         localStorage.setItem('authToken',d.token);
         localStorage.setItem('authUser',JSON.stringify(d.user));
         if(d.queryUsage)localStorage.setItem('queryUsage',JSON.stringify(d.queryUsage));
-        // ── Store credentials for biometric/password-manager autofill ──
-        if(window.PasswordCredential){
-          try{
-            const cred=new PasswordCredential({id:username,password:password,name:d.user.full_name||username});
-            navigator.credentials.store(cred);
-          }catch(ex){}
-        }
         unlockApp();
       }
       else{e.textContent=d.error||'Login failed';e.style.display='block';p.value='';p.focus();}
       btn.disabled=false;btn.textContent='Sign In';
     }).catch(()=>{e.textContent='Connection error';e.style.display='block';btn.disabled=false;btn.textContent='Sign In';});
 }
-
-// ── Biometric / saved-credential sign-in ──
-async function signInWithBiometric(){
-  const e=document.getElementById('loginError');
-  e.style.display='none';
-  const btn=document.getElementById('biometricBtn');
-  btn.disabled=true;
-  try{
-    const cred=await navigator.credentials.get({password:true,mediation:'optional'});
-    if(cred&&cred.id&&cred.password){
-      document.getElementById('loginUser').value=cred.id;
-      document.getElementById('loginPass').value=cred.password;
-      tryLogin();
-      return;
-    }
-  }catch(ex){}
-  btn.disabled=false;
-  // Fall back: just focus the password field
-  document.getElementById('loginPass').focus();
-}
-
-// ── On page load: check for saved credentials (triggers Face ID prompt) ──
-(async function checkSavedCredentials(){
-  if(!window.PasswordCredential)return;
-  try{
-    const cred=await navigator.credentials.get({password:true,mediation:'silent'});
-    if(cred&&cred.id&&cred.password){
-      // Auto-populate and sign in silently
-      document.getElementById('loginUser').value=cred.id;
-      document.getElementById('loginPass').value=cred.password;
-      tryLogin();
-      return;
-    }
-  }catch(ex){}
-  // If we have stored creds but need biometric confirmation, show the button
-  try{
-    const cred=await navigator.credentials.get({password:true,mediation:'optional'});
-    if(cred){
-      const bioBtn=document.getElementById('biometricBtn');
-      const bioDivider=document.getElementById('biometricDivider');
-      const icon=document.getElementById('biometricIcon');
-      const label=document.getElementById('biometricLabel');
-      // Detect platform for correct label
-      const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isMac=/Mac/.test(navigator.userAgent)&&navigator.maxTouchPoints>1;
-      if(isIOS||isMac){icon.textContent='🆔';label.textContent='Sign in with Face ID / Touch ID';}
-      else{icon.textContent='🔐';label.textContent='Sign in with saved credentials';}
-      bioBtn.style.display='flex';
-      bioDivider.style.display='flex';
-    }
-  }catch(ex){}
-})();
 function unlockApp(){
   document.getElementById('loginGate').classList.add('hidden');
   document.getElementById('appContent').classList.add('visible');
@@ -796,45 +726,76 @@ function showInjectorChart(){
 function showFrictionChart(){
   setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
 
-  // PSI loss per 100 ft of hose, from Service School Friction Loss Diagram
-  const frictionData = [
-    {gpm:2,  q14:180, q38:30,  q12:5},
-    {gpm:3,  q14:370, q38:50,  q12:10},
-    {gpm:4,  q14:null,q38:95,  q12:20},
-    {gpm:5,  q14:null,q38:135, q12:30},
-    {gpm:6,  q14:null,q38:220, q12:50},
-    {gpm:7,  q14:null,q38:260, q12:65},
-    {gpm:8,  q14:null,q38:300, q12:80},
-    {gpm:9,  q14:null,q38:null,q12:95},
-    {gpm:10, q14:null,q38:null,q12:120},
-  ];
+  // Data points from Friction Loss Diagram
+  const d14 = [{x:2,y:180},{x:3,y:370}];
+  const d38 = [{x:2,y:30},{x:3,y:50},{x:4,y:95},{x:5,y:135},{x:6,y:220},{x:7,y:260},{x:8,y:300}];
+  const d12 = [{x:2,y:5},{x:3,y:10},{x:4,y:20},{x:5,y:30},{x:6,y:50},{x:7,y:65},{x:8,y:80},{x:9,y:95},{x:10,y:120}];
 
-  let rows = frictionData.map(r => `<tr>
-    <td class="nz-label"><strong>${r.gpm}</strong></td>
-    <td>${r.q14 !== null ? r.q14 : '<span style="color:var(--text-muted)">—</span>'}</td>
-    <td>${r.q38 !== null ? r.q38 : '<span style="color:var(--text-muted)">—</span>'}</td>
-    <td>${r.q12 !== null ? r.q12 : '<span style="color:var(--text-muted)">—</span>'}</td>
-  </tr>`).join('');
+  // SVG chart dimensions
+  const W=560,H=380,PL=58,PR=20,PT=20,PB=50;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const xMin=2,xMax=10,yMin=0,yMax=400;
+  const xS=v=>(v-xMin)/(xMax-xMin)*CW;
+  const yS=v=>(1-(v-yMin)/(yMax-yMin))*CH;
+
+  // Grid lines
+  const yTicks=[0,50,100,150,200,250,300,350,400];
+  const xTicks=[2,3,4,5,6,7,8,9,10];
+  let grid='';
+  yTicks.forEach(y=>{
+    const yy=yS(y);
+    grid+=`<line x1="0" y1="${yy}" x2="${CW}" y2="${yy}" stroke="#e2e6ea" stroke-width="1"/>`;
+    grid+=`<text x="-8" y="${yy+4}" text-anchor="end" font-size="11" fill="#6b7280">${y}</text>`;
+  });
+  xTicks.forEach(x=>{
+    const xx=xS(x);
+    grid+=`<line x1="${xx}" y1="0" x2="${xx}" y2="${CH}" stroke="#e2e6ea" stroke-width="1"/>`;
+    grid+=`<text x="${xx}" y="${CH+18}" text-anchor="middle" font-size="11" fill="#6b7280">${x}</text>`;
+  });
+
+  // Build polyline points
+  const pts=arr=>arr.map(p=>`${xS(p.x)},${yS(p.y)}`).join(' ');
+  // Dots
+  const dots=(arr,color)=>arr.map(p=>`<circle cx="${xS(p.x)}" cy="${yS(p.y)}" r="4" fill="${color}" stroke="white" stroke-width="1.5"/>`).join('');
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block;margin:0 auto;font-family:var(--font-body)">
+    <!-- Title -->
+    <text x="${W/2}" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">Friction Loss Chart (PSI Loss per 100 ft of Hose)</text>
+    <!-- Chart area -->
+    <g transform="translate(${PL},${PT+14})">
+      <!-- Grid + axes -->
+      ${grid}
+      <rect x="0" y="0" width="${CW}" height="${CH}" fill="none" stroke="#d1d5db" stroke-width="1"/>
+      <!-- Y axis label -->
+      <text transform="rotate(-90)" x="${-CH/2}" y="-44" text-anchor="middle" font-size="11" fill="#6b7280">Pressure Loss (PSI per 100 ft)</text>
+      <!-- X axis label -->
+      <text x="${CW/2}" y="${CH+40}" text-anchor="middle" font-size="11" fill="#6b7280">Flow Rate (GPM)</text>
+      <!-- 1/4" line (blue) -->
+      <polyline points="${pts(d14)}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
+      ${dots(d14,'#2563eb')}
+      <!-- 3/8" line (orange) -->
+      <polyline points="${pts(d38)}" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linejoin="round"/>
+      ${dots(d38,'#f97316')}
+      <!-- 1/2" line (green) -->
+      <polyline points="${pts(d12)}" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linejoin="round"/>
+      ${dots(d12,'#16a34a')}
+      <!-- Legend -->
+      <g transform="translate(${CW-110},10)">
+        <rect width="115" height="62" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+        <line x1="8" y1="18" x2="28" y2="18" stroke="#2563eb" stroke-width="2.5"/><circle cx="18" cy="18" r="3.5" fill="#2563eb"/><text x="34" y="22" font-size="11" fill="#374151">1/4" Hose</text>
+        <line x1="8" y1="36" x2="28" y2="36" stroke="#f97316" stroke-width="2.5"/><circle cx="18" cy="36" r="3.5" fill="#f97316"/><text x="34" y="40" font-size="11" fill="#374151">3/8" Hose</text>
+        <line x1="8" y1="54" x2="28" y2="54" stroke="#16a34a" stroke-width="2.5"/><circle cx="18" cy="54" r="3.5" fill="#16a34a"/><text x="34" y="58" font-size="11" fill="#374151">1/2" Hose</text>
+      </g>
+    </g>
+  </svg>`;
 
   C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
     <div class="page-header"><div class="page-header-icon">📉</div><div><h2>Friction Loss Chart</h2><p>Approximate PSI loss per 100 ft of pressure washer hose</p></div></div>
-
-    <div class="card" style="overflow-x:auto">
-      <h4>PSI Loss per 100 ft — by Hose Size &amp; Flow Rate</h4>
-      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Values from Service School friction loss training. Multiply by hose length ÷ 100 for actual loss. — indicates flow rate exceeds recommended range for that hose size.</p>
-      <table class="ref-table">
-        <thead>
-          <tr>
-            <th>GPM</th>
-            <th>¼" Hose</th>
-            <th>⅜" Hose</th>
-            <th>½" Hose</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+    <div class="card">
+      <h4>Friction Loss Diagram</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem">Reference chart showing approximate pressure loss per 100 ft of pressure washer hose. Values used for field diagnostics.</p>
+      ${svg}
     </div>
-
     <div class="card">
       <h4>How to Use This Chart</h4>
       <p style="font-size:0.85rem;line-height:1.8">
@@ -844,16 +805,6 @@ function showFrictionChart(){
         📌 <strong>Unexplained pressure loss?</strong> Calculate friction loss before suspecting the pump.
       </p>
     </div>
-
-    <div class="card">
-      <h4>Quick Reference — Max Recommended GPM</h4>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;text-align:center">
-        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">3 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">¼" max</div></div>
-        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">8 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">⅜" max</div></div>
-        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">10+ GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">½" handles</div></div>
-      </div>
-    </div>
-
     <div style="text-align:center;padding:1rem">
       <button class="quick-btn" onclick="startTopic('pressure')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI about pressure loss issues</button>
     </div>
@@ -1732,10 +1683,7 @@ function submitHomeTip(){
 </div>
 </div><!-- end appContent -->
 <style>
-.pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;padding-bottom:max(0.75rem,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;z-index:300;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
-/* When the input bar is visible, push the PWA bar above it */
-body.chat-active .pwa-install-bar.show{bottom:64px}
-@media(max-width:600px){.pwa-install-bar{padding:0.65rem 1rem;padding-bottom:max(0.65rem,env(safe-area-inset-bottom))}}
+.pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;z-index:200;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
 
 /* ═══ EQUIPMENT INTAKE FORM ═══ */
 .intake-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-top:0.75rem}
@@ -1794,23 +1742,14 @@ window.addEventListener('appinstalled', () => {
 });
 
 // ─── Mobile Keyboard Fix ───
-// On mobile: shift the input bar up when the keyboard opens
-if(window.visualViewport){
-  const inputBar=document.querySelector('.input-bar');
-  const adjustForKeyboard=()=>{
-    if(!inputBar)return;
-    if(window.innerWidth<=900){
-      // Mobile: translate input bar above keyboard
-      const kbHeight=window.innerHeight-window.visualViewport.height-window.visualViewport.offsetTop;
-      inputBar.style.transform=kbHeight>50?`translateY(-${Math.round(kbHeight)}px)`:'';
-    } else {
-      // Desktop: resize the app shell
-      const app=document.querySelector('.app');
-      if(app)app.style.height=window.visualViewport.height+'px';
-    }
+// Only apply on desktop (fixed-height shell). Mobile uses natural page scroll.
+if(isMobile && window.visualViewport && window.innerWidth > 900){
+  const app = document.querySelector('.app');
+  const adjustForKeyboard = () => {
+    if(app) app.style.height = window.visualViewport.height + 'px';
   };
-  window.visualViewport.addEventListener('resize',adjustForKeyboard);
-  window.visualViewport.addEventListener('scroll',adjustForKeyboard);
+  window.visualViewport.addEventListener('resize', adjustForKeyboard);
+  window.visualViewport.addEventListener('scroll', adjustForKeyboard);
 }
 
 // ─── iOS Install Hint ───
