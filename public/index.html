@@ -595,27 +595,44 @@ function findOil(q){q=norm(q);const r=[];for(const[,s]of Object.entries(KB.gp.oi
 /* ─── NOZZLE SIZE CHART ─── */
 function showNozzleChart(){
   setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
-  // Nozzle # = GPM capacity at 4000 PSI. At other PSI: GPM = Nozzle# × √(PSI/4000)
-  const pressures = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
-  const nozzles = [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 12, 15];
+
+  // Barens Nozzle Size Chart — orifice size given GPM (rows) and PSI (columns)
+  const pressures = [500,1000,1500,2000,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,10000];
+  const barensData = [
+    {gpm:'2.0', sizes:[5.5,4.0,3.5,3.0,2.5,2.5,2.0,2.0,2.0,2.0,1.5,1.5,1.5,1.5,1.5]},
+    {gpm:'2.5', sizes:[7.0,5.0,4.0,3.5,3.0,3.0,2.5,2.5,2.5,2.0,2.0,2.0,2.0,1.5,1.5]},
+    {gpm:'3.0', sizes:[8.5,6.0,5.0,4.0,4.0,3.5,3.0,3.0,3.0,2.5,2.5,2.5,2.0,2.0,2.0]},
+    {gpm:'3.5', sizes:[10.0,7.0,5.5,5.0,4.5,4.0,3.5,3.5,3.5,3.0,3.0,2.5,2.5,2.5,2.0]},
+    {gpm:'4.0', sizes:[12.0,8.0,6.5,5.5,5.0,4.5,4.5,4.0,4.0,3.5,3.5,3.0,3.0,2.5,2.5]},
+    {gpm:'4.5', sizes:[13.0,9.0,7.5,6.5,5.5,5.0,5.0,4.5,4.0,4.0,3.5,3.5,3.0,3.0,3.0]},
+    {gpm:'5.0', sizes:[15.0,10.0,8.0,7.0,6.5,6.0,5.5,5.0,4.5,4.5,4.0,4.0,3.5,3.5,3.0]},
+    {gpm:'5.5', sizes:[20.0,11.0,9.0,8.0,7.0,6.5,6.0,5.5,5.0,5.0,4.5,4.0,4.0,3.5,3.5]},
+    {gpm:'6.0', sizes:[20.0,12.0,10.0,8.5,7.5,7.0,6.5,6.0,5.5,5.5,5.0,4.5,4.0,4.0,4.0]},
+    {gpm:'6.5', sizes:[20.0,13.0,11.0,9.0,8.0,7.5,7.0,6.5,6.0,6.0,5.5,5.0,4.5,4.5,4.0]},
+    {gpm:'7.0', sizes:[20.0,15.0,12.0,10.0,9.0,8.0,7.5,7.0,6.5,6.5,5.5,5.0,5.0,4.5,4.5]},
+    {gpm:'7.5', sizes:[30.0,15.0,12.0,11.0,10.0,8.5,8.0,7.5,7.0,6.5,6.0,5.5,5.5,5.0,4.5]},
+    {gpm:'8.0', sizes:[30.0,20.0,13.0,12.0,10.0,9.0,8.5,8.0,7.5,7.0,6.5,6.0,5.5,5.5,5.0]},
+  ];
   const colors = {0:'Red',15:'Yellow',25:'Green',40:'White',65:'Black'};
 
-  let rows = nozzles.map(n => {
-    let cells = pressures.map(p => {
-      const gpm = (n * Math.sqrt(p / 4000)).toFixed(1);
-      return `<td>${gpm}</td>`;
-    }).join('');
-    return `<tr><td class="nz-label"><strong>#${n}</strong></td>${cells}</tr>`;
+  let rows = barensData.map(row => {
+    let cells = row.sizes.map(s => `<td>${s.toFixed(1)}</td>`).join('');
+    return `<tr><td class="nz-label"><strong>${row.gpm}</strong></td>${cells}</tr>`;
   }).join('');
 
   C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
-    <div class="page-header"><div class="page-header-icon">🎯</div><div><h2>Nozzle Size Chart</h2><p>GPM output by nozzle number and operating PSI</p></div></div>
+    <div class="page-header"><div class="page-header-icon">🎯</div><div><h2>Nozzle Size Chart</h2><p>Find orifice size by machine GPM and operating PSI</p></div></div>
 
     <div class="card" style="overflow-x:auto">
-      <h4>Nozzle # → GPM at Operating Pressure</h4>
-      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Nozzle number = GPM capacity at 4,000 PSI. Spray angle does NOT affect flow rate.</p>
-      <table class="ref-table">
-        <thead><tr><th>Nozzle #</th>${pressures.map(p => `<th>${p.toLocaleString()} PSI</th>`).join('')}</tr></thead>
+      <h4>Nozzle Size Chart — Orifice # by GPM &amp; PSI</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Find your machine's GPM row, then read across to your operating PSI column. That number is the correct nozzle orifice size. Spray angle does NOT affect flow rate.</p>
+      <table class="ref-table" style="font-size:0.75rem">
+        <thead>
+          <tr>
+            <th style="white-space:nowrap">GPM ↓ / PSI →</th>
+            ${pressures.map(p => `<th>${p >= 1000 ? (p/1000).toFixed(0)+'k' : p}</th>`).join('')}
+          </tr>
+        </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -630,14 +647,14 @@ function showNozzleChart(){
 
     <div class="card">
       <h4>Tip Code Format</h4>
-      <p style="font-size:0.85rem;line-height:1.6">Tip code = <strong>AABB</strong> where AA = spray angle, BB = nozzle size × 10.<br>
-      Example: <strong>2540</strong> = 25° angle, #4.0 nozzle (4.0 GPM at 4,000 PSI)</p>
-      <p style="font-size:0.85rem;line-height:1.6;margin-top:0.5rem">⚠️ A nozzle that is <strong>too small</strong> causes over-pressurization.<br>
-      ⚠️ A <strong>worn</strong> nozzle reduces system pressure — check nozzles regularly for wear.</p>
+      <p style="font-size:0.85rem;line-height:1.6">Tip code = <strong>AABB</strong> where AA = spray angle ÷ 5, BB = orifice size × 10.<br>
+      Example: <strong>2540</strong> = 25° angle, #4.0 orifice</p>
+      <p style="font-size:0.85rem;line-height:1.6;margin-top:0.5rem">⚠️ Nozzle <strong>too small</strong> → over-pressurization, pump damage.<br>
+      ⚠️ <strong>Worn nozzle</strong> → enlarged orifice, pressure loss — inspect regularly.</p>
     </div>
 
     <div style="text-align:center;padding:1rem">
-      <button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI to calculate a specific nozzle</button>
+      <button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI to help size a nozzle</button>
     </div>
   </div>`;
   MAIN.scrollTop=0;
