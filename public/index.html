@@ -232,7 +232,8 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 @media(max-width:500px){.save-row{grid-template-columns:1fr}.save-modal{padding:1rem}}
 #loginGate{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:var(--font-body)}
 #loginGate.hidden{display:none}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:44px;width:380px;text-align:center}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.08);padding:44px;width:min(380px,calc(100vw - 2rem));text-align:center}
+@media(max-width:480px){.login-box{padding:28px 20px;border-radius:12px}}
 .login-box::before{content:'';position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:400px;height:300px;background:radial-gradient(ellipse,rgba(37,99,235,0.06) 0%,transparent 70%);pointer-events:none}
 .login-logo-box{width:64px;height:64px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:0.9rem;color:#fff;margin:0 auto 20px}
 .login-box h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-0.3px}
@@ -243,6 +244,10 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 .login-box button:not(.pw-toggle){width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:var(--font-body);cursor:pointer;transition:all 0.15s}
 .login-box button:not(.pw-toggle):hover{filter:brightness(1.15);transform:scale(1.02)}
 .login-error{color:#f87171;font-size:0.78rem;margin-top:10px;display:none}
+.biometric-btn{width:100%;padding:11px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:0.85rem;font-weight:600;font-family:var(--font-body);cursor:pointer;display:none;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:10px;transition:all 0.15s}
+.biometric-btn:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.biometric-divider{display:none;align-items:center;gap:0.5rem;margin:6px 0 10px;font-size:0.72rem;color:var(--text-muted)}
+.biometric-divider::before,.biometric-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .login-field-label{text-align:left;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px}
 .user-info{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted)}
 .role-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px}
@@ -346,6 +351,11 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
     <div class="login-logo-box">P-S</div>
     <h2>P-Supp Tool</h2>
     <p>Sign in with your credentials</p>
+    <!-- Biometric / saved credential button (shown if browser has saved creds) -->
+    <button class="biometric-btn" id="biometricBtn" onclick="signInWithBiometric()">
+      <span id="biometricIcon">🔐</span> <span id="biometricLabel">Sign in with Face ID</span>
+    </button>
+    <div class="biometric-divider" id="biometricDivider">or enter password</div>
     <div class="login-field-label">Username</div>
     <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" autofocus />
     <div class="login-field-label">Password</div>
@@ -360,21 +370,81 @@ header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;alig
 <script>
 function tryLogin(){
   const u=document.getElementById('loginUser'),p=document.getElementById('loginPass'),e=document.getElementById('loginError');
-  const btn=document.querySelector('.login-box button');
+  const btn=document.querySelector('.login-box button:not(.pw-toggle):not(.biometric-btn)');
   if(!u.value.trim()||!p.value){e.textContent='Enter username and password';e.style.display='block';return;}
   btn.disabled=true;btn.textContent='Signing in…';e.style.display='none';
-  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u.value.trim(),password:p.value})})
+  const username=u.value.trim(), password=p.value;
+  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})})
     .then(r=>r.json()).then(d=>{
       if(d.ok&&d.token){
         localStorage.setItem('authToken',d.token);
         localStorage.setItem('authUser',JSON.stringify(d.user));
         if(d.queryUsage)localStorage.setItem('queryUsage',JSON.stringify(d.queryUsage));
+        // ── Store credentials for biometric/password-manager autofill ──
+        if(window.PasswordCredential){
+          try{
+            const cred=new PasswordCredential({id:username,password:password,name:d.user.full_name||username});
+            navigator.credentials.store(cred);
+          }catch(ex){}
+        }
         unlockApp();
       }
       else{e.textContent=d.error||'Login failed';e.style.display='block';p.value='';p.focus();}
       btn.disabled=false;btn.textContent='Sign In';
     }).catch(()=>{e.textContent='Connection error';e.style.display='block';btn.disabled=false;btn.textContent='Sign In';});
 }
+
+// ── Biometric / saved-credential sign-in ──
+async function signInWithBiometric(){
+  const e=document.getElementById('loginError');
+  e.style.display='none';
+  const btn=document.getElementById('biometricBtn');
+  btn.disabled=true;
+  try{
+    const cred=await navigator.credentials.get({password:true,mediation:'optional'});
+    if(cred&&cred.id&&cred.password){
+      document.getElementById('loginUser').value=cred.id;
+      document.getElementById('loginPass').value=cred.password;
+      tryLogin();
+      return;
+    }
+  }catch(ex){}
+  btn.disabled=false;
+  // Fall back: just focus the password field
+  document.getElementById('loginPass').focus();
+}
+
+// ── On page load: check for saved credentials (triggers Face ID prompt) ──
+(async function checkSavedCredentials(){
+  if(!window.PasswordCredential)return;
+  try{
+    const cred=await navigator.credentials.get({password:true,mediation:'silent'});
+    if(cred&&cred.id&&cred.password){
+      // Auto-populate and sign in silently
+      document.getElementById('loginUser').value=cred.id;
+      document.getElementById('loginPass').value=cred.password;
+      tryLogin();
+      return;
+    }
+  }catch(ex){}
+  // If we have stored creds but need biometric confirmation, show the button
+  try{
+    const cred=await navigator.credentials.get({password:true,mediation:'optional'});
+    if(cred){
+      const bioBtn=document.getElementById('biometricBtn');
+      const bioDivider=document.getElementById('biometricDivider');
+      const icon=document.getElementById('biometricIcon');
+      const label=document.getElementById('biometricLabel');
+      // Detect platform for correct label
+      const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isMac=/Mac/.test(navigator.userAgent)&&navigator.maxTouchPoints>1;
+      if(isIOS||isMac){icon.textContent='🆔';label.textContent='Sign in with Face ID / Touch ID';}
+      else{icon.textContent='🔐';label.textContent='Sign in with saved credentials';}
+      bioBtn.style.display='flex';
+      bioDivider.style.display='flex';
+    }
+  }catch(ex){}
+})();
 function unlockApp(){
   document.getElementById('loginGate').classList.add('hidden');
   document.getElementById('appContent').classList.add('visible');
@@ -1662,7 +1732,10 @@ function submitHomeTip(){
 </div>
 </div><!-- end appContent -->
 <style>
-.pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;z-index:200;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
+.pwa-install-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.75rem 1.5rem;padding-bottom:max(0.75rem,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;z-index:300;box-shadow:0 -4px 12px rgba(0,0,0,0.06);transform:translateY(100%);transition:transform 0.3s}
+/* When the input bar is visible, push the PWA bar above it */
+body.chat-active .pwa-install-bar.show{bottom:64px}
+@media(max-width:600px){.pwa-install-bar{padding:0.65rem 1rem;padding-bottom:max(0.65rem,env(safe-area-inset-bottom))}}
 
 /* ═══ EQUIPMENT INTAKE FORM ═══ */
 .intake-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-top:0.75rem}
@@ -1721,14 +1794,23 @@ window.addEventListener('appinstalled', () => {
 });
 
 // ─── Mobile Keyboard Fix ───
-// Only apply on desktop (fixed-height shell). Mobile uses natural page scroll.
-if(isMobile && window.visualViewport && window.innerWidth > 900){
-  const app = document.querySelector('.app');
-  const adjustForKeyboard = () => {
-    if(app) app.style.height = window.visualViewport.height + 'px';
+// On mobile: shift the input bar up when the keyboard opens
+if(window.visualViewport){
+  const inputBar=document.querySelector('.input-bar');
+  const adjustForKeyboard=()=>{
+    if(!inputBar)return;
+    if(window.innerWidth<=900){
+      // Mobile: translate input bar above keyboard
+      const kbHeight=window.innerHeight-window.visualViewport.height-window.visualViewport.offsetTop;
+      inputBar.style.transform=kbHeight>50?`translateY(-${Math.round(kbHeight)}px)`:'';
+    } else {
+      // Desktop: resize the app shell
+      const app=document.querySelector('.app');
+      if(app)app.style.height=window.visualViewport.height+'px';
+    }
   };
-  window.visualViewport.addEventListener('resize', adjustForKeyboard);
-  window.visualViewport.addEventListener('scroll', adjustForKeyboard);
+  window.visualViewport.addEventListener('resize',adjustForKeyboard);
+  window.visualViewport.addEventListener('scroll',adjustForKeyboard);
 }
 
 // ─── iOS Install Hint ───
