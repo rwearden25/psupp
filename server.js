@@ -1743,6 +1743,333 @@ async function runAgent(userMessage, imageData, imageType, history) {
 }
 
 // ═══════════════════════════════════════════════════════
+//  Web Scraper — Real Implementation
+// ═══════════════════════════════════════════════════════
+
+// Known manufacturer support/FAQ pages to scrape when no URL provided
+const MANUFACTURER_URLS = {
+  'General Pump': [
+    'https://www.gpcompanies.com/products/pumps/',
+    'https://www.gpcompanies.com/support/troubleshooting/',
+  ],
+  'Cat Pumps': [
+    'https://www.catpumps.com/support/troubleshooting/',
+    'https://www.catpumps.com/products/',
+  ],
+  'AR Pumps': [
+    'https://arnorthamerica.com/technical-support/',
+    'https://arnorthamerica.com/product-category/pumps/',
+  ],
+  'Beckett': [
+    'https://www.beckettcorp.com/resources/technical-support/',
+    'https://www.beckettcorp.com/products/',
+  ],
+  'Honda': [
+    'https://engines.honda.com/models/engine-detail/gx390',
+    'https://engines.honda.com/models/engine-detail/gx390/specifications',
+    'https://engines.honda.com/models/engine-detail/gx630',
+    'https://engines.honda.com/models/engine-detail/gx630/specifications',
+  ],
+  'Kohler': [
+    'https://kohlerengines.com/en-us/engines',
+    'https://kohlerengines.com/en-us/support',
+  ],
+  'Briggs & Stratton': [
+    'https://www.briggsandstratton.com/na/en_us/support.html',
+    'https://www.briggsandstratton.com/na/en_us/engines.html',
+  ],
+  'Generac': [
+    'https://www.generac.com/all-products/pressure-washers',
+  ],
+  'Ingersoll Rand': [
+    'https://www.irco.com/en-us/products/air-products/air-compressors',
+  ],
+};
+
+// Category fallback URLs
+const CATEGORY_URLS = {
+  pumps:    ['https://arnorthamerica.com/technical-support/', 'https://www.catpumps.com/support/troubleshooting/'],
+  burners:  ['https://www.beckettcorp.com/resources/technical-support/'],
+  engines:  ['https://engines.honda.com/models', 'https://kohlerengines.com/en-us/support'],
+};
+
+// Simple HTTP(S) fetch using Node built-ins — no npm needed
+function fetchUrl(targetUrl, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(targetUrl);
+    const mod = parsed.protocol === 'https:' ? require('https') : require('http');
+    const timer = setTimeout(() => reject(new Error('Timeout after ' + timeoutMs + 'ms')), timeoutMs);
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + (parsed.search || ''),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; P-Supp/1.0; +https://github.com/p-supp)',
+        'Accept': 'text/html,application/xhtml+xml,*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      timeout: timeoutMs,
+    };
+    const request = mod.get(options, (resp) => {
+      clearTimeout(timer);
+      // Follow one redirect
+      if ((resp.statusCode === 301 || resp.statusCode === 302) && resp.headers.location) {
+        resolve(fetchUrl(resp.headers.location, timeoutMs));
+        return;
+      }
+      if (resp.statusCode !== 200) {
+        reject(new Error(`HTTP ${resp.statusCode} for ${targetUrl}`));
+        return;
+      }
+      let data = '';
+      resp.setEncoding('utf8');
+      resp.on('data', chunk => { data += chunk; if (data.length > 2e6) resp.destroy(); });
+      resp.on('end', () => resolve(data));
+    });
+    request.on('error', e => { clearTimeout(timer); reject(e); });
+    request.on('timeout', () => { clearTimeout(timer); request.destroy(); reject(new Error('Socket timeout')); });
+  });
+}
+
+// Strip HTML tags, collapse whitespace, decode common entities
+function htmlToText(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|h[1-6]|li|tr|section|article)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Extract page title from HTML
+function extractTitle(html) {
+  const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return m ? m[1].replace(/\s+/g, ' ').trim().substring(0, 120) : 'Scraped Page';
+}
+
+// Split text into overlapping ~400-word chunks
+function chunkText(text, chunkWords = 400, overlapWords = 60) {
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  if (words.length < 20) return [];   // skip tiny pages
+  const chunks = [];
+  let i = 0;
+  while (i < words.length) {
+    const slice = words.slice(i, i + chunkWords).join(' ');
+    if (slice.trim().length > 80) chunks.push(slice);
+    i += (chunkWords - overlapWords);
+    if (i + 20 >= words.length) break;
+  }
+  // Last chunk
+  const tail = words.slice(i).join(' ');
+  if (tail.trim().length > 80 && (!chunks.length || tail !== chunks[chunks.length - 1])) {
+    chunks.push(tail);
+  }
+  return chunks;
+}
+
+// Detect a heading/section name near the start of a chunk
+function detectSection(chunkText) {
+  const first = chunkText.substring(0, 80).trim();
+  // If it starts with something that looks like a heading, use it
+  const heading = first.match(/^([A-Z][A-Za-z0-9 &\/\-]{3,50})[\.\:]/);
+  return heading ? heading[1].trim() : null;
+}
+
+// Open a writable connection to knowledge.db (separate from the readonly `db`)
+let scrapeDb = null;
+function getScrapeDb() {
+  if (scrapeDb) return scrapeDb;
+  try {
+    scrapeDb = new Database(DB_PATH);   // writable
+    scrapeDb.pragma('journal_mode = WAL');
+    scrapeDb.pragma('synchronous = NORMAL');
+    // Ensure tables exist (in case knowledge.db was just created)
+    scrapeDb.exec(`
+      CREATE TABLE IF NOT EXISTS documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT,
+        title TEXT,
+        brand TEXT,
+        doc_type TEXT DEFAULT 'web',
+        source_url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS chunks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        doc_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        chunk_type TEXT DEFAULT 'text',
+        section TEXT,
+        page_num INTEGER DEFAULT 1,
+        word_count INTEGER,
+        FOREIGN KEY (doc_id) REFERENCES documents(id)
+      );
+      CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
+        content,
+        content=chunks,
+        content_rowid=id
+      );
+    `);
+    console.log('[Scraper] Writable KB connection opened');
+  } catch(e) {
+    console.error('[Scraper] Could not open writable KB connection:', e.message);
+    scrapeDb = null;
+  }
+  return scrapeDb;
+}
+
+async function runScrapeJob({ brand, category, scrapeUrl, threshold, runId }) {
+  const kbDb = getScrapeDb();
+  if (!kbDb) {
+    const msg = 'Cannot open writable connection to knowledge.db';
+    console.error('[Scraper]', msg);
+    if (userDb && runId) userDb.prepare("UPDATE scrape_runs SET status='error', error=? WHERE id=?").run(msg, runId);
+    return;
+  }
+
+  // Build list of URLs to scrape
+  let urlsToScrape = [];
+  if (scrapeUrl) {
+    urlsToScrape = [scrapeUrl];
+  } else if (brand && MANUFACTURER_URLS[brand]) {
+    urlsToScrape = MANUFACTURER_URLS[brand];
+  } else if (category && CATEGORY_URLS[category]) {
+    urlsToScrape = CATEGORY_URLS[category];
+  } else if (brand) {
+    // Try a generic search-engine-friendly support URL
+    const slug = brand.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    urlsToScrape = [`https://www.${slug}.com/support/`];
+  }
+
+  if (!urlsToScrape.length) {
+    const msg = 'No URLs to scrape — provide a specific URL or select a supported brand';
+    console.warn('[Scraper]', msg);
+    if (userDb && runId) userDb.prepare("UPDATE scrape_runs SET status='error', error=? WHERE id=?").run(msg, runId);
+    return;
+  }
+
+  let totalChunksAdded = 0;
+  const errors = [];
+
+  for (const targetUrl of urlsToScrape) {
+    console.log(`[Scraper] Fetching: ${targetUrl}`);
+    try {
+      const html = await fetchUrl(targetUrl);
+      const text = htmlToText(html);
+      const title = extractTitle(html);
+      const wordCount = text.split(/\s+/).length;
+
+      if (wordCount < 50) {
+        console.log(`[Scraper] Skipping ${targetUrl} — too little text (${wordCount} words)`);
+        continue;
+      }
+
+      const chunks = chunkText(text);
+      if (!chunks.length) {
+        console.log(`[Scraper] Skipping ${targetUrl} — no usable chunks`);
+        continue;
+      }
+
+      // Filter chunks by quality: must have enough content and look like technical text
+      const qualityChunks = chunks.filter(c => {
+        const wc = c.split(/\s+/).length;
+        if (wc < 30) return false;
+        // Score 1–10 based on density of technical terms and word count
+        const techTerms = (c.match(/\b(pump|pressure|psi|gpm|gph|engine|valve|seal|bearing|impeller|plunger|packing|oil|rpm|hp|kw|manifold|unloader|injector|burner|nozzle|flow|torque|stroke|cylinder|crankcase|carburetor|spark|ignition|fuel|filter|belt|pulley|shaft|seal|o-ring|check|relief|regulator|thermal|bypass|inlet|outlet|discharge|suction|cavitation|wear|repair|service|maintenance|specification|model|serial|part|assembly|installation|troubleshoot|diagnose|symptom|cause|solution|warning|caution|note)\b/gi) || []).length;
+        const score = Math.min(10, Math.round((techTerms / wc) * 80 + (wc / 400) * 4));
+        return score >= (threshold || 7);
+      });
+
+      if (!qualityChunks.length) {
+        console.log(`[Scraper] ${targetUrl} — ${chunks.length} chunks found but none met quality threshold ${threshold}`);
+        continue;
+      }
+
+      // Check if we already have this URL indexed
+      const existing = kbDb.prepare("SELECT id FROM documents WHERE source_url = ?").get(targetUrl);
+      let docId;
+      if (existing) {
+        docId = existing.id;
+        // Remove old chunks so we get fresh content
+        const oldChunks = kbDb.prepare("SELECT id FROM chunks WHERE doc_id = ?").all(docId).map(r => r.id);
+        if (oldChunks.length) {
+          kbDb.prepare(`DELETE FROM chunks_fts WHERE rowid IN (${oldChunks.map(() => '?').join(',')})`).run(...oldChunks);
+          kbDb.prepare("DELETE FROM chunks WHERE doc_id = ?").run(docId);
+        }
+        console.log(`[Scraper] Re-indexing existing doc #${docId}: ${title}`);
+      } else {
+        const info = kbDb.prepare(
+          "INSERT INTO documents (filename, title, brand, doc_type, source_url) VALUES (?, ?, ?, 'web', ?)"
+        ).run(
+          new URL(targetUrl).hostname + new URL(targetUrl).pathname,
+          title,
+          brand || 'Unknown',
+          targetUrl
+        );
+        docId = info.lastInsertRowid;
+        console.log(`[Scraper] New doc #${docId}: ${title} (${qualityChunks.length} chunks)`);
+      }
+
+      // Insert chunks + FTS in a transaction
+      const insertChunk = kbDb.prepare(
+        "INSERT INTO chunks (doc_id, content, chunk_type, section, page_num, word_count) VALUES (?, ?, 'text', ?, 1, ?)"
+      );
+      const insertFts = kbDb.prepare(
+        "INSERT INTO chunks_fts (rowid, content) VALUES (?, ?)"
+      );
+
+      const insertAll = kbDb.transaction((cks) => {
+        let added = 0;
+        for (const chunk of cks) {
+          const section = detectSection(chunk);
+          const wc = chunk.split(/\s+/).length;
+          const ci = insertChunk.run(docId, chunk, section, wc);
+          insertFts.run(ci.lastInsertRowid, chunk);
+          added++;
+        }
+        return added;
+      });
+
+      const added = insertAll(qualityChunks);
+      totalChunksAdded += added;
+      console.log(`[Scraper] ✓ ${targetUrl} — inserted ${added} chunks`);
+
+    } catch(e) {
+      console.error(`[Scraper] Error on ${targetUrl}:`, e.message);
+      errors.push(`${targetUrl}: ${e.message}`);
+    }
+
+    // Polite delay between requests
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  // Update run record
+  if (userDb && runId) {
+    const finalStatus = errors.length && totalChunksAdded === 0 ? 'error' : 'done';
+    userDb.prepare("UPDATE scrape_runs SET status=?, chunks_added=?, error=? WHERE id=?").run(
+      finalStatus,
+      totalChunksAdded,
+      errors.length ? errors.slice(0, 3).join(' | ') : null,
+      runId
+    );
+  }
+
+  // Refresh in-memory stats so /api/stats reflects new content
+  initDatabase();
+
+  console.log(`[Scraper] Run #${runId} complete — ${totalChunksAdded} total chunks added, ${errors.length} errors`);
+}
+
+// ═══════════════════════════════════════════════════════
 //  HTTP Server
 // ═══════════════════════════════════════════════════════
 
@@ -1936,12 +2263,29 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const { brand, category, url: scrapeUrl, threshold } = JSON.parse(body);
+
+        // Insert run record, get its ID
+        let runId = null;
         if (userDb) {
-          userDb.prepare("INSERT INTO scrape_runs (brand, category, url, threshold, status) VALUES (?, ?, ?, ?, 'queued')").run(brand || null, category || null, scrapeUrl || null, threshold || 7);
-          console.log(`[Admin] Scrape job queued: brand=${brand} category=${category}`);
+          const info = userDb.prepare(
+            "INSERT INTO scrape_runs (brand, category, url, threshold, status) VALUES (?, ?, ?, ?, 'running')"
+          ).run(brand || null, category || null, scrapeUrl || null, threshold || 7);
+          runId = info.lastInsertRowid;
+          console.log(`[Scraper] Run #${runId} started: brand=${brand} category=${category} url=${scrapeUrl || 'auto'}`);
         }
+
+        // Respond immediately — scraping runs async
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
+        res.end(JSON.stringify({ ok: true, run_id: runId }));
+
+        // Kick off real scrape in background
+        runScrapeJob({ brand, category, scrapeUrl, threshold: threshold || 7, runId }).catch(e => {
+          console.error('[Scraper] Fatal error:', e.message);
+          if (userDb && runId) {
+            userDb.prepare("UPDATE scrape_runs SET status='error', error=? WHERE id=?").run(e.message, runId);
+          }
+        });
+
       } catch(e) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));
