@@ -4,602 +4,569 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>P-Supp Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:        #f4f6f9;
+  --surface:   #ffffff;
+  --surface-2: #f8f9fb;
+  --border:    #e4e7ec;
+  --border-2:  #d0d5dd;
+  --text:      #101828;
+  --text-mid:  #344054;
+  --muted:     #667085;
+  --accent:    #2563eb;
+  --accent-bg: #eff6ff;
+  --accent-bd: #bfdbfe;
+  --green:     #16a34a;
+  --green-bg:  #f0fdf4;
+  --green-bd:  #bbf7d0;
+  --red:       #dc2626;
+  --red-bg:    #fef2f2;
+  --red-bd:    #fecaca;
+  --yellow:    #d97706;
+  --yellow-bg: #fffbeb;
+  --yellow-bd: #fde68a;
+  --radius:    10px;
+  --sidebar:   220px;
+  --sans:      'DM Sans', system-ui, sans-serif;
+  --mono:      'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; display: flex; min-height: 100vh; }
 
-  :root {
-    --bg:       #0d0f12;
-    --surface:  #141618;
-    --border:   #1e2125;
-    --border2:  #2a2e34;
-    --text:     #e2e4e8;
-    --muted:    #6b7280;
-    --accent:   #3b82f6;
-    --accent2:  #1d4ed8;
-    --green:    #22c55e;
-    --red:      #ef4444;
-    --yellow:   #f59e0b;
-    --orange:   #f97316;
-    --mono:     'IBM Plex Mono', monospace;
-    --sans:     'IBM Plex Sans', sans-serif;
-  }
+/* ── LOGIN ── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px; width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.login-logo {
+  width: 44px; height: 44px; background: var(--accent); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 500; color: #fff;
+  letter-spacing: 0.5px; margin-bottom: 20px;
+}
+.login-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.login-card p { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
+.field input {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border-2);
+  border-radius: 8px; font-family: var(--sans); font-size: 14px; color: var(--text);
+  background: var(--surface); outline: none; transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.login-btn {
+  width: 100%; padding: 11px; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; font-family: var(--sans); font-size: 14px;
+  font-weight: 600; cursor: pointer; margin-top: 4px; transition: background 0.15s;
+}
+.login-btn:hover { background: #1d4ed8; }
+.login-err { color: var(--red); font-size: 12px; margin-top: 10px; text-align: center; min-height: 16px; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar); min-height: 100vh; background: var(--surface);
+  border-right: 1px solid var(--border); display: none; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+}
+.sb-top { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.sb-brand { display: flex; align-items: center; gap: 10px; }
+.sb-logo {
+  width: 32px; height: 32px; background: var(--accent); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 9px; font-weight: 500; color: #fff; flex-shrink: 0;
+}
+.sb-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.sb-sub { font-size: 11px; color: var(--muted); }
+.sb-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
+.sb-group { margin-bottom: 20px; }
+.sb-group-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); padding: 0 8px; margin-bottom: 4px; display: block;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 13px;
+  font-weight: 500; transition: all 0.12s; text-decoration: none; position: relative;
+}
+.nav-item:hover { background: var(--bg); color: var(--text-mid); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 10px; font-family: var(--mono); padding: 1px 6px;
+  border-radius: 10px; min-width: 20px; text-align: center; display: none;
+}
+.nav-badge.yellow { background: var(--yellow); }
+.nav-badge.green { background: var(--green); }
+.nav-badge.blue { background: var(--accent); }
+.sb-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
+.sb-footer a { display: block; text-align: center; color: var(--accent); font-size: 12px; text-decoration: none; margin-bottom: 8px; }
+.sb-footer a:hover { text-decoration: underline; }
+.logout-btn {
+  width: 100%; padding: 8px; background: none; border: 1.5px solid var(--border-2);
+  color: var(--muted); border-radius: 7px; font-family: var(--sans); font-size: 12px;
+  font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 14px;
-    min-height: 100vh;
-    display: flex;
-  }
+/* ── MAIN ── */
+#main { margin-left: var(--sidebar); flex: 1; display: none; flex-direction: column; min-height: 100vh; }
+.topbar {
+  padding: 16px 28px; border-bottom: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-left h1 { font-size: 16px; font-weight: 700; color: var(--text); }
+.topbar-left p { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.section { display: none; padding: 24px 28px; }
+.section.active { display: block; }
 
-  /* ── LOGIN ── */
-  #login-screen {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
-  }
-  .login-box {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 40px;
-    width: 340px;
-  }
-  .login-logo {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .login-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 32px;
-    color: var(--text);
-  }
-  .login-title span { color: var(--accent); }
-  .login-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
-  .login-input {
-    width: 100%; background: var(--bg); border: 1px solid var(--border2);
-    color: var(--text); padding: 10px 12px; border-radius: 5px;
-    font-family: var(--mono); font-size: 14px; margin-bottom: 20px;
-    outline: none; transition: border-color 0.2s;
-  }
-  .login-input:focus { border-color: var(--accent); }
-  .login-btn {
-    width: 100%; background: var(--accent); border: none; color: #fff;
-    padding: 11px; border-radius: 5px; font-family: var(--sans);
-    font-size: 14px; font-weight: 500; cursor: pointer;
-    transition: background 0.2s;
-  }
-  .login-btn:hover { background: var(--accent2); }
-  .login-error { color: var(--red); font-size: 12px; margin-top: 10px; text-align: center; }
+/* ── STATS ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+.stat-card .sc-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 10px; }
+.stat-card .sc-value { font-family: var(--mono); font-size: 28px; font-weight: 500; line-height: 1; color: var(--text); }
+.stat-card .sc-value.blue { color: var(--accent); }
+.stat-card .sc-value.green { color: var(--green); }
+.stat-card .sc-value.red { color: var(--red); }
+.stat-card .sc-value.yellow { color: var(--yellow); }
+.stat-card .sc-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
-  /* ── SIDEBAR ── */
-  #sidebar {
-    width: 200px; min-height: 100vh;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    padding: 0;
-    position: fixed; top: 0; left: 0; bottom: 0;
-    z-index: 100;
-  }
-  .sidebar-header {
-    padding: 20px 16px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sidebar-brand {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-  .sidebar-title { font-size: 15px; font-weight: 600; color: var(--text); }
-  .sidebar-title span { color: var(--accent); }
+/* ── PANEL ── */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; }
+.panel-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.panel-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.panel-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-  .nav-section { padding: 12px 8px 4px; }
-  .nav-label {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    padding: 0 8px;
-    margin-bottom: 4px;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 9px;
-    padding: 8px 8px;
-    border-radius: 5px;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 13px;
-    transition: all 0.15s;
-    position: relative;
-    text-decoration: none;
-  }
-  .nav-item:hover { background: var(--border); color: var(--text); }
-  .nav-item.active { background: rgba(59,130,246,0.12); color: var(--accent); }
-  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
-  .nav-badge {
-    margin-left: auto;
-    background: var(--red);
-    color: #fff;
-    font-size: 10px;
-    font-family: var(--mono);
-    padding: 1px 5px;
-    border-radius: 9px;
-    min-width: 18px;
-    text-align: center;
-  }
-  .nav-badge.green { background: var(--green); }
-  .nav-badge.yellow { background: var(--yellow); color: #000; }
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--muted); padding: 10px 16px;
+  border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; color: var(--text-mid); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-2); }
+.td-mono { font-family: var(--mono); font-size: 12px; }
+.td-muted { color: var(--muted); }
 
-  .sidebar-footer {
-    margin-top: auto;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-  }
-  .logout-btn {
-    width: 100%; background: none; border: 1px solid var(--border2);
-    color: var(--muted); padding: 7px; border-radius: 5px;
-    font-family: var(--sans); font-size: 12px; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px;
+  border-radius: 7px; font-size: 12px; font-family: var(--sans); font-weight: 600;
+  cursor: pointer; border: 1.5px solid transparent; transition: all 0.12s; text-decoration: none; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.btn-success { background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
+.btn-success:hover { background: #dcfce7; }
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: var(--red-bd); }
+.btn-danger:hover { background: #fee2e2; }
+.btn-ghost { background: var(--surface); color: var(--muted); border-color: var(--border-2); }
+.btn-ghost:hover { color: var(--text-mid); background: var(--surface-2); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  /* ── MAIN CONTENT ── */
-  #main {
-    margin-left: 200px;
-    flex: 1;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── BADGES ── */
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  font-weight: 500; padding: 2px 8px; border-radius: 20px;
+}
+.badge-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-bd); }
+.badge-red    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-bd); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-bd); }
+.badge-blue   { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); }
+.badge-gray   { background: var(--surface-2); color: var(--muted);  border: 1px solid var(--border); }
 
-  .topbar {
-    padding: 16px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--surface);
-    position: sticky; top: 0; z-index: 50;
-  }
-  .page-title { font-size: 16px; font-weight: 600; }
-  .page-subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
-  .topbar-actions { display: flex; gap: 8px; }
+/* ── FORMS ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.form-input, .form-select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--border-2);
+  border-radius: 7px; font-family: var(--sans); font-size: 13px; color: var(--text);
+  background: var(--surface); outline: none; transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+.form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-  .section { display: none; padding: 24px 28px; }
-  .section.active { display: block; }
+/* ── TIP CARDS ── */
+.tip-card { padding: 18px; border-bottom: 1px solid var(--border); }
+.tip-card:last-child { border-bottom: none; }
+.tip-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.tip-text { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 10px; }
+.tip-context { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-family: var(--mono); background: var(--surface-2); padding: 6px 10px; border-radius: 6px; }
+.tip-actions { display: flex; gap: 8px; }
 
-  /* ── CARDS ── */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 16px;
-  }
-  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-  .stat-value { font-family: var(--mono); font-size: 26px; font-weight: 600; line-height: 1; }
-  .stat-value.blue { color: var(--accent); }
-  .stat-value.green { color: var(--green); }
-  .stat-value.red { color: var(--red); }
-  .stat-value.yellow { color: var(--yellow); }
-  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+/* ── LOG DETAIL ── */
+.log-detail-row td { background: var(--surface-2); }
+.log-detail-body { padding: 14px 16px; font-size: 12px; font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 400px; overflow-y: auto; color: var(--muted); line-height: 1.7; }
+.log-user-msg { color: var(--accent); }
+.log-ai-msg   { color: var(--green); }
 
-  /* ── PANELS ── */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    margin-bottom: 20px;
-    overflow: hidden;
-  }
-  .panel-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .panel-title { font-size: 13px; font-weight: 600; }
-  .panel-body { padding: 0; }
+/* ── SCRAPER ── */
+.scraper-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+.scraper-terminal {
+  background: #0f172a; border-radius: 8px; padding: 14px;
+  font-family: var(--mono); font-size: 12px; color: #94a3b8;
+  height: 200px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;
+}
+.scraper-terminal .t-ok   { color: #4ade80; }
+.scraper-terminal .t-err  { color: #f87171; }
+.scraper-terminal .t-info { color: #60a5fa; }
+.scraper-terminal .t-warn { color: #fbbf24; }
+.scraper-notice {
+  background: var(--yellow-bg); border: 1px solid var(--yellow-bd);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+  font-size: 12px; color: var(--yellow); display: flex; gap: 8px;
+}
+.scraper-notice strong { color: var(--text-mid); }
 
-  /* ── TABLE ── */
-  table { width: 100%; border-collapse: collapse; }
-  th {
-    text-align: left;
-    font-size: 10px;
-    font-family: var(--mono);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(0,0,0,0.2);
-  }
-  td {
-    padding: 11px 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    vertical-align: top;
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  .td-mono { font-family: var(--mono); font-size: 12px; }
-  .td-muted { color: var(--muted); font-size: 12px; }
+/* ── BAR CHART ── */
+.bar-chart { padding: 16px 18px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bar-label { font-size: 12px; color: var(--muted); width: 170px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.5s; }
+.bar-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
 
-  /* ── BUTTONS ── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-size: 12px;
-    font-family: var(--sans);
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s;
-    text-decoration: none;
-  }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-success { background: rgba(34,197,94,0.12); color: var(--green); border-color: rgba(34,197,94,0.3); }
-  .btn-success:hover { background: rgba(34,197,94,0.2); }
-  .btn-danger { background: rgba(239,68,68,0.12); color: var(--red); border-color: rgba(239,68,68,0.3); }
-  .btn-danger:hover { background: rgba(239,68,68,0.2); }
-  .btn-ghost { background: none; color: var(--muted); border-color: var(--border2); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--border); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ── BRAND GRID ── */
+.brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 16px; }
+.brand-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+.brand-name { font-size: 13px; font-weight: 500; color: var(--text-mid); }
+.brand-count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
-  /* ── BADGES ── */
-  .badge {
-    display: inline-block;
-    font-family: var(--mono);
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 3px;
-    letter-spacing: 0.5px;
-  }
-  .badge-pending { background: rgba(245,158,11,0.15); color: var(--yellow); }
-  .badge-approved { background: rgba(34,197,94,0.15); color: var(--green); }
-  .badge-rejected { background: rgba(239,68,68,0.15); color: var(--red); }
-  .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
-  .badge-gray { background: rgba(107,114,128,0.15); color: var(--muted); }
+/* ── EMPTY / LOADING ── */
+.empty { padding: 48px 20px; text-align: center; }
+.empty-icon { font-size: 32px; margin-bottom: 10px; }
+.empty-title { font-size: 14px; font-weight: 600; color: var(--text-mid); margin-bottom: 4px; }
+.empty-text { font-size: 13px; color: var(--muted); max-width: 320px; margin: 0 auto; line-height: 1.5; }
+.loading { padding: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── TIP CARD (approval queue) ── */
-  .tip-card {
-    border-bottom: 1px solid var(--border);
-    padding: 16px 18px;
-  }
-  .tip-card:last-child { border-bottom: none; }
-  .tip-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-  .tip-text { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 10px; }
-  .tip-context { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; }
-  .tip-actions { display: flex; gap: 8px; }
+/* ── PAGINATION ── */
+.pagination { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.page-info { font-size: 12px; color: var(--muted); margin-right: auto; font-family: var(--mono); }
 
-  /* ── LOG ENTRY ── */
-  .log-row-expand { background: rgba(0,0,0,0.3); }
-  .log-detail { padding: 12px 16px; font-size: 12px; color: var(--muted); font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 600px; overflow-y: auto; }
+/* ── SEARCH ── */
+.search-input {
+  padding: 8px 12px; border: 1.5px solid var(--border-2); border-radius: 7px;
+  font-family: var(--sans); font-size: 13px; color: var(--text);
+  background: var(--surface); outline: none; transition: border-color 0.15s; width: 220px;
+}
+.search-input:focus { border-color: var(--accent); }
 
-  /* ── SCRAPER ── */
-  .scraper-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px; }
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block; }
-  .form-input, .form-select {
-    width: 100%; background: var(--bg); border: 1px solid var(--border2);
-    color: var(--text); padding: 8px 10px; border-radius: 5px;
-    font-family: var(--sans); font-size: 13px; outline: none;
-  }
-  .form-input:focus, .form-select:focus { border-color: var(--accent); }
-  .form-select option { background: var(--surface); }
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--surface);
+  border: 1px solid var(--border); color: var(--text); padding: 12px 18px;
+  border-radius: 10px; font-size: 13px; font-weight: 500; display: none; z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+#toast.show { display: block; }
+#toast.ok  { border-left: 3px solid var(--green); }
+#toast.err { border-left: 3px solid var(--red); }
 
-  /* ── BAR CHART ── */
-  .bar-chart { padding: 16px 18px; }
-  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .bar-label { font-size: 12px; color: var(--muted); width: 180px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar-track { flex: 1; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.6s ease; }
-  .bar-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 40px; text-align: right; }
+/* ── ATTENTION CARDS ── */
+.attention-card {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px;
+  background: var(--surface); display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: all 0.12s;
+}
+.attention-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.06); }
+.attention-card .ac-icon { font-size: 24px; flex-shrink: 0; }
+.attention-card .ac-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 3px; }
+.attention-card .ac-value { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+.attention-card .ac-value.red    { color: var(--red); }
+.attention-card .ac-value.yellow { color: var(--yellow); }
+.attention-card .ac-value.green  { color: var(--green); }
+.attention-card .ac-value.blue   { color: var(--accent); }
+.attention-card .ac-action { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.attention-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
 
-  /* ── EMPTY STATE ── */
-  .empty { padding: 40px 20px; text-align: center; color: var(--muted); }
-  .empty-icon { font-size: 28px; margin-bottom: 8px; }
-  .empty-text { font-size: 13px; }
+/* ── KB SEARCH RESULTS ── */
+.kb-result { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.kb-result:last-child { border-bottom: none; }
+.kb-result-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.kb-result-text { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
 
-  /* ── LOADING ── */
-  .loading { padding: 30px 20px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+/* ── SCRAPER STATUS ── */
+.scrape-status-idle    { color: var(--muted); }
+.scrape-status-running { color: var(--accent); }
+.scrape-status-done    { color: var(--green); }
+.scrape-status-error   { color: var(--red); }
 
-  /* ── PAGINATION ── */
-  .pagination { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
-  .page-info { font-size: 12px; color: var(--muted); margin-right: auto; font-family: var(--mono); }
-
-  /* ── SCRAPER LOG ── */
-  .scraper-log {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
-    padding: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted);
-    height: 160px; overflow-y: auto; white-space: pre-wrap;
-  }
-  .scraper-log .log-ok { color: var(--green); }
-  .scraper-log .log-err { color: var(--red); }
-  .scraper-log .log-info { color: var(--accent); }
-
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: var(--surface); border: 1px solid var(--border2);
-    color: var(--text); padding: 10px 16px; border-radius: 6px;
-    font-size: 13px; display: none; z-index: 9999;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  }
-  #toast.show { display: block; }
-  #toast.ok { border-left: 3px solid var(--green); }
-  #toast.err { border-left: 3px solid var(--red); }
-
-  /* ── SEARCH BAR ── */
-  .search-input {
-    background: var(--bg); border: 1px solid var(--border2);
-    color: var(--text); padding: 7px 11px; border-radius: 5px;
-    font-family: var(--sans); font-size: 13px; outline: none; width: 220px;
-  }
-  .search-input:focus { border-color: var(--accent); }
-
-  /* ── KB BRAND LIST ── */
-  .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 16px 18px; }
-  .brand-card {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
-    padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
-  }
-  .brand-name { font-size: 13px; font-weight: 500; }
-  .brand-count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  select { color-scheme: dark; }
+@media (max-width: 960px) {
+  .scraper-layout { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ══ LOGIN ══ -->
 <div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">P-Supp</div>
-    <div class="login-title">Admin <span>Dashboard</span></div>
-    <label class="login-label">Username</label>
-    <input type="text" class="login-input" id="admin-user" placeholder="Enter username" autocomplete="username">
-    <label class="login-label">Password</label>
-    <input type="password" class="login-input" id="admin-pass" placeholder="Enter password" autocomplete="current-password">
+  <div class="login-card">
+    <div class="login-logo">P-S</div>
+    <h2>Admin Dashboard</h2>
+    <p>Sign in with your admin credentials to continue.</p>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="admin-user" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="admin-pass" placeholder="Enter password" autocomplete="current-password">
+    </div>
     <button class="login-btn" onclick="doLogin()">Sign In →</button>
-    <div class="login-error" id="login-err"></div>
+    <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
-<!-- SIDEBAR -->
-<nav id="sidebar" style="display:none">
-  <div class="sidebar-header">
-    <div class="sidebar-brand">P-Supp</div>
-    <div class="sidebar-title"><span>Admin</span> Panel</div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">Monitor</div>
-    <div class="nav-item active" onclick="showSection('overview')" id="nav-overview">
-      <span class="nav-icon">◈</span> Overview
-    </div>
-    <div class="nav-item" onclick="showSection('tips')" id="nav-tips">
-      <span class="nav-icon">💡</span> Tips Queue
-      <span class="nav-badge" id="tips-badge" style="display:none">0</span>
-    </div>
-    <div class="nav-item" onclick="showSection('logs')" id="nav-logs">
-      <span class="nav-icon">📋</span> Chat Logs
-    </div>
-    <div class="nav-item" onclick="showSection('gaps')" id="nav-gaps">
-      <span class="nav-icon">⚠</span> KB Gaps
-      <span class="nav-badge yellow" id="gaps-badge" style="display:none">0</span>
+<!-- ══ SIDEBAR ══ -->
+<nav id="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-logo">P-S</div>
+      <div>
+        <div class="sb-name">P-Supp</div>
+        <div class="sb-sub">Admin Panel</div>
+      </div>
     </div>
   </div>
 
-  <div class="nav-section">
-    <div class="nav-label">Knowledge Base</div>
-    <div class="nav-item" onclick="showSection('kb')" id="nav-kb">
-      <span class="nav-icon">📚</span> KB Contents
+  <div class="sb-nav">
+    <div class="sb-group">
+      <span class="sb-group-label">Dashboard</span>
+      <div class="nav-item active" id="nav-overview" onclick="showSection('overview')">
+        <span class="nav-icon">◈</span> Overview
+      </div>
     </div>
-    <div class="nav-item" onclick="showSection('analytics')" id="nav-analytics">
-      <span class="nav-icon">📊</span> Analytics
+
+    <div class="sb-group">
+      <span class="sb-group-label">Content</span>
+      <div class="nav-item" id="nav-tips" onclick="showSection('tips')">
+        <span class="nav-icon">💡</span> Tips Queue
+        <span class="nav-badge" id="tips-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-gaps" onclick="showSection('gaps')">
+        <span class="nav-icon">⚠️</span> KB Gaps
+        <span class="nav-badge yellow" id="gaps-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-logs" onclick="showSection('logs')">
+        <span class="nav-icon">📋</span> Chat Logs
+      </div>
     </div>
-    <div class="nav-item" onclick="showSection('scraper')" id="nav-scraper">
-      <span class="nav-icon">🌐</span> Web Scraper
+
+    <div class="sb-group">
+      <span class="sb-group-label">Knowledge Base</span>
+      <div class="nav-item" id="nav-kb" onclick="showSection('kb')">
+        <span class="nav-icon">📚</span> KB Contents
+      </div>
+      <div class="nav-item" id="nav-scraper" onclick="showSection('scraper')">
+        <span class="nav-icon">🌐</span> Web Scraper
+      </div>
+      <div class="nav-item" id="nav-analytics" onclick="showSection('analytics')">
+        <span class="nav-icon">📊</span> Analytics
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <span class="sb-group-label">Users</span>
+      <div class="nav-item" id="nav-users" onclick="showSection('users')">
+        <span class="nav-icon">👥</span> Accounts
+        <span class="nav-badge blue" id="users-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-loginlog" onclick="showSection('loginlog')">
+        <span class="nav-icon">🔒</span> Login Log
+      </div>
     </div>
   </div>
 
-  <div class="nav-section">
-    <div class="nav-label">Management</div>
-    <div class="nav-item" onclick="showSection('users')" id="nav-users">
-      <span class="nav-icon">👥</span> Users
-      <span class="nav-badge green" id="users-badge" style="display:none">0</span>
-    </div>
-    <div class="nav-item" onclick="showSection('loginlog')" id="nav-loginlog">
-      <span class="nav-icon">🔒</span> Login Log
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
-    <a href="/" style="display:block;text-align:center;color:var(--accent);font-size:12px;text-decoration:none;margin-bottom:8px">← Back to App</a>
+  <div class="sb-footer">
+    <a href="/">← Back to App</a>
     <button class="logout-btn" onclick="doLogout()">Sign Out</button>
   </div>
 </nav>
 
-<!-- MAIN -->
-<div id="main" style="display:none">
+<!-- ══ MAIN ══ -->
+<div id="main">
   <div class="topbar">
-    <div>
-      <div class="page-title" id="page-title">Overview</div>
-      <div class="page-subtitle" id="page-subtitle">System status at a glance</div>
+    <div class="topbar-left">
+      <h1 id="page-title">Overview</h1>
+      <p id="page-subtitle">System status at a glance</p>
     </div>
-    <div class="topbar-actions" id="topbar-actions"></div>
+    <div id="topbar-actions"></div>
   </div>
 
-  <!-- OVERVIEW -->
+  <!-- ══ OVERVIEW ══ -->
   <div class="section active" id="section-overview">
+    <div class="attention-grid" id="overview-attention"></div>
     <div class="stat-grid" id="overview-stats">
-      <div class="stat-card"><div class="stat-label">Loading…</div></div>
+      <div class="stat-card"><div class="sc-label">Loading…</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="panel">
-        <div class="panel-header"><div class="panel-title">Recent KB Gaps</div></div>
-        <div id="overview-gaps"><div class="loading">Loading…</div></div>
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">KB Gaps — Needs Attention</div>
+            <div class="panel-subtitle">Queries users asked that the AI couldn't answer</div>
+          </div>
+          <button class="btn btn-ghost" onclick="showSection('gaps')">View All →</button>
+        </div>
+        <div id="overview-gaps"><div class="loading"><span class="spinner"></span>Loading…</div></div>
       </div>
       <div class="panel">
-        <div class="panel-header"><div class="panel-title">Pending Tips</div></div>
-        <div id="overview-tips"><div class="loading">Loading…</div></div>
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Pending Tips</div>
+            <div class="panel-subtitle">Field technician tips awaiting your review</div>
+          </div>
+          <button class="btn btn-ghost" onclick="showSection('tips')">View All →</button>
+        </div>
+        <div id="overview-tips"><div class="loading"><span class="spinner"></span>Loading…</div></div>
       </div>
     </div>
   </div>
 
-  <!-- TIPS QUEUE -->
+  <!-- ══ TIPS QUEUE ══ -->
   <div class="section" id="section-tips">
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">Community Field Tips</div>
+        <div>
+          <div class="panel-title">Community Field Tips</div>
+          <div class="panel-subtitle">Tips submitted by technicians from the field. Approve to add to the knowledge base, reject to discard.</div>
+        </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <select class="form-select" style="width:140px;padding:5px 8px" id="tips-filter" onchange="loadTips()">
-            <option value="pending">Pending</option>
+          <select class="form-select" style="width:140px;font-size:12px;padding:7px 10px" id="tips-filter" onchange="loadTips()">
+            <option value="pending">Pending review</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-            <option value="">All</option>
+            <option value="">All tips</option>
           </select>
           <button class="btn btn-ghost" onclick="loadTips()">↻ Refresh</button>
         </div>
       </div>
-      <div class="panel-body" id="tips-list"><div class="loading">Loading…</div></div>
+      <div id="tips-list"><div class="loading"><span class="spinner"></span>Loading…</div></div>
     </div>
   </div>
 
-  <!-- CHAT LOGS -->
+  <!-- ══ CHAT LOGS ══ -->
   <div class="section" id="section-logs">
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">Chat Logs</div>
+        <div>
+          <div class="panel-title">Chat Logs</div>
+          <div class="panel-subtitle">All user conversations. Click any row to expand the full message and AI reply.</div>
+        </div>
         <div style="display:flex;gap:8px">
           <input type="text" class="search-input" id="logs-search" placeholder="Search messages…" oninput="debounce(loadLogs, 400)()">
           <button class="btn btn-ghost" onclick="loadLogs()">↻ Refresh</button>
         </div>
       </div>
-      <div class="panel-body">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:140px">Time</th>
-              <th>User Message</th>
-              <th style="width:80px">Tools</th>
-              <th style="width:80px">Time (ms)</th>
-              <th style="width:70px">Gap</th>
-            </tr>
-          </thead>
-          <tbody id="logs-tbody"><tr><td colspan="5"><div class="loading">Loading…</div></td></tr></tbody>
-        </table>
-        <div class="pagination">
-          <span class="page-info" id="logs-page-info"></span>
-          <button class="btn btn-ghost" id="logs-prev" onclick="logsPage(-1)">← Prev</button>
-          <button class="btn btn-ghost" id="logs-next" onclick="logsPage(1)">Next →</button>
-        </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:130px">Time</th>
+            <th>User Message</th>
+            <th style="width:80px">Tools</th>
+            <th style="width:90px">Response</th>
+            <th style="width:70px">Status</th>
+          </tr>
+        </thead>
+        <tbody id="logs-tbody"><tr><td colspan="5"><div class="loading"><span class="spinner"></span>Loading…</div></td></tr></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="logs-page-info"></span>
+        <button class="btn btn-ghost" id="logs-prev" onclick="logsPage(-1)">← Prev</button>
+        <button class="btn btn-ghost" id="logs-next" onclick="logsPage(1)">Next →</button>
       </div>
     </div>
   </div>
 
-  <!-- KB GAPS -->
+  <!-- ══ KB GAPS ══ -->
   <div class="section" id="section-gaps">
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">Unanswered / Low-Confidence Queries</div>
-        <button class="btn btn-ghost" onclick="loadGaps()">↻ Refresh</button>
-        <button class="btn btn-ghost" style="color:var(--red)" onclick="clearAllGaps()">🗑 Clear All</button>
+        <div>
+          <div class="panel-title">Knowledge Base Gaps</div>
+          <div class="panel-subtitle">These are questions users asked that the AI couldn't find a good answer for. Use them to identify what content is missing from your knowledge base.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="loadGaps()">↻ Refresh</button>
+          <button class="btn btn-danger" onclick="clearAllGaps()">🗑 Clear All</button>
+        </div>
       </div>
-      <div class="panel-body">
-        <table>
-          <thead>
-            <tr>
-              <th>Query</th>
-              <th style="width:120px">Tool</th>
-              <th style="width:160px">Time</th>
-              <th style="width:120px">Action</th>
-            </tr>
-          </thead>
-          <tbody id="gaps-tbody"><tr><td colspan="4"><div class="loading">Loading…</div></td></tr></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Question Asked</th>
+            <th style="width:130px">Tool Used</th>
+            <th style="width:130px">When</th>
+            <th style="width:160px">Action</th>
+          </tr>
+        </thead>
+        <tbody id="gaps-tbody"><tr><td colspan="4"><div class="loading"><span class="spinner"></span>Loading…</div></td></tr></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- KB CONTENTS -->
+  <!-- ══ KB CONTENTS ══ -->
   <div class="section" id="section-kb">
     <div class="stat-grid" id="kb-stats">
-      <div class="stat-card"><div class="stat-label">Loading…</div></div>
-    </div>
-    <div class="panel">
-      <div class="panel-header"><div class="panel-title">Indexed Brands</div></div>
-      <div id="kb-brands"><div class="loading">Loading…</div></div>
+      <div class="stat-card"><div class="sc-label">Loading…</div></div>
     </div>
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">Search KB</div>
+        <div class="panel-title">Search the Knowledge Base</div>
       </div>
       <div style="padding:16px 18px;display:flex;gap:10px">
-        <input type="text" class="search-input" id="kb-search-q" placeholder="Search knowledge base…" style="flex:1" onkeydown="if(event.key==='Enter')kbSearch()">
+        <input type="text" class="form-input" id="kb-search-q" placeholder="Search indexed content…" style="flex:1" onkeydown="if(event.key==='Enter')kbSearch()">
         <select class="form-select" style="width:160px" id="kb-search-brand"></select>
         <button class="btn btn-primary" onclick="kbSearch()">Search</button>
       </div>
       <div id="kb-search-results"></div>
     </div>
-  </div>
-
-  <!-- ANALYTICS -->
-  <div class="section" id="section-analytics">
-    <div class="stat-grid" id="analytics-stats">
-      <div class="stat-card"><div class="stat-label">Loading…</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="panel">
-        <div class="panel-header"><div class="panel-title">Top Categories</div></div>
-        <div class="bar-chart" id="analytics-categories"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header"><div class="panel-title">Top Tools Used</div></div>
-        <div class="bar-chart" id="analytics-tools"></div>
-      </div>
-    </div>
     <div class="panel">
-      <div class="panel-header"><div class="panel-title">Daily Chat Volume (last 14 days)</div></div>
-      <div class="bar-chart" id="analytics-volume"></div>
-    </div>
-    <div class="panel">
-      <div class="panel-header"><div class="panel-title">Negative Feedback</div></div>
-      <div id="analytics-feedback"><div class="loading">Loading…</div></div>
+      <div class="panel-header"><div class="panel-title">Indexed Brands & Sources</div></div>
+      <div id="kb-brands"><div class="loading"><span class="spinner"></span>Loading…</div></div>
     </div>
   </div>
 
-  <!-- SCRAPER -->
+  <!-- ══ WEB SCRAPER ══ -->
   <div class="section" id="section-scraper">
+
+    <div class="scraper-notice">
+      <span style="font-size:16px;flex-shrink:0">ℹ️</span>
+      <div>
+        <strong>How the scraper works:</strong>
+        Clicking "Run Scraper" sends a request to the server to queue a background scrape job.
+        The server fetches content from the target URL or manufacturer site, scores it with AI, and stores high-quality chunks in the knowledge base.
+        <strong>Results appear in KB Contents once complete.</strong>
+        Check Railway logs for detailed progress if a job seems stuck.
+      </div>
+    </div>
+
     <div class="panel">
-      <div class="panel-header"><div class="panel-title">Web Scraper — Manufacturer Content</div></div>
-      <div class="scraper-grid">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Run a Scrape Job</div>
+          <div class="panel-subtitle">Select a manufacturer or paste a specific URL to pull content into your knowledge base.</div>
+        </div>
+        <div id="scrape-status-badge" class="badge badge-gray scrape-status-idle">Idle</div>
+      </div>
+      <div class="scraper-layout">
         <div>
           <div class="form-group">
             <label class="form-label">Brand / Manufacturer</label>
@@ -611,11 +578,9 @@
               <option value="Beckett">Beckett</option>
               <option value="Honda">Honda</option>
               <option value="Kohler">Kohler</option>
-              <option value="Briggs & Stratton">Briggs & Stratton</option>
+              <option value="Briggs &amp; Stratton">Briggs &amp; Stratton</option>
               <option value="Generac">Generac</option>
               <option value="Ingersoll Rand">Ingersoll Rand</option>
-              <option value="Quincy">Quincy</option>
-              <option value="Campbell Hausfeld">Campbell Hausfeld</option>
             </select>
           </div>
           <div class="form-group">
@@ -626,72 +591,106 @@
               <option value="burners">Burners</option>
               <option value="engines">Engines</option>
               <option value="generators">Generators</option>
-              <option value="air_compressors">Air Compressors</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Specific URL (optional)</label>
-            <input type="text" class="form-input" id="scrape-url" placeholder="https://manufacturer.com/support/…">
+            <label class="form-label">Specific URL <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional — overrides brand/category)</span></label>
+            <input type="url" class="form-input" id="scrape-url" placeholder="https://manufacturer.com/support/…">
+            <div class="form-hint">Paste a direct link to a parts page, FAQ, or manual index for best results.</div>
           </div>
           <div class="form-group">
-            <label class="form-label">Quality Threshold (1–10)</label>
+            <label class="form-label">Quality Threshold <span style="font-weight:400;text-transform:none;color:var(--muted)">(1–10, default 7)</span></label>
             <input type="number" class="form-input" id="scrape-threshold" value="7" min="1" max="10">
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">AI scores each chunk — only content scoring above this is stored</div>
+            <div class="form-hint">Only content scored above this threshold is stored. Lower = more content, lower quality. Higher = less content, better quality.</div>
           </div>
-          <button class="btn btn-primary" onclick="triggerScrape()" id="scrape-btn" style="width:100%">▶ Run Scraper</button>
+          <button class="btn btn-primary" id="scrape-btn" onclick="triggerScrape()" style="width:100%;justify-content:center;padding:11px">▶ Run Scraper</button>
         </div>
         <div>
-          <label class="form-label" style="margin-bottom:8px;display:block">Scraper Output</label>
-          <div class="scraper-log" id="scraper-log">Ready. Configure and click Run Scraper to begin.
+          <div class="form-label" style="margin-bottom:8px">Live Output</div>
+          <div class="scraper-terminal" id="scraper-log">Ready — configure options and click Run Scraper to begin.
 </div>
-          <div style="margin-top:12px;display:flex;gap:8px">
-            <button class="btn btn-ghost" onclick="clearScraperLog()">Clear Log</button>
-            <div id="scrape-status" style="font-size:12px;color:var(--muted);align-self:center"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <button class="btn btn-ghost" onclick="clearScraperLog()">Clear</button>
+            <a href="https://railway.app" target="_blank" class="btn btn-ghost" style="font-size:11px">Open Railway Logs ↗</a>
           </div>
         </div>
       </div>
     </div>
+
     <div class="panel">
-      <div class="panel-header"><div class="panel-title">Scrape History</div></div>
-      <div id="scrape-history"><div class="loading">Loading…</div></div>
+      <div class="panel-header">
+        <div class="panel-title">Scrape History</div>
+        <button class="btn btn-ghost" onclick="loadScrapeHistory()">↻ Refresh</button>
+      </div>
+      <div id="scrape-history"><div class="loading"><span class="spinner"></span>Loading…</div></div>
     </div>
   </div>
 
-  <!-- USERS -->
+  <!-- ══ ANALYTICS ══ -->
+  <div class="section" id="section-analytics">
+    <div class="stat-grid" id="analytics-stats">
+      <div class="stat-card"><div class="sc-label">Loading…</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top Categories Asked</div></div>
+        <div class="bar-chart" id="analytics-categories"><div class="empty"><div class="empty-text">No data yet</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top Tools Used by AI</div></div>
+        <div class="bar-chart" id="analytics-tools"><div class="empty"><div class="empty-text">No data yet</div></div></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header"><div class="panel-title">Daily Chat Volume — Last 14 Days</div></div>
+      <div class="bar-chart" id="analytics-volume"><div class="empty"><div class="empty-text">No data yet</div></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Negative Feedback</div>
+          <div class="panel-subtitle">Conversations where the user gave a thumbs down</div>
+        </div>
+      </div>
+      <div id="analytics-feedback"><div class="loading"><span class="spinner"></span>Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ══ USERS ══ -->
   <div class="section" id="section-users">
     <div class="stat-grid" id="users-stats"></div>
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">User Accounts</div>
-        <button class="btn btn-primary" onclick="showUserForm()">＋ New User</button>
+        <div>
+          <div class="panel-title">User Accounts</div>
+          <div class="panel-subtitle">Manage who has access and what they can do.</div>
+        </div>
+        <button class="btn btn-primary" onclick="showUserForm()">＋ Add User</button>
       </div>
-      <div class="panel-body">
-        <table>
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th style="width:70px">Role</th>
-              <th>Full Name</th>
-              <th style="width:100px">Supervisor</th>
-              <th style="width:100px">Queries Today</th>
-              <th style="width:110px">Last Login</th>
-              <th style="width:60px">Active</th>
-              <th style="width:130px">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody"><tr><td colspan="8"><div class="loading">Loading…</div></td></tr></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th style="width:80px">Role</th>
+            <th>Full Name</th>
+            <th style="width:110px">Supervisor</th>
+            <th style="width:110px">Queries Today</th>
+            <th style="width:120px">Last Login</th>
+            <th style="width:60px">Active</th>
+            <th style="width:130px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"><tr><td colspan="8"><div class="loading"><span class="spinner"></span>Loading…</div></td></tr></tbody>
+      </table>
     </div>
 
-    <!-- User Form (hidden) -->
     <div class="panel" id="user-form-panel" style="display:none">
       <div class="panel-header">
-        <div class="panel-title" id="user-form-title">New User</div>
+        <div class="panel-title" id="user-form-title">Add New User</div>
         <button class="btn btn-ghost" onclick="hideUserForm()">✕ Cancel</button>
       </div>
-      <div class="panel-body" style="padding:16px 18px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="padding:18px">
+        <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Username</label>
             <input type="text" class="form-input" id="uf-username" placeholder="e.g. jsmith">
@@ -707,23 +706,23 @@
           <div class="form-group">
             <label class="form-label">Role</label>
             <select class="form-select" id="uf-role">
-              <option value="tech">Tech (5/day)</option>
-              <option value="techp">Power Tech (15/day)</option>
-              <option value="admin">Admin (unlimited)</option>
+              <option value="tech">Technician — 5 queries/day</option>
+              <option value="techp">Power Technician — 15 queries/day</option>
+              <option value="admin">Admin — unlimited</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Supervisor (for tech only)</label>
+            <label class="form-label">Supervisor <span style="text-transform:none;font-weight:400;color:var(--muted)">(Technicians only)</span></label>
             <select class="form-select" id="uf-supervisor">
-              <option value="">— none —</option>
+              <option value="">— None —</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Email (optional)</label>
-            <input type="email" class="form-input" id="uf-email" placeholder="e.g. jsmith@company.com">
+            <label class="form-label">Email <span style="text-transform:none;font-weight:400;color:var(--muted)">(optional)</span></label>
+            <input type="email" class="form-input" id="uf-email" placeholder="jsmith@company.com">
           </div>
         </div>
-        <div style="margin-top:14px;display:flex;gap:8px">
+        <div style="display:flex;gap:8px;margin-top:6px">
           <button class="btn btn-primary" onclick="saveUser()">Save User</button>
           <button class="btn btn-ghost" onclick="hideUserForm()">Cancel</button>
         </div>
@@ -731,27 +730,28 @@
     </div>
   </div>
 
-  <!-- LOGIN LOG -->
+  <!-- ══ LOGIN LOG ══ -->
   <div class="section" id="section-loginlog">
     <div class="panel">
       <div class="panel-header">
-        <div class="panel-title">Login Activity</div>
+        <div>
+          <div class="panel-title">Login Activity</div>
+          <div class="panel-subtitle">All sign-in attempts, successful and failed.</div>
+        </div>
         <button class="btn btn-ghost" onclick="loadLoginLog()">↻ Refresh</button>
       </div>
-      <div class="panel-body">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:140px">Time</th>
-              <th>Username</th>
-              <th style="width:70px">Role</th>
-              <th style="width:80px">Result</th>
-              <th>IP Address</th>
-            </tr>
-          </thead>
-          <tbody id="loginlog-tbody"><tr><td colspan="5"><div class="loading">Loading…</div></td></tr></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:140px">Time</th>
+            <th>Username</th>
+            <th style="width:80px">Role</th>
+            <th style="width:90px">Result</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody id="loginlog-tbody"><tr><td colspan="5"><div class="loading"><span class="spinner"></span>Loading…</div></td></tr></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -760,9 +760,9 @@
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  STATE
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 let adminToken = localStorage.getItem('authToken') || null;
 let currentSection = 'overview';
 let logsCurrentPage = 1;
@@ -772,23 +772,25 @@ let editUserId = null;
 
 const SECTION_META = {
   overview:  { title: 'Overview',           subtitle: 'System status at a glance' },
-  tips:      { title: 'Community Tips Queue', subtitle: 'Review and approve field technician tips' },
-  logs:      { title: 'Chat Logs',           subtitle: 'All conversations' },
-  gaps:      { title: 'KB Gaps',             subtitle: 'Queries that returned no useful results' },
-  kb:        { title: 'Knowledge Base',      subtitle: 'Indexed documents, brands, chunks' },
-  analytics: { title: 'Analytics',           subtitle: 'Usage patterns and satisfaction' },
-  scraper:   { title: 'Web Scraper',         subtitle: 'Pull manufacturer content into KB' },
-  users:     { title: 'User Management',     subtitle: 'Accounts, roles, and query limits' },
-  loginlog:  { title: 'Login Log',           subtitle: 'Authentication activity' },
+  tips:      { title: 'Tips Queue',          subtitle: 'Review and approve field technician tips' },
+  logs:      { title: 'Chat Logs',           subtitle: 'All user conversations' },
+  gaps:      { title: 'KB Gaps',             subtitle: 'Questions the AI couldn\'t answer — content to add' },
+  kb:        { title: 'Knowledge Base',      subtitle: 'Indexed documents, brands, and search' },
+  analytics: { title: 'Analytics',           subtitle: 'Usage patterns and user satisfaction' },
+  scraper:   { title: 'Web Scraper',         subtitle: 'Pull manufacturer content into the knowledge base' },
+  users:     { title: 'User Accounts',       subtitle: 'Manage access and query limits' },
+  loginlog:  { title: 'Login Log',           subtitle: 'Authentication activity and failed attempts' },
 };
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  AUTH
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function doLogin() {
   const user = document.getElementById('admin-user').value.trim();
   const pass = document.getElementById('admin-pass').value;
-  if (!user || !pass) { document.getElementById('login-err').textContent = 'Enter username and password'; return; }
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if (!user || !pass) { errEl.textContent = 'Enter your username and password'; return; }
   try {
     const r = await fetch('/api/auth/login', {
       method: 'POST',
@@ -797,11 +799,7 @@ async function doLogin() {
     });
     const d = await r.json();
     if (d.token) {
-      // Only allow admin role
-      if (d.user.role !== 'admin') {
-        document.getElementById('login-err').textContent = 'Admin access required';
-        return;
-      }
+      if (d.user.role !== 'admin') { errEl.textContent = 'Admin access required'; return; }
       adminToken = d.token;
       localStorage.setItem('authToken', adminToken);
       localStorage.setItem('authUser', JSON.stringify(d.user));
@@ -810,62 +808,61 @@ async function doLogin() {
       document.getElementById('main').style.display = 'flex';
       initDashboard();
     } else {
-      document.getElementById('login-err').textContent = d.error || 'Invalid credentials';
+      errEl.textContent = d.error || 'Invalid credentials';
     }
   } catch(e) {
-    document.getElementById('login-err').textContent = 'Connection error';
+    errEl.textContent = 'Connection error — is the server running?';
   }
 }
 
 function doLogout() {
-  fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken } }).catch(()=>{});
+  fetch('/api/auth/logout', { method: 'POST', headers: authHeaders() }).catch(()=>{});
   adminToken = null;
   localStorage.removeItem('authToken');
   localStorage.removeItem('authUser');
   location.reload();
 }
 
-document.getElementById('admin-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-document.getElementById('admin-user').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('admin-pass').focus();
-});
+document.getElementById('admin-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('admin-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('admin-pass').focus(); });
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  API HELPER
-// ═══════════════════════════════════════
-async function api(path, opts = {}) {
-  const res = await fetch(path, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${adminToken}`,
-      ...(opts.headers || {})
-    }
-  });
-  if (res.status === 401) { doLogout(); return null; }
-  return res.json();
+// ════════════════════════════════════
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
 }
 
-// ═══════════════════════════════════════
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(path, {
+      ...opts,
+      headers: { ...authHeaders(), ...(opts.headers || {}) }
+    });
+    if (res.status === 401) { doLogout(); return null; }
+    return res.json();
+  } catch(e) {
+    console.error('[API]', path, e.message);
+    return null;
+  }
+}
+
+// ════════════════════════════════════
 //  NAV
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
   currentSection = name;
-  const meta = SECTION_META[name];
-  document.getElementById('page-title').textContent = meta.title;
-  document.getElementById('page-subtitle').textContent = meta.subtitle;
-  document.getElementById('topbar-actions').innerHTML = '';
+  const meta = SECTION_META[name] || {};
+  document.getElementById('page-title').textContent = meta.title || name;
+  document.getElementById('page-subtitle').textContent = meta.subtitle || '';
 
-  // Load data for section
   if (name === 'overview')  loadOverview();
   if (name === 'tips')      loadTips();
-  if (name === 'logs')      loadLogs();
+  if (name === 'logs')      { logsCurrentPage = 1; loadLogs(); }
   if (name === 'gaps')      loadGaps();
   if (name === 'kb')        loadKB();
   if (name === 'analytics') loadAnalytics();
@@ -874,11 +871,10 @@ function showSection(name) {
   if (name === 'loginlog')  loadLoginLog();
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  INIT
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function initDashboard() {
-  // Load badge counts
   loadBadges();
   showSection('overview');
 }
@@ -889,8 +885,9 @@ async function loadBadges() {
   const tb = document.getElementById('tips-badge');
   const gb = document.getElementById('gaps-badge');
   if (d.pending_tips > 0) { tb.textContent = d.pending_tips; tb.style.display = 'inline'; }
+  else { tb.style.display = 'none'; }
   if (d.kb_gaps > 0) { gb.textContent = d.kb_gaps; gb.style.display = 'inline'; }
-  // User count
+  else { gb.style.display = 'none'; }
   try {
     const users = await api('/api/admin/users');
     if (users) {
@@ -901,50 +898,85 @@ async function loadBadges() {
   } catch(e) {}
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  OVERVIEW
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadOverview() {
-  // Stats from /api/stats and /api/admin/counts
   const [stats, counts, analytics] = await Promise.all([
     api('/api/stats'),
     api('/api/admin/counts'),
     api('/api/analytics')
   ]);
-
   if (!stats || !counts) return;
 
-  const satisf = analytics?.overview?.satisfaction_rate || '—';
+  const ov = analytics?.overview || {};
+
+  // Attention cards
+  const attentionItems = [
+    {
+      icon: '⚠️', label: 'KB Gaps', value: counts.kb_gaps || 0,
+      color: (counts.kb_gaps || 0) > 0 ? 'red' : 'green',
+      action: (counts.kb_gaps || 0) > 0 ? 'Click to review unanswered questions' : 'All questions answered',
+      section: 'gaps'
+    },
+    {
+      icon: '💡', label: 'Tips Pending', value: counts.pending_tips || 0,
+      color: (counts.pending_tips || 0) > 0 ? 'yellow' : 'green',
+      action: (counts.pending_tips || 0) > 0 ? 'Click to approve or reject' : 'Queue is clear',
+      section: 'tips'
+    },
+    {
+      icon: '💬', label: 'Total Chats', value: (ov.total_chats || 0).toLocaleString(),
+      color: 'blue', action: 'Click to view logs', section: 'logs'
+    },
+    {
+      icon: '👥', label: 'Active Users', value: '—',
+      color: 'blue', action: 'Click to manage accounts', section: 'users'
+    }
+  ];
+
+  document.getElementById('overview-attention').innerHTML = attentionItems.map(a => `
+    <div class="attention-card" onclick="showSection('${a.section}')">
+      <div class="ac-icon">${a.icon}</div>
+      <div>
+        <div class="ac-label">${a.label}</div>
+        <div class="ac-value ${a.color}">${a.value}</div>
+        <div class="ac-action">${a.action}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Load user count
+  const users = await api('/api/admin/users');
+  if (users) {
+    const cards = document.querySelectorAll('.attention-card');
+    if (cards[3]) {
+      const active = users.filter(u => u.active).length;
+      cards[3].querySelector('.ac-value').textContent = active;
+    }
+  }
+
+  const satisf = ov.satisfaction_rate || '—';
   document.getElementById('overview-stats').innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">KB Documents</div>
-      <div class="stat-value blue">${(stats.documents || 0).toLocaleString()}</div>
-      <div class="stat-sub">${(stats.chunks || 0).toLocaleString()} chunks</div>
+      <div class="sc-label">KB Documents</div>
+      <div class="sc-value blue">${(stats.documents || 0).toLocaleString()}</div>
+      <div class="sc-sub">${(stats.chunks || 0).toLocaleString()} indexed chunks</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total Chats</div>
-      <div class="stat-value">${(analytics?.overview?.total_chats || 0).toLocaleString()}</div>
-      <div class="stat-sub">all time</div>
+      <div class="sc-label">Satisfaction</div>
+      <div class="sc-value green">${satisf}</div>
+      <div class="sc-sub">${ov.thumbs_up || 0} 👍  ${ov.thumbs_down || 0} 👎</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Pending Tips</div>
-      <div class="stat-value yellow">${counts.pending_tips || 0}</div>
-      <div class="stat-sub">awaiting review</div>
+      <div class="sc-label">Avg Response</div>
+      <div class="sc-value">${Math.round((ov.avg_response_time_ms || 0) / 100) / 10}s</div>
+      <div class="sc-sub">per query</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">KB Gaps</div>
-      <div class="stat-value red">${counts.kb_gaps || 0}</div>
-      <div class="stat-sub">unanswered queries</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Satisfaction</div>
-      <div class="stat-value green">${satisf}</div>
-      <div class="stat-sub">${analytics?.overview?.thumbs_up || 0}↑ ${analytics?.overview?.thumbs_down || 0}↓</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Avg Response</div>
-      <div class="stat-value">${Math.round((analytics?.overview?.avg_response_time_ms || 0) / 100) / 10}s</div>
-      <div class="stat-sub">per query</div>
+      <div class="sc-label">Web Fallbacks</div>
+      <div class="sc-value yellow">${ov.web_search_fallbacks || 0}</div>
+      <div class="sc-sub">answered by web search</div>
     </div>
   `;
 
@@ -952,12 +984,13 @@ async function loadOverview() {
   const gaps = await api('/api/admin/gaps?limit=5');
   const gapEl = document.getElementById('overview-gaps');
   if (!gaps?.gaps?.length) {
-    gapEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div>';
+    gapEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No gaps recorded</div><div class="empty-text">Every question so far has found a useful answer in the knowledge base.</div></div>`;
   } else {
     gapEl.innerHTML = `<table>${gaps.gaps.map(g => `
       <tr>
-        <td class="td-muted" style="width:100px">${fmtTime(g.created_at)}</td>
+        <td class="td-muted td-mono" style="width:90px">${fmtTime(g.created_at)}</td>
         <td>${esc(g.query)}</td>
+        <td style="width:90px;text-align:right"><button class="btn btn-ghost" style="font-size:11px" onclick="dismissGap(${g.id})">Dismiss</button></td>
       </tr>`).join('')}</table>`;
   }
 
@@ -965,38 +998,38 @@ async function loadOverview() {
   const tips = await api('/api/admin/tips?status=pending&limit=5');
   const tipEl = document.getElementById('overview-tips');
   if (!tips?.tips?.length) {
-    tipEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No pending tips</div></div>';
+    tipEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">Queue is clear</div><div class="empty-text">No tips waiting for review right now.</div></div>`;
   } else {
     tipEl.innerHTML = `<table>${tips.tips.map(t => `
       <tr>
         <td>${esc(t.tip_text.substring(0, 100))}${t.tip_text.length > 100 ? '…' : ''}</td>
-        <td style="width:130px;text-align:right">
-          <button class="btn btn-success" onclick="approveTip(${t.id}, this)">✓ Approve</button>
+        <td style="width:160px;text-align:right;white-space:nowrap">
+          <button class="btn btn-success" style="font-size:11px" onclick="approveTip(${t.id}, this)">✓ Approve</button>
+          <button class="btn btn-danger" style="font-size:11px;margin-left:4px" onclick="rejectTip(${t.id}, this)">✕</button>
         </td>
       </tr>`).join('')}</table>`;
   }
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  TIPS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadTips() {
   const status = document.getElementById('tips-filter').value;
-  const url = `/api/admin/tips${status ? '?status=' + status : ''}`;
-  const data = await api(url);
+  const data = await api(`/api/admin/tips${status ? '?status=' + status : ''}`);
   const el = document.getElementById('tips-list');
   if (!data?.tips?.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">💡</div><div class="empty-text">No tips found</div></div>';
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💡</div><div class="empty-title">No tips found</div><div class="empty-text">When technicians submit tips from the field, they'll appear here for your review.</div></div>`;
     return;
   }
   el.innerHTML = data.tips.map(t => `
     <div class="tip-card" id="tip-${t.id}">
       <div class="tip-meta">
-        <span class="badge badge-${t.status || 'pending'}">${t.status || 'pending'}</span>
+        <span class="badge badge-${t.status === 'approved' ? 'green' : t.status === 'rejected' ? 'red' : 'yellow'}">${t.status || 'pending'}</span>
         ${t.category ? `<span class="badge badge-blue">${esc(t.category)}</span>` : ''}
-        <span class="td-muted">${fmtTime(t.created_at)}</span>
+        <span class="td-muted" style="font-size:12px">${fmtTime(t.created_at)}</span>
       </div>
-      ${t.context_query ? `<div class="tip-context">Query: "${esc(t.context_query)}"</div>` : ''}
+      ${t.context_query ? `<div class="tip-context">Context: "${esc(t.context_query)}"</div>` : ''}
       <div class="tip-text">${esc(t.tip_text)}</div>
       <div class="tip-actions">
         ${(!t.status || t.status === 'pending' || t.status === 'rejected') ?
@@ -1013,8 +1046,7 @@ async function approveTip(id, btn) {
   const d = await api(`/api/admin/tips/${id}/approve`, { method: 'POST' });
   if (d?.ok) {
     toast('Tip approved ✓', 'ok');
-    const card = document.getElementById('tip-' + id);
-    if (card) card.style.opacity = '0.4';
+    document.getElementById('tip-' + id)?.remove();
     loadBadges();
   } else {
     btn.disabled = false;
@@ -1027,8 +1059,7 @@ async function rejectTip(id, btn) {
   const d = await api(`/api/admin/tips/${id}/reject`, { method: 'POST' });
   if (d?.ok) {
     toast('Tip rejected', 'ok');
-    const card = document.getElementById('tip-' + id);
-    if (card) card.style.opacity = '0.4';
+    document.getElementById('tip-' + id)?.remove();
     loadBadges();
   } else {
     btn.disabled = false;
@@ -1036,42 +1067,39 @@ async function rejectTip(id, btn) {
   }
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  CHAT LOGS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadLogs() {
   const q = document.getElementById('logs-search')?.value || '';
   const offset = (logsCurrentPage - 1) * LOGS_PER_PAGE;
-  const url = `/api/admin/logs?limit=${LOGS_PER_PAGE}&offset=${offset}${q ? '&q=' + encodeURIComponent(q) : ''}`;
-  const data = await api(url);
+  const data = await api(`/api/admin/logs?limit=${LOGS_PER_PAGE}&offset=${offset}${q ? '&q=' + encodeURIComponent(q) : ''}`);
   const tbody = document.getElementById('logs-tbody');
   if (!data?.logs?.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-text">No chat logs found</div></div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No chats found</div><div class="empty-text">Conversations will appear here once users start chatting.</div></div></td></tr>`;
     return;
   }
-
   tbody.innerHTML = data.logs.map(l => `
     <tr style="cursor:pointer" onclick="toggleLogDetail(${l.id})">
       <td class="td-mono td-muted">${fmtTime(l.created_at)}</td>
       <td>${esc((l.user_message || '').substring(0, 120))}${(l.user_message || '').length > 120 ? '…' : ''}</td>
-      <td class="td-mono">${l.tools_used ? JSON.parse(l.tools_used || '[]').length : 0}</td>
-      <td class="td-mono">${l.response_time_ms || '—'}</td>
-      <td>${l.kb_gap ? '<span class="badge badge-pending">gap</span>' : '<span class="badge badge-gray">ok</span>'}</td>
+      <td class="td-mono td-muted">${l.tools_used ? JSON.parse(l.tools_used || '[]').length : 0}</td>
+      <td class="td-mono td-muted">${l.response_time_ms ? Math.round(l.response_time_ms / 100)/10 + 's' : '—'}</td>
+      <td>${l.kb_gap ? '<span class="badge badge-yellow">gap</span>' : '<span class="badge badge-green">ok</span>'}</td>
     </tr>
-    <tr id="log-detail-${l.id}" style="display:none" class="log-row-expand">
+    <tr id="log-detail-${l.id}" style="display:none" class="log-detail-row">
       <td colspan="5">
-        <div class="log-detail"><span style="color:var(--accent)">USER:</span> ${esc(l.user_message || '')}
+        <div class="log-detail-body"><span class="log-user-msg">USER:</span> ${esc(l.user_message || '')}
 
-<span style="color:var(--green)">AI:</span> ${esc(l.ai_reply || '')}</div>
+<span class="log-ai-msg">AI:</span> ${esc(l.ai_reply || '')}</div>
       </td>
     </tr>
   `).join('');
 
-  const info = document.getElementById('logs-page-info');
   const total = data.total || 0;
-  info.textContent = `${offset + 1}–${Math.min(offset + data.logs.length, total)} of ${total}`;
+  document.getElementById('logs-page-info').textContent = `${offset + 1}–${Math.min(offset + data.logs.length, total)} of ${total.toLocaleString()}`;
   document.getElementById('logs-prev').disabled = logsCurrentPage <= 1;
-  document.getElementById('logs-next').disabled = offset + data.logs.length >= total;
+  document.getElementById('logs-next').disabled = (offset + data.logs.length) >= total;
 }
 
 function logsPage(dir) {
@@ -1084,39 +1112,39 @@ function toggleLogDetail(id) {
   if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  KB GAPS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadGaps() {
   const data = await api('/api/admin/gaps?limit=100');
   const tbody = document.getElementById('gaps-tbody');
   if (!data?.gaps?.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No KB gaps recorded</div></div></td></tr>';
-    document.getElementById('gaps-clear-btn')?.remove();
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No gaps recorded</div><div class="empty-text">All recent user questions found relevant content in the knowledge base.</div></div></td></tr>`;
     return;
   }
   tbody.innerHTML = data.gaps.map(g => `
     <tr>
-      <td>${esc(g.query || '')}</td>
+      <td><strong>${esc(g.query || '')}</strong></td>
       <td class="td-mono td-muted">${esc(g.tool_name || '—')}</td>
       <td class="td-muted">${fmtTime(g.created_at)}</td>
       <td>
-        <button class="btn btn-ghost" style="font-size:11px" onclick="scrapeForGap('${esc(g.query || '')}')">→ Scrape</button>
-        <button class="btn btn-ghost" style="font-size:11px;color:var(--red)" onclick="dismissGap(${g.id})">✕ Dismiss</button>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="scrapeForGap('${esc(g.query || '')}')">→ Scrape for this</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:var(--red);margin-left:4px" onclick="dismissGap(${g.id})">Dismiss</button>
       </td>
     </tr>
   `).join('');
 }
 
 async function dismissGap(id) {
-  await fetch('/api/admin/gaps/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+  // Fixed: was using localStorage.getItem('token') — now uses adminToken via api()
+  await api('/api/admin/gaps/' + id, { method: 'DELETE' });
   loadGaps();
   loadBadges();
 }
 
 async function clearAllGaps() {
   if (!confirm('Clear all KB gaps? This cannot be undone.')) return;
-  await fetch('/api/admin/gaps', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+  await api('/api/admin/gaps', { method: 'DELETE' });
   loadGaps();
   loadBadges();
 }
@@ -1124,53 +1152,53 @@ async function clearAllGaps() {
 function scrapeForGap(query) {
   showSection('scraper');
   document.getElementById('scrape-url').value = '';
-  document.getElementById('scraper-log').textContent = `Queued scrape for gap: "${query}"\n`;
+  const log = document.getElementById('scraper-log');
+  log.innerHTML = `<span class="t-info">[INFO] Pre-loaded from KB gap: "${query}"</span>\n`;
+  log.innerHTML += `<span class="t-info">[INFO] Select a brand or paste a URL, then click Run Scraper.</span>\n`;
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  KB CONTENTS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadKB() {
-  const [stats, brands] = await Promise.all([
-    api('/api/stats'),
-    api('/api/brands')
-  ]);
+  const [stats, brands] = await Promise.all([api('/api/stats'), api('/api/brands')]);
   if (!stats) return;
 
   document.getElementById('kb-stats').innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">Documents</div>
-      <div class="stat-value blue">${(stats.documents || 0).toLocaleString()}</div>
+      <div class="sc-label">Documents</div>
+      <div class="sc-value blue">${(stats.documents || 0).toLocaleString()}</div>
+      <div class="sc-sub">PDFs and pages indexed</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Chunks</div>
-      <div class="stat-value">${(stats.chunks || 0).toLocaleString()}</div>
+      <div class="sc-label">Chunks</div>
+      <div class="sc-value">${(stats.chunks || 0).toLocaleString()}</div>
+      <div class="sc-sub">searchable segments</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total Words</div>
-      <div class="stat-value">${Math.round((stats.total_words || 0) / 1000)}k</div>
+      <div class="sc-label">Total Words</div>
+      <div class="sc-value">${Math.round((stats.total_words || 0) / 1000)}k</div>
+      <div class="sc-sub">words indexed</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Brands</div>
-      <div class="stat-value">${(brands || []).length}</div>
+      <div class="sc-label">Brands</div>
+      <div class="sc-value">${(brands || []).length}</div>
+      <div class="sc-sub">manufacturers covered</div>
     </div>
   `;
 
+  // Brands
   const brandEl = document.getElementById('kb-brands');
   if (!brands?.length) {
-    brandEl.innerHTML = '<div class="empty"><div class="empty-text">No brands found</div></div>';
+    brandEl.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-title">No brands indexed yet</div><div class="empty-text">Use the Web Scraper to pull in manufacturer content.</div></div>`;
   } else {
     brandEl.innerHTML = `<div class="brand-grid">${brands.map(b => `
       <div class="brand-card">
         <span class="brand-name">${esc(b.brand || 'Unknown')}</span>
         <span class="brand-count">${b.doc_count} docs</span>
-      </div>
-    `).join('')}</div>`;
-
-    // Populate brand filter in search
+      </div>`).join('')}</div>`;
     const sel = document.getElementById('kb-search-brand');
-    sel.innerHTML = '<option value="">All brands</option>' +
-      brands.map(b => `<option value="${esc(b.brand)}">${esc(b.brand)}</option>`).join('');
+    sel.innerHTML = '<option value="">All brands</option>' + brands.map(b => `<option value="${esc(b.brand)}">${esc(b.brand)}</option>`).join('');
   }
 }
 
@@ -1179,56 +1207,55 @@ async function kbSearch() {
   const brand = document.getElementById('kb-search-brand').value;
   if (!q) return;
   const el = document.getElementById('kb-search-results');
-  el.innerHTML = '<div class="loading">Searching…</div>';
-  const url = `/api/search?q=${encodeURIComponent(q)}${brand ? '&brand=' + encodeURIComponent(brand) : ''}`;
-  const data = await api(url);
+  el.innerHTML = `<div class="loading"><span class="spinner"></span>Searching…</div>`;
+  const data = await api(`/api/search?q=${encodeURIComponent(q)}${brand ? '&brand=' + encodeURIComponent(brand) : ''}`);
   if (!data?.results?.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-text">No results found</div></div>';
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No results</div><div class="empty-text">Try different keywords or a different brand filter.</div></div>`;
     return;
   }
-  el.innerHTML = `<div style="padding:0 4px">${data.results.map(r => `
-    <div style="border-top:1px solid var(--border);padding:12px 18px">
-      <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+  el.innerHTML = data.results.map(r => `
+    <div class="kb-result">
+      <div class="kb-result-meta">
         <span class="badge badge-blue">${esc(r.brand || '—')}</span>
         <span class="badge badge-gray">${esc(r.chunk_type || 'text')}</span>
         ${r.section ? `<span class="badge badge-gray">${esc(r.section)}</span>` : ''}
         <span class="td-muted" style="font-size:11px">${esc(r.filename || '')}</span>
       </div>
-      <div style="font-size:13px;color:var(--text);line-height:1.5">${esc((r.content || '').substring(0, 300))}…</div>
-    </div>
-  `).join('')}</div>`;
+      <div class="kb-result-text">${esc((r.content || '').substring(0, 300))}…</div>
+    </div>`).join('');
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  ANALYTICS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadAnalytics() {
   const data = await api('/api/analytics');
   if (!data) return;
-  const ov = data.overview;
+  const ov = data.overview || {};
 
   document.getElementById('analytics-stats').innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">Total Chats</div>
-      <div class="stat-value blue">${(ov.total_chats || 0).toLocaleString()}</div>
+      <div class="sc-label">Total Chats</div>
+      <div class="sc-value blue">${(ov.total_chats || 0).toLocaleString()}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Satisfaction</div>
-      <div class="stat-value green">${ov.satisfaction_rate || '—'}</div>
-      <div class="stat-sub">${ov.thumbs_up}↑ / ${ov.thumbs_down}↓</div>
+      <div class="sc-label">Satisfaction</div>
+      <div class="sc-value green">${ov.satisfaction_rate || '—'}</div>
+      <div class="sc-sub">${ov.thumbs_up || 0} 👍  ${ov.thumbs_down || 0} 👎</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Avg Response</div>
-      <div class="stat-value">${Math.round((ov.avg_response_time_ms || 0) / 100) / 10}s</div>
+      <div class="sc-label">Avg Response Time</div>
+      <div class="sc-value">${Math.round((ov.avg_response_time_ms || 0) / 100) / 10}s</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">KB Gaps</div>
-      <div class="stat-value yellow">${ov.kb_gap_questions || 0}</div>
-      <div class="stat-sub">unanswered</div>
+      <div class="sc-label">KB Gaps</div>
+      <div class="sc-value yellow">${ov.kb_gap_questions || 0}</div>
+      <div class="sc-sub">unanswered questions</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Web Fallbacks</div>
-      <div class="stat-value">${ov.web_search_fallbacks || 0}</div>
+      <div class="sc-label">Web Fallbacks</div>
+      <div class="sc-value">${ov.web_search_fallbacks || 0}</div>
+      <div class="sc-sub">answered by web search</div>
     </div>
   `;
 
@@ -1238,26 +1265,26 @@ async function loadAnalytics() {
   // Daily volume
   const vol = data.daily_volume || [];
   const maxVol = Math.max(1, ...vol.map(v => v.cnt));
-  document.getElementById('analytics-volume').innerHTML = vol.length ? vol.map(v => `
+  const volEl = document.getElementById('analytics-volume');
+  volEl.innerHTML = vol.length ? vol.map(v => `
     <div class="bar-row">
       <div class="bar-label">${esc(v.day)}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v.cnt / maxVol * 100)}%;background:var(--green)"></div></div>
       <div class="bar-count">${v.cnt}</div>
-    </div>
-  `).join('') : '<div class="empty"><div class="empty-text">No data yet</div></div>';
+    </div>`).join('') : '<div class="empty"><div class="empty-text">No data yet — check back after users start chatting</div></div>';
 
   // Negative feedback
   const fb = data.negative_feedback || [];
   const fbEl = document.getElementById('analytics-feedback');
   if (!fb.length) {
-    fbEl.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No negative feedback yet</div></div>';
+    fbEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No negative feedback yet</div><div class="empty-text">Great sign — users haven't given any thumbs down.</div></div>`;
   } else {
     fbEl.innerHTML = `<table>
-      <thead><tr><th>Question</th><th>AI Reply</th><th>Correction</th><th>Date</th></tr></thead>
+      <thead><tr><th>Question</th><th>AI Reply</th><th>User Correction</th><th style="width:100px">Date</th></tr></thead>
       <tbody>${fb.map(f => `<tr>
         <td>${esc((f.user_question || '').substring(0, 80))}</td>
         <td class="td-muted">${esc((f.ai_reply || '').substring(0, 80))}</td>
-        <td>${f.correction ? esc(f.correction.substring(0, 80)) : '<span class="td-muted">—</span>'}</td>
+        <td>${f.correction ? esc(f.correction.substring(0, 80)) : '<span class="td-muted">No correction given</span>'}</td>
         <td class="td-muted td-mono">${fmtTime(f.feedback_at)}</td>
       </tr>`).join('')}</tbody>
     </table>`;
@@ -1266,35 +1293,34 @@ async function loadAnalytics() {
 
 function renderBarChart(elId, data, labelKey, countKey) {
   const el = document.getElementById(elId);
-  if (!data.length) { el.innerHTML = '<div class="empty"><div class="empty-text">No data yet</div></div>'; return; }
+  if (!data?.length) { el.innerHTML = '<div class="empty"><div class="empty-text">No data yet</div></div>'; return; }
   const max = Math.max(1, ...data.map(d => d[countKey]));
   el.innerHTML = data.slice(0, 10).map(d => `
     <div class="bar-row">
       <div class="bar-label" title="${esc(String(d[labelKey]))}">${esc(String(d[labelKey]))}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d[countKey] / max * 100)}%"></div></div>
       <div class="bar-count">${d[countKey]}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  SCRAPER
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadScrapeHistory() {
   const data = await api('/api/admin/scrape-history');
   const el = document.getElementById('scrape-history');
   if (!data?.runs?.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-text">No scrape runs yet</div></div>';
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🌐</div><div class="empty-title">No scrape runs yet</div><div class="empty-text">Configure options above and click Run Scraper to pull manufacturer content into your knowledge base.</div></div>`;
     return;
   }
   el.innerHTML = `<table>
-    <thead><tr><th>Time</th><th>Brand</th><th>Category</th><th>Chunks Added</th><th>Status</th></tr></thead>
+    <thead><tr><th>Time</th><th>Brand</th><th>Category</th><th>Chunks Added</th><th style="width:100px">Status</th></tr></thead>
     <tbody>${data.runs.map(r => `<tr>
       <td class="td-muted td-mono">${fmtTime(r.created_at)}</td>
       <td>${esc(r.brand || 'All')}</td>
       <td>${esc(r.category || 'All')}</td>
-      <td class="td-mono">${r.chunks_added || 0}</td>
-      <td><span class="badge badge-${r.status === 'done' ? 'approved' : r.status === 'error' ? 'rejected' : 'pending'}">${esc(r.status)}</span></td>
+      <td class="td-mono">${r.chunks_added > 0 ? '<span style="color:var(--green)">' + r.chunks_added + '</span>' : r.chunks_added || '0'}</td>
+      <td><span class="badge badge-${r.status === 'done' ? 'green' : r.status === 'error' ? 'red' : 'yellow'}">${esc(r.status)}</span></td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -1304,19 +1330,26 @@ async function triggerScrape() {
   const category  = document.getElementById('scrape-category').value;
   const url       = document.getElementById('scrape-url').value.trim();
   const threshold = parseInt(document.getElementById('scrape-threshold').value) || 7;
+  const btn       = document.getElementById('scrape-btn');
+  const log       = document.getElementById('scraper-log');
+  const statusEl  = document.getElementById('scrape-status-badge');
 
-  const btn = document.getElementById('scrape-btn');
+  if (!brand && !category && !url) {
+    toast('Select a brand, category, or enter a URL first', 'err');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = '⏳ Running…';
+  statusEl.textContent = 'Running…';
+  statusEl.className = 'badge badge-yellow scrape-status-running';
 
-  const log = document.getElementById('scraper-log');
-  log.innerHTML = `<span class="log-info">[INFO] Starting scrape…</span>
-Brand: ${brand || 'all'}  Category: ${category || 'all'}  Threshold: ${threshold}
-${url ? 'URL: ' + url : ''}
-
-`;
-
-  document.getElementById('scrape-status').textContent = 'Running…';
+  log.innerHTML = `<span class="t-info">[INFO] Starting scrape job…</span>\n`;
+  if (brand)     log.innerHTML += `<span class="t-info">[INFO] Brand:     ${brand}</span>\n`;
+  if (category)  log.innerHTML += `<span class="t-info">[INFO] Category:  ${category}</span>\n`;
+  if (url)       log.innerHTML += `<span class="t-info">[INFO] URL:       ${url}</span>\n`;
+  log.innerHTML += `<span class="t-info">[INFO] Threshold: ${threshold}/10</span>\n`;
+  log.innerHTML += `<span class="t-info">[INFO] Sending request to server…</span>\n\n`;
 
   try {
     const d = await api('/api/admin/scrape', {
@@ -1324,20 +1357,33 @@ ${url ? 'URL: ' + url : ''}
       body: JSON.stringify({ brand, category, url, threshold })
     });
 
-    if (d?.ok) {
-      log.innerHTML += `<span class="log-ok">[OK] Scrape queued — run ingest pipeline on server to process.</span>\n`;
-      log.innerHTML += `<span class="log-info">[INFO] Check Railway logs for progress.</span>\n`;
-      document.getElementById('scrape-status').textContent = 'Queued ✓';
-      toast('Scrape job queued', 'ok');
-      setTimeout(loadScrapeHistory, 1000);
+    if (!d) {
+      log.innerHTML += `<span class="t-err">[ERR] No response from server. Is the /api/admin/scrape endpoint configured?</span>\n`;
+      log.innerHTML += `<span class="t-warn">[WARN] Check that server.js has the POST /api/admin/scrape route.</span>\n`;
+      statusEl.textContent = 'Error';
+      statusEl.className = 'badge badge-red scrape-status-error';
+      toast('Scraper endpoint not responding', 'err');
+    } else if (d.ok) {
+      log.innerHTML += `<span class="t-ok">[OK] Job queued successfully on the server.</span>\n`;
+      log.innerHTML += `<span class="t-info">[INFO] The server is now fetching and processing content.</span>\n`;
+      log.innerHTML += `<span class="t-info">[INFO] New chunks will appear in KB Contents when complete.</span>\n`;
+      log.innerHTML += `<span class="t-info">[INFO] For live progress, open your Railway dashboard logs.</span>\n`;
+      statusEl.textContent = 'Queued ✓';
+      statusEl.className = 'badge badge-green scrape-status-done';
+      toast('Scrape job queued ✓', 'ok');
+      setTimeout(loadScrapeHistory, 2000);
     } else {
-      log.innerHTML += `<span class="log-err">[ERR] ${d?.error || 'Unknown error'}</span>\n`;
-      document.getElementById('scrape-status').textContent = 'Error';
-      toast('Scrape failed: ' + (d?.error || 'unknown'), 'err');
+      log.innerHTML += `<span class="t-err">[ERR] ${d.error || 'Server returned an error.'}</span>\n`;
+      if (d.detail) log.innerHTML += `<span class="t-warn">[DETAIL] ${d.detail}</span>\n`;
+      statusEl.textContent = 'Error';
+      statusEl.className = 'badge badge-red scrape-status-error';
+      toast('Scrape error: ' + (d.error || 'unknown'), 'err');
     }
   } catch(e) {
-    log.innerHTML += `<span class="log-err">[ERR] ${e.message}</span>\n`;
-    document.getElementById('scrape-status').textContent = 'Error';
+    log.innerHTML += `<span class="t-err">[ERR] ${e.message}</span>\n`;
+    statusEl.textContent = 'Error';
+    statusEl.className = 'badge badge-red scrape-status-error';
+    toast('Network error — check connection', 'err');
   }
 
   btn.disabled = false;
@@ -1346,73 +1392,78 @@ ${url ? 'URL: ' + url : ''}
 }
 
 function clearScraperLog() {
-  document.getElementById('scraper-log').textContent = 'Log cleared.\n';
+  document.getElementById('scraper-log').textContent = 'Log cleared — ready for next run.\n';
+  document.getElementById('scrape-status-badge').textContent = 'Idle';
+  document.getElementById('scrape-status-badge').className = 'badge badge-gray scrape-status-idle';
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  USERS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadUsers() {
   const users = await api('/api/admin/users');
   if (!users) return;
   allUsers = users;
 
-  const admins = users.filter(u => u.role === 'admin').length;
-  const techps = users.filter(u => u.role === 'techp').length;
-  const techs  = users.filter(u => u.role === 'tech').length;
-  const active = users.filter(u => u.active).length;
+  const admins  = users.filter(u => u.role === 'admin').length;
+  const techps  = users.filter(u => u.role === 'techp').length;
+  const techs   = users.filter(u => u.role === 'tech').length;
+  const active  = users.filter(u => u.active).length;
 
   document.getElementById('users-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value blue">${users.length}</div><div class="stat-sub">${active} active</div></div>
-    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value yellow">${admins}</div></div>
-    <div class="stat-card"><div class="stat-label">Power Techs</div><div class="stat-value green">${techps}</div></div>
-    <div class="stat-card"><div class="stat-label">Technicians</div><div class="stat-value">${techs}</div></div>
+    <div class="stat-card"><div class="sc-label">Total Users</div><div class="sc-value blue">${users.length}</div><div class="sc-sub">${active} active</div></div>
+    <div class="stat-card"><div class="sc-label">Admins</div><div class="sc-value yellow">${admins}</div><div class="sc-sub">unlimited queries</div></div>
+    <div class="stat-card"><div class="sc-label">Power Technicians</div><div class="sc-value green">${techps}</div><div class="sc-sub">15 queries/day</div></div>
+    <div class="stat-card"><div class="sc-label">Technicians</div><div class="sc-value">${techs}</div><div class="sc-sub">5 queries/day</div></div>
   `;
 
   const tbody = document.getElementById('users-tbody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-text">No users</div></div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No users yet</div><div class="empty-text">Click Add User to create the first account.</div></div></td></tr>`;
     return;
   }
 
-  const roleBadge = r => `<span class="badge badge-${r === 'admin' ? 'pending' : r === 'techp' ? 'approved' : 'gray'}">${r}</span>`;
-  const limit = r => r === 'admin' ? '∞' : r === 'techp' ? '15' : '5';
+  const roleBadge = r => {
+    if (r === 'admin') return `<span class="badge badge-yellow">admin</span>`;
+    if (r === 'techp') return `<span class="badge badge-green">power tech</span>`;
+    return `<span class="badge badge-gray">tech</span>`;
+  };
+  const limit = r => r === 'admin' ? '∞' : r === 'techp' ? '15/day' : '5/day';
 
   tbody.innerHTML = users.map(u => `
-    <tr style="${u.active ? '' : 'opacity:0.4'}">
+    <tr style="${u.active ? '' : 'opacity:0.45'}">
       <td><strong>${esc(u.username)}</strong></td>
       <td>${roleBadge(u.role)}</td>
       <td>${esc(u.full_name || '—')}</td>
       <td class="td-muted">${esc(u.supervisor_name || '—')}</td>
-      <td class="td-mono">${u.queriesUsed || 0} / ${limit(u.role)}</td>
-      <td class="td-muted">${u.last_login ? fmtTime(u.last_login) : 'never'}</td>
-      <td>${u.active ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--red)">✕</span>'}</td>
-      <td>
+      <td class="td-mono td-muted">${u.queriesUsed || 0} / ${limit(u.role)}</td>
+      <td class="td-muted">${u.last_login ? fmtTime(u.last_login) : 'Never'}</td>
+      <td>${u.active ? '<span style="color:var(--green);font-weight:600">✓</span>' : '<span style="color:var(--red)">✕</span>'}</td>
+      <td style="white-space:nowrap">
         <button class="btn btn-ghost" style="font-size:11px" onclick="editUser(${u.id})">Edit</button>
-        <button class="btn btn-ghost" style="font-size:11px" onclick="resetUserPw(${u.id}, '${esc(u.username)}')">🔑</button>
-        <button class="btn btn-ghost" style="font-size:11px;color:${u.active ? 'var(--red)' : 'var(--green)'}" onclick="toggleUserActive(${u.id}, ${u.active ? 0 : 1})">${u.active ? '✕' : '✓'}</button>
+        <button class="btn btn-ghost" style="font-size:11px" title="Reset password" onclick="resetUserPw(${u.id}, '${esc(u.username)}')">🔑</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:${u.active ? 'var(--red)' : 'var(--green)'}" onclick="toggleUserActive(${u.id}, ${u.active ? 0 : 1})">${u.active ? 'Deactivate' : 'Activate'}</button>
       </td>
     </tr>
   `).join('');
 
-  // Populate supervisor dropdown for form
   const supSel = document.getElementById('uf-supervisor');
-  supSel.innerHTML = '<option value="">— none —</option>' +
-    users.filter(u => u.role === 'techp').map(u => `<option value="${u.id}">${esc(u.username)} (${esc(u.full_name || '')})</option>`).join('');
+  supSel.innerHTML = '<option value="">— None —</option>' +
+    users.filter(u => u.role === 'techp').map(u => `<option value="${u.id}">${esc(u.username)}${u.full_name ? ' (' + esc(u.full_name) + ')' : ''}</option>`).join('');
 }
 
 function showUserForm(user) {
   editUserId = user ? user.id : null;
   document.getElementById('user-form-panel').style.display = 'block';
-  document.getElementById('user-form-title').textContent = user ? 'Edit User: ' + user.username : 'New User';
+  document.getElementById('user-form-title').textContent = user ? 'Edit User: ' + user.username : 'Add New User';
   document.getElementById('uf-username').value = user ? user.username : '';
   document.getElementById('uf-username').disabled = !!user;
-  document.getElementById('uf-fullname').value = user ? (user.full_name || '') : '';
+  document.getElementById('uf-fullname').value = user?.full_name || '';
   document.getElementById('uf-password').value = '';
   document.getElementById('uf-password').placeholder = user ? 'Leave blank to keep current' : 'Enter password';
   document.getElementById('uf-role').value = user ? user.role : 'tech';
-  document.getElementById('uf-email').value = user ? (user.email || '') : '';
-  document.getElementById('uf-supervisor').value = user ? (user.supervised_by || '') : '';
+  document.getElementById('uf-email').value = user?.email || '';
+  document.getElementById('uf-supervisor').value = user?.supervised_by || '';
   document.getElementById('user-form-panel').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -1421,23 +1472,19 @@ function hideUserForm() {
   document.getElementById('user-form-panel').style.display = 'none';
 }
 
-function editUser(id) {
-  const u = allUsers.find(x => x.id === id);
-  if (u) showUserForm(u);
-}
+function editUser(id) { showUserForm(allUsers.find(x => x.id === id)); }
 
 async function saveUser() {
   const payload = {
-    username: document.getElementById('uf-username').value.trim(),
-    full_name: document.getElementById('uf-fullname').value.trim(),
-    role: document.getElementById('uf-role').value,
-    email: document.getElementById('uf-email').value.trim(),
+    username:    document.getElementById('uf-username').value.trim(),
+    full_name:   document.getElementById('uf-fullname').value.trim(),
+    role:        document.getElementById('uf-role').value,
+    email:       document.getElementById('uf-email').value.trim(),
     supervised_by: document.getElementById('uf-supervisor').value ? parseInt(document.getElementById('uf-supervisor').value) : null
   };
   const pw = document.getElementById('uf-password').value;
 
   if (!editUserId) {
-    // Creating
     if (!payload.username) { toast('Username required', 'err'); return; }
     if (!pw) { toast('Password required', 'err'); return; }
     payload.password = pw;
@@ -1445,7 +1492,7 @@ async function saveUser() {
     if (d?.ok) { toast('User created ✓', 'ok'); hideUserForm(); loadUsers(); }
     else toast(d?.error || 'Error creating user', 'err');
   } else {
-    // Editing
+    if (pw) payload.password = pw;
     const d = await api(`/api/admin/users/${editUserId}`, { method: 'PUT', body: JSON.stringify(payload) });
     if (d?.ok) { toast('User updated ✓', 'ok'); hideUserForm(); loadUsers(); }
     else toast(d?.error || 'Error updating user', 'err');
@@ -1456,7 +1503,7 @@ async function resetUserPw(id, username) {
   const pw = prompt(`Reset password for "${username}":\nEnter new password:`);
   if (!pw) return;
   const d = await api(`/api/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ newPassword: pw }) });
-  if (d?.ok) toast('Password reset ✓ — user must change on next login', 'ok');
+  if (d?.ok) toast('Password reset ✓', 'ok');
   else toast(d?.error || 'Error resetting password', 'err');
 }
 
@@ -1466,41 +1513,39 @@ async function toggleUserActive(id, active) {
   else toast(d?.error || 'Error', 'err');
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  LOGIN LOG
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 async function loadLoginLog() {
   const data = await api('/api/admin/login-log?limit=50');
   const tbody = document.getElementById('loginlog-tbody');
   if (!data?.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-text">No login activity</div></div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">No login activity yet</div><div class="empty-text">Sign-in attempts will appear here once users start logging in.</div></div></td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(l => `
     <tr>
       <td class="td-mono td-muted">${fmtTime(l.timestamp)}</td>
       <td><strong>${esc(l.username)}</strong>${l.full_name ? ' <span class="td-muted">(' + esc(l.full_name) + ')</span>' : ''}</td>
-      <td>${l.role ? `<span class="badge badge-${l.role === 'admin' ? 'pending' : l.role === 'techp' ? 'approved' : 'gray'}">${l.role}</span>` : '<span class="td-muted">—</span>'}</td>
-      <td>${l.success ? '<span style="color:var(--green)">✓ OK</span>' : '<span style="color:var(--red)">✕ Failed</span>'}</td>
+      <td>${l.role ? `<span class="badge badge-${l.role === 'admin' ? 'yellow' : l.role === 'techp' ? 'green' : 'gray'}">${l.role}</span>` : '<span class="td-muted">—</span>'}</td>
+      <td>${l.success ? '<span class="badge badge-green">✓ Success</span>' : '<span class="badge badge-red">✕ Failed</span>'}</td>
       <td class="td-mono td-muted">${esc(l.ip || '—')}</td>
     </tr>
   `).join('');
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 //  UTILS
-// ═══════════════════════════════════════
+// ════════════════════════════════════
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function fmtTime(ts) {
   if (!ts) return '—';
-  const d = new Date(ts);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000) return 'just now';
-  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  const d = new Date(ts), now = new Date(), diff = now - d;
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
   if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
   if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + 'd ago';
   return d.toLocaleDateString();
@@ -1518,24 +1563,23 @@ function debounce(fn, delay) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
 
-// ═══════════════════════════════════════
-//  AUTO LOGIN (if token stored)
-// ═══════════════════════════════════════
+// ════════════════════════════════════
+//  AUTO LOGIN
+// ════════════════════════════════════
 if (adminToken) {
-  // Verify token is still valid and user is admin
-  fetch('/api/auth/me', {
-    headers: { 'Authorization': 'Bearer ' + adminToken }
-  }).then(r => r.json()).then(d => {
-    if (d.authenticated && d.user.role === 'admin') {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('sidebar').style.display = 'flex';
-      document.getElementById('main').style.display = 'flex';
-      initDashboard();
-    } else {
-      adminToken = null;
-      localStorage.removeItem('authToken');
-    }
-  }).catch(() => {});
+  fetch('/api/auth/me', { headers: authHeaders() })
+    .then(r => r.json())
+    .then(d => {
+      if (d.authenticated && d.user.role === 'admin') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('main').style.display = 'flex';
+        initDashboard();
+      } else {
+        adminToken = null;
+        localStorage.removeItem('authToken');
+      }
+    }).catch(() => {});
 }
 </script>
 </body>
