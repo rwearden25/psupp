@@ -581,6 +581,7 @@ function buildSidebar(){
   h+=`<div class="sb-section collapsed" id="sec-charts"><div class="sb-header" onclick="toggleSection('sec-charts')"><span class="sb-chevron">▼</span><span class="sb-brand">Reference Charts</span></div><div class="sb-body"><div class="sb-quick">`;
   h+=`<button class="sb-quick-btn" onclick="showNozzleChart()"><span class="qicon">🎯</span>Nozzle Size Chart</button>`;
   h+=`<button class="sb-quick-btn" onclick="showInjectorChart()"><span class="qicon">💉</span>Injector Sizing Chart</button>`;
+  h+=`<button class="sb-quick-btn" onclick="showFrictionChart()"><span class="qicon">📉</span>Friction Loss Chart</button>`;
   h+=`</div></div></div>`;
   h+=`<button class="home-btn" data-topic="saved-diags" onclick="showSavedDiags()"><span class="topic-icon">📋</span> My Diagnostics</button>`;
   SB.innerHTML=h;
@@ -720,6 +721,76 @@ function showInjectorChart(){
   </div>`;
   MAIN.scrollTop=0;
 }
+
+/* ─── FRICTION LOSS CHART ─── */
+function showFrictionChart(){
+  setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
+
+  // PSI loss per 100 ft of hose, from Service School Friction Loss Diagram
+  const frictionData = [
+    {gpm:2,  q14:180, q38:30,  q12:5},
+    {gpm:3,  q14:370, q38:50,  q12:10},
+    {gpm:4,  q14:null,q38:95,  q12:20},
+    {gpm:5,  q14:null,q38:135, q12:30},
+    {gpm:6,  q14:null,q38:220, q12:50},
+    {gpm:7,  q14:null,q38:260, q12:65},
+    {gpm:8,  q14:null,q38:300, q12:80},
+    {gpm:9,  q14:null,q38:null,q12:95},
+    {gpm:10, q14:null,q38:null,q12:120},
+  ];
+
+  let rows = frictionData.map(r => `<tr>
+    <td class="nz-label"><strong>${r.gpm}</strong></td>
+    <td>${r.q14 !== null ? r.q14 : '<span style="color:var(--text-muted)">—</span>'}</td>
+    <td>${r.q38 !== null ? r.q38 : '<span style="color:var(--text-muted)">—</span>'}</td>
+    <td>${r.q12 !== null ? r.q12 : '<span style="color:var(--text-muted)">—</span>'}</td>
+  </tr>`).join('');
+
+  C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
+    <div class="page-header"><div class="page-header-icon">📉</div><div><h2>Friction Loss Chart</h2><p>Approximate PSI loss per 100 ft of pressure washer hose</p></div></div>
+
+    <div class="card" style="overflow-x:auto">
+      <h4>PSI Loss per 100 ft — by Hose Size &amp; Flow Rate</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Values from Service School friction loss training. Multiply by hose length ÷ 100 for actual loss. — indicates flow rate exceeds recommended range for that hose size.</p>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>GPM</th>
+            <th>¼" Hose</th>
+            <th>⅜" Hose</th>
+            <th>½" Hose</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h4>How to Use This Chart</h4>
+      <p style="font-size:0.85rem;line-height:1.8">
+        📌 <strong>Actual loss</strong> = chart value × (hose length ÷ 100)<br>
+        📌 <strong>Example:</strong> 4 GPM through 200 ft of ⅜" hose = 95 × 2 = <strong>190 PSI lost</strong><br>
+        📌 <strong>¼" hose</strong> is only practical under 3 GPM — pressure loss becomes extreme above that.<br>
+        📌 <strong>Unexplained pressure loss?</strong> Calculate friction loss before suspecting the pump.
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>Quick Reference — Max Recommended GPM</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;text-align:center">
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">3 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">¼" max</div></div>
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">8 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">⅜" max</div></div>
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">10+ GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">½" handles</div></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:1rem">
+      <button class="quick-btn" onclick="startTopic('pressure')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI about pressure loss issues</button>
+    </div>
+  </div>`;
+  MAIN.scrollTop=0;
+}
+
 function showHome(){setActive('home');inChat=false;chatMessages=[];chatHistory=[];chatMsgId=0;equipmentContext=null;latestLogId=null;document.querySelector('.input-bar').classList.add('hidden');C.innerHTML=`<div class="welcome"><div class="welcome-icon">🔧<svg class="pippie" width="42" height="58" viewBox="0 0 100 140"><rect x="28" y="45" width="44" height="60" rx="8" fill="#D4A843" stroke="#B8922E" stroke-width="2"/><rect x="33" y="51" width="14" height="6" rx="3" fill="#E8C75A" opacity="0.6"/><circle cx="50" cy="88" r="10" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/><circle cx="50" cy="88" r="7" fill="white"/><line x1="50" y1="88" x2="54" y2="83" stroke="#C4382A" stroke-width="1.5" stroke-linecap="round"/><circle cx="50" cy="88" r="1.5" fill="#333"/><path d="M 38 45 L 38 28 Q 38 22 44 22 L 56 22 Q 62 22 62 28 L 62 45" fill="none" stroke="#888" stroke-width="3" stroke-linecap="round"/><rect x="42" y="15" width="16" height="10" rx="3" fill="#C4382A" stroke="#A52E22" stroke-width="1.5"/><g class="pb"><ellipse cx="41" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="41" cy="63" r="4.5" fill="#22C55E"/><circle cx="41" cy="63" r="2" fill="#15803D"/><circle cx="39.5" cy="61" r="1.5" fill="white"/></g><g class="pb"><ellipse cx="59" cy="62" rx="7" ry="8" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="59" cy="63" r="4.5" fill="#22C55E"/><circle cx="59" cy="63" r="2" fill="#15803D"/><circle cx="57.5" cy="61" r="1.5" fill="white"/></g><path d="M 42 76 Q 50 82 58 76" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><rect x="8" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="10" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="70" y="58" width="22" height="10" rx="5" fill="#B0B0B0" stroke="#888" stroke-width="1.5"/><circle cx="90" cy="63" r="4" fill="#999" stroke="#777" stroke-width="1"/><rect x="30" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><rect x="54" y="103" width="16" height="10" rx="5" fill="#B8922E" stroke="#8B6F1F" stroke-width="1.5"/><circle cx="46" cy="12" r="3.5" fill="#ddd" class="ps1" opacity="0"/><circle cx="54" cy="10" r="3" fill="#ddd" class="ps2" opacity="0"/></svg></div><h2>How can I help?</h2><div class="home-search"><div class="home-search-box"><input type="text" id="homeInput" placeholder="Describe your issue or search models…" autocomplete="off"/><div class="home-search-actions"><button class="upload-home" onclick="document.getElementById('imageUpload').click()" title="Upload photo">📷</button><button class="search-send" onclick="homeSearch()" title="Send">➤</button></div></div></div><p class="home-hint">Try: "pump losing pressure" · "oil for TS2021" · "burner won't fire"</p><div class="mobile-quick"><button class="quick-btn" onclick="startTopic('pressure')"><span class="qicon">📉</span> Low pressure</button><button class="quick-btn" onclick="startTopic('oil')"><span class="qicon">🛢️</span> Oil lookup</button><button class="quick-btn" onclick="startTopic('burner')"><span class="qicon">🔥</span> Burner issues</button><button class="quick-btn" onclick="startTopic('service')"><span class="qicon">⚙️</span> Service &amp; repair</button><button class="quick-btn" onclick="startTopic('chemical')"><span class="qicon">🧪</span> Soap / Chemical</button><button class="quick-btn" onclick="startTopic('electrical')"><span class="qicon">⚡</span> Electrical</button><button class="quick-btn" onclick="startTopic('find')"><span class="qicon">🔍</span> Find a pump</button><button class="quick-btn" onclick="startTopic('maintenance')"><span class="qicon">🗓️</span> Maintenance</button><button class="quick-btn" onclick="showSavedDiags()"><span class="qicon">📋</span> My Diagnostics</button></div><div class="mobile-quick" style="margin-top:0.5rem"><button class="quick-btn" onclick="startTopic('nozzle')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🎯</span> Nozzle Calculator</button><button class="quick-btn" onclick="startTopic('injector')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">💉</span> Injector Sizing</button><button class="quick-btn" onclick="startTopic('multimeter')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">⚡</span> Multimeter Assistant</button></div><div class="mobile-quick" style="margin-top:0.75rem"><button class="home-tip-btn" onclick="showTipForm()" style="grid-column:1/-1"><span class="qicon">💡</span> Submit a Field Tip — share what works in the real world</button></div></div>`;document.getElementById('homeInput').addEventListener('keydown',e=>{if(e.key==='Enter')homeSearch()});safeFocus(document.getElementById('homeInput'));}
 
 /* ═══ SEARCH ═══ */
