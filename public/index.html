@@ -726,76 +726,45 @@ function showInjectorChart(){
 function showFrictionChart(){
   setActive('home');inChat=false;document.querySelector('.input-bar').classList.add('hidden');
 
-  // Data points from Friction Loss Diagram
-  const d14 = [{x:2,y:180},{x:3,y:370}];
-  const d38 = [{x:2,y:30},{x:3,y:50},{x:4,y:95},{x:5,y:135},{x:6,y:220},{x:7,y:260},{x:8,y:300}];
-  const d12 = [{x:2,y:5},{x:3,y:10},{x:4,y:20},{x:5,y:30},{x:6,y:50},{x:7,y:65},{x:8,y:80},{x:9,y:95},{x:10,y:120}];
+  // PSI loss per 100 ft of hose, from Service School Friction Loss Diagram
+  const frictionData = [
+    {gpm:2,  q14:180, q38:30,  q12:5},
+    {gpm:3,  q14:370, q38:50,  q12:10},
+    {gpm:4,  q14:null,q38:95,  q12:20},
+    {gpm:5,  q14:null,q38:135, q12:30},
+    {gpm:6,  q14:null,q38:220, q12:50},
+    {gpm:7,  q14:null,q38:260, q12:65},
+    {gpm:8,  q14:null,q38:300, q12:80},
+    {gpm:9,  q14:null,q38:null,q12:95},
+    {gpm:10, q14:null,q38:null,q12:120},
+  ];
 
-  // SVG chart dimensions
-  const W=560,H=380,PL=58,PR=20,PT=20,PB=50;
-  const CW=W-PL-PR, CH=H-PT-PB;
-  const xMin=2,xMax=10,yMin=0,yMax=400;
-  const xS=v=>(v-xMin)/(xMax-xMin)*CW;
-  const yS=v=>(1-(v-yMin)/(yMax-yMin))*CH;
-
-  // Grid lines
-  const yTicks=[0,50,100,150,200,250,300,350,400];
-  const xTicks=[2,3,4,5,6,7,8,9,10];
-  let grid='';
-  yTicks.forEach(y=>{
-    const yy=yS(y);
-    grid+=`<line x1="0" y1="${yy}" x2="${CW}" y2="${yy}" stroke="#e2e6ea" stroke-width="1"/>`;
-    grid+=`<text x="-8" y="${yy+4}" text-anchor="end" font-size="11" fill="#6b7280">${y}</text>`;
-  });
-  xTicks.forEach(x=>{
-    const xx=xS(x);
-    grid+=`<line x1="${xx}" y1="0" x2="${xx}" y2="${CH}" stroke="#e2e6ea" stroke-width="1"/>`;
-    grid+=`<text x="${xx}" y="${CH+18}" text-anchor="middle" font-size="11" fill="#6b7280">${x}</text>`;
-  });
-
-  // Build polyline points
-  const pts=arr=>arr.map(p=>`${xS(p.x)},${yS(p.y)}`).join(' ');
-  // Dots
-  const dots=(arr,color)=>arr.map(p=>`<circle cx="${xS(p.x)}" cy="${yS(p.y)}" r="4" fill="${color}" stroke="white" stroke-width="1.5"/>`).join('');
-
-  const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block;margin:0 auto;font-family:var(--font-body)">
-    <!-- Title -->
-    <text x="${W/2}" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">Friction Loss Chart (PSI Loss per 100 ft of Hose)</text>
-    <!-- Chart area -->
-    <g transform="translate(${PL},${PT+14})">
-      <!-- Grid + axes -->
-      ${grid}
-      <rect x="0" y="0" width="${CW}" height="${CH}" fill="none" stroke="#d1d5db" stroke-width="1"/>
-      <!-- Y axis label -->
-      <text transform="rotate(-90)" x="${-CH/2}" y="-44" text-anchor="middle" font-size="11" fill="#6b7280">Pressure Loss (PSI per 100 ft)</text>
-      <!-- X axis label -->
-      <text x="${CW/2}" y="${CH+40}" text-anchor="middle" font-size="11" fill="#6b7280">Flow Rate (GPM)</text>
-      <!-- 1/4" line (blue) -->
-      <polyline points="${pts(d14)}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
-      ${dots(d14,'#2563eb')}
-      <!-- 3/8" line (orange) -->
-      <polyline points="${pts(d38)}" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linejoin="round"/>
-      ${dots(d38,'#f97316')}
-      <!-- 1/2" line (green) -->
-      <polyline points="${pts(d12)}" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linejoin="round"/>
-      ${dots(d12,'#16a34a')}
-      <!-- Legend -->
-      <g transform="translate(${CW-110},10)">
-        <rect width="115" height="62" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
-        <line x1="8" y1="18" x2="28" y2="18" stroke="#2563eb" stroke-width="2.5"/><circle cx="18" cy="18" r="3.5" fill="#2563eb"/><text x="34" y="22" font-size="11" fill="#374151">1/4" Hose</text>
-        <line x1="8" y1="36" x2="28" y2="36" stroke="#f97316" stroke-width="2.5"/><circle cx="18" cy="36" r="3.5" fill="#f97316"/><text x="34" y="40" font-size="11" fill="#374151">3/8" Hose</text>
-        <line x1="8" y1="54" x2="28" y2="54" stroke="#16a34a" stroke-width="2.5"/><circle cx="18" cy="54" r="3.5" fill="#16a34a"/><text x="34" y="58" font-size="11" fill="#374151">1/2" Hose</text>
-      </g>
-    </g>
-  </svg>`;
+  let rows = frictionData.map(r => `<tr>
+    <td class="nz-label"><strong>${r.gpm}</strong></td>
+    <td>${r.q14 !== null ? r.q14 : '<span style="color:var(--text-muted)">—</span>'}</td>
+    <td>${r.q38 !== null ? r.q38 : '<span style="color:var(--text-muted)">—</span>'}</td>
+    <td>${r.q12 !== null ? r.q12 : '<span style="color:var(--text-muted)">—</span>'}</td>
+  </tr>`).join('');
 
   C.innerHTML = `<div class="section-page"><button class="back-btn" onclick="showHome()">← Back</button>
     <div class="page-header"><div class="page-header-icon">📉</div><div><h2>Friction Loss Chart</h2><p>Approximate PSI loss per 100 ft of pressure washer hose</p></div></div>
-    <div class="card">
-      <h4>Friction Loss Diagram</h4>
-      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem">Reference chart showing approximate pressure loss per 100 ft of pressure washer hose. Values used for field diagnostics.</p>
-      ${svg}
+
+    <div class="card" style="overflow-x:auto">
+      <h4>PSI Loss per 100 ft — by Hose Size &amp; Flow Rate</h4>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem">Values from Service School friction loss training. Multiply by hose length ÷ 100 for actual loss. — indicates flow rate exceeds recommended range for that hose size.</p>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>GPM</th>
+            <th>¼" Hose</th>
+            <th>⅜" Hose</th>
+            <th>½" Hose</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
+
     <div class="card">
       <h4>How to Use This Chart</h4>
       <p style="font-size:0.85rem;line-height:1.8">
@@ -805,6 +774,16 @@ function showFrictionChart(){
         📌 <strong>Unexplained pressure loss?</strong> Calculate friction loss before suspecting the pump.
       </p>
     </div>
+
+    <div class="card">
+      <h4>Quick Reference — Max Recommended GPM</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;text-align:center">
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">3 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">¼" max</div></div>
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">8 GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">⅜" max</div></div>
+        <div style="padding:0.75rem;background:var(--surface-2);border-radius:8px"><div style="font-size:1.1rem;font-weight:700;color:var(--accent)">10+ GPM</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">½" handles</div></div>
+      </div>
+    </div>
+
     <div style="text-align:center;padding:1rem">
       <button class="quick-btn" onclick="startTopic('pressure')" style="border-color:rgba(37,99,235,0.3);background:rgba(37,99,235,0.04)"><span class="qicon">🤖</span> Ask AI about pressure loss issues</button>
     </div>
@@ -892,7 +871,7 @@ function formatAIText(raw){
       .replace(/\n/g,'<br>')
       .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
       .replace(/^/, '<p>') + '…</p>';
-    return shortHtml+`<button class="show-more-btn" onclick="this.style.display='none';document.getElementById('aiTr${_aiTruncId}').style.display='block';document.getElementById('aiSh${_aiTruncId}').style.display='none'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--accent);font-family:var(--font-body);margin-top:0.5rem" id="aiSh${_aiTruncId}">Show full response ▾</button><div id="aiTr${_aiTruncId}" style="display:none">${formatted}</div>`;
+    return `<div id="aiSh${_aiTruncId}">${shortHtml}<button class="show-more-btn" onclick="document.getElementById('aiSh${_aiTruncId}').style.display='none';document.getElementById('aiTr${_aiTruncId}').style.display='block'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.78rem;color:var(--accent);font-family:var(--font-body);margin-top:0.5rem">Show full response \u25be</button></div><div id="aiTr${_aiTruncId}" style="display:none">${formatted}</div>`;
   }
   return formatted;
 }
