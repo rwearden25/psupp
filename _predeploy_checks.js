@@ -99,8 +99,10 @@ if (check === 'auth-gates') {
   var c = fs.readFileSync('server.js', 'utf8');
   var routes = ['/api/admin', '/api/tips', '/api/kb-gaps', '/api/scraper'];
   var issues = 0;
+  // Check for the actual auth gate pattern: auth.getUser or verifyAuth
+  var hasAuthGate = c.includes('auth.getUser') || c.includes('verifyAuth');
   routes.forEach(function(r) {
-    if (c.includes(r) && !c.includes('verifyAuth')) {
+    if (c.includes(r) && !hasAuthGate) {
       console.log('    [WARN] ' + r + ' may lack auth gate');
       issues++;
     }

@@ -131,7 +131,8 @@ try {
 
   // Test / returns something
   try {
-    const code = execSync('curl -s -o nul -w "%{http_code}" http://127.0.0.1:3000/', { stdio: 'pipe', timeout: 5000 }).toString().trim();
+    const devnull = process.platform === 'win32' ? 'nul' : '/dev/null';
+    const code = execSync(`curl -s -o ${devnull} -w "%{http_code}" http://127.0.0.1:3000/`, { stdio: 'pipe', timeout: 5000 }).toString().trim();
     if (code === '302') ok('/ redirects to login (auth working)');
     else if (code === '200') ok('/ serves index.html');
     else hint('/ returned ' + code);
@@ -139,7 +140,7 @@ try {
 
   // Test auth gate
   try {
-    const code = execSync('curl -s -o nul -w "%{http_code}" http://127.0.0.1:3000/api/stats', { stdio: 'pipe', timeout: 5000 }).toString().trim();
+    const code = execSync(`curl -s -o ${devnull} -w "%{http_code}" http://127.0.0.1:3000/api/stats`, { stdio: 'pipe', timeout: 5000 }).toString().trim();
     code === '401' ? ok('Auth gate working (401 without token)') : hint('/api/stats returned ' + code + ' instead of 401');
   } catch (e) { hint('Could not test auth gate'); }
 
