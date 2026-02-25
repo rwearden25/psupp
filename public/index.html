@@ -545,11 +545,15 @@ function handleImageSelect(e){
   const reader=new FileReader();
   reader.onload=function(ev){
     pendingImage={data:ev.target.result.split(',')[1], mediaType:file.type, name:file.name};
+    // Chat input bar (visible in chat)
     document.getElementById('imgThumb').src=ev.target.result;
     document.getElementById('imgName').textContent=file.name;
     document.getElementById('imgPreviewBar').style.display='flex';
     I.placeholder='Describe the issue or ask about this equipment...';
     safeFocus(I);
+    // Home screen: show confirmation on the upload button
+    const homeUpload=document.querySelector('.upload-home');
+    if(homeUpload){homeUpload.textContent='✓';homeUpload.style.color='var(--success)';homeUpload.title='File uploaded!';}
   };
   reader.readAsDataURL(file);
 }
@@ -558,6 +562,9 @@ function clearImage(){
   document.getElementById('imgPreviewBar').style.display='none';
   document.getElementById('imageUpload').value='';
   I.placeholder='Search models, troubleshoot issues, look up specs…';
+  // Reset home upload button
+  const homeUpload=document.querySelector('.upload-home');
+  if(homeUpload){homeUpload.textContent='📷';homeUpload.style.color='';homeUpload.title='Upload photo';}
 }
 const esc=t=>{const d=document.createElement('div');d.textContent=t;return d.innerHTML};
 const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
