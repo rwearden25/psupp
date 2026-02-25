@@ -10,3 +10,4 @@ pump-agent/
 generator/
 knowledge.db-shm
 knowledge.db-wal
+nul
