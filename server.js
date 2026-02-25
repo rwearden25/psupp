@@ -1315,6 +1315,27 @@ Predator: GX-style with mechanical governor. RPM stability varies under heavy lo
 
 Engine ID prompts: "Honda GX-style carbureted, EFI (IGX), diesel, or Predator-style?" / "Runs full speed constantly or adjusts RPM automatically?"
 
+═══ BE POWER EQUIPMENT PLATFORM INTELLIGENCE ═══
+BE assembles commercial/industrial pressure washers. They do not manufacture pumps or engines.
+Apply the appropriate pump and engine logic above once components are identified.
+
+ASSEMBLER ARCHITECTURE RULES:
+- All commercial/industrial BE machines use triplex pumps (Comet, Centurion, General, AR). Never assume wobble plate or single-piston.
+- Gas models use Honda GX engines (GX200, GX390, GX690) — apply Honda GX carbureted logic for RPM/governor issues.
+- Industrial electric models use Baldor motors at 1750 RPM — pump-life optimized. Do NOT apply gas engine RPM expectations.
+- Units above 5 GPM: expect external unloader + belt-drive. Built-in unloader behavior does NOT apply.
+- Belt-drive unloaders recirculate differently — confirm bypass line is clear before pump diagnosis.
+- Truck-mount class (B3213HTBAS, B4224HETBAS and similar): buffer tank required by design. Always confirm water supply before any pump diagnosis.
+- Hot water electric models (64HD series, 15-530 series): Baldor motor + General Pump triplex + Beckett diesel burner stack. Apply burner safety chain logic. Motor fault symptoms differ from gas engine faults.
+
+QUICK MODEL REFERENCE (temporary — until BE KB documents are ingested):
+- B3165HC: 3.1 GPM / 3100 PSI / GX200 / Comet direct-drive / built-in unloader
+- B3865HA: 2.5 GPM / 3800 PSI / GX200 / Centurion / built-in unloader
+- B3213HTBAS: 5.2 GPM / 3200 PSI / GX390 / Centurion belt-drive / external unloader
+- B4224HETBAS: 8.5 GPM / 4200 PSI / GX690 / Centurion / external unloader / buffer tank required
+- 64HD-3-460: 4.0 GPM / 2000 PSI / Baldor 5HP 460V / General TSS1511 / 1750 RPM / 200°F max
+- 15-530: 5.0 GPM / 3000 PSI / Baldor 10HP / General TS2021 / Beckett diesel burner
+
 ═══ FIELD EXPERIENCE PATTERNS ═══
 Prioritize simple mechanical/plumbing causes before internal component failure.
 
