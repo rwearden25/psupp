@@ -1554,6 +1554,65 @@ User: "I need a nozzle for 4 GPM at 3500 PSI"
 Good: [calls calculate_nozzle, then] "You want a #4.0 nozzle. At 3500 PSI that'll deliver 4.03 GPM. For a 25° fan, that's a green 2504 tip."`;
 
 
+// ═══════════════════════════════════════════════════════════
+//  FEEDBACK LEARNING — inject thumbs-down patterns into prompt
+// ═══════════════════════════════════════════════════════════
+let feedbackLessonsCache = { text: '', refreshedAt: 0 };
+const FEEDBACK_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function getFeedbackLessons() {
+  const now = Date.now();
+  if (now - feedbackLessonsCache.refreshedAt < FEEDBACK_CACHE_TTL && feedbackLessonsCache.text) {
+    return feedbackLessonsCache.text;
+  }
+
+  if (!userDb) return '';
+
+  try {
+    // Get recent thumbs-down with context (last 90 days, max 15)
+    const negatives = userDb.prepare(`
+      SELECT c.user_message, c.ai_reply, f.correction, c.tools_used
+      FROM feedback f
+      JOIN chat_logs c ON f.log_id = c.id
+      WHERE f.rating = -1
+        AND f.created_at > datetime('now', '-90 days')
+      ORDER BY f.created_at DESC
+      LIMIT 15
+    `).all();
+
+    if (negatives.length === 0) {
+      feedbackLessonsCache = { text: '', refreshedAt: now };
+      return '';
+    }
+
+    let lessons = '\n\n═══ LEARN FROM PAST MISTAKES ═══\n';
+    lessons += 'Technicians flagged these responses as unhelpful. Avoid repeating these patterns:\n\n';
+
+    negatives.forEach((row, i) => {
+      const question = (row.user_message || '').substring(0, 150).trim();
+      const badReply = (row.ai_reply || '').substring(0, 200).trim();
+      const correction = row.correction ? row.correction.substring(0, 200).trim() : null;
+
+      lessons += `${i + 1}. Question: "${question}"\n`;
+      lessons += `   Problem with response: "${badReply}..."\n`;
+      if (correction) {
+        lessons += `   Tech's correction: "${correction}"\n`;
+      }
+      lessons += '\n';
+    });
+
+    lessons += 'Apply these corrections going forward. If a similar question comes up, give a better answer.\n';
+
+    feedbackLessonsCache = { text: lessons, refreshedAt: now };
+    console.log(`[Feedback] Loaded ${negatives.length} lessons from negative feedback`);
+    return lessons;
+  } catch (e) {
+    console.error('[Feedback] Error loading lessons:', e.message);
+    return '';
+  }
+}
+
+
 async function callAnthropic(messages, useWebSearch = false) {
   const toolsToUse = [...tools];
   if (useWebSearch) {
@@ -1569,6 +1628,11 @@ async function callAnthropic(messages, useWebSearch = false) {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 45000);
+    const feedbackBlock = getFeedbackLessons();
+    const systemBlocks = [
+      { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+      ...(feedbackBlock ? [{ type: 'text', text: feedbackBlock }] : [])
+    ];
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'prompt-caching-2024-07-31' },
@@ -1576,7 +1640,7 @@ async function callAnthropic(messages, useWebSearch = false) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 1200,
-        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+        system: systemBlocks,
         messages,
         tools: cachedTools
       })
@@ -1746,7 +1810,7 @@ async function runAgent(userMessage, imageData, imageType, history) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 1200,
-        system: SYSTEM_PROMPT + '\n\nIMPORTANT: You have already gathered information using tools. Now provide your answer using what you have. Do NOT request any more tools.',
+        system: SYSTEM_PROMPT + getFeedbackLessons() + '\n\nIMPORTANT: You have already gathered information using tools. Now provide your answer using what you have. Do NOT request any more tools.',
         messages
       })
     });
