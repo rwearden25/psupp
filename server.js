@@ -2624,6 +2624,61 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── GET /api/admin/export ───
+  if (url.pathname === '/api/admin/export' && req.method === 'GET') {
+    try {
+      if (!userDb) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'No database' })); return; }
+
+      const chat_logs = userDb.prepare('SELECT * FROM chat_logs ORDER BY created_at DESC').all();
+      const feedback = userDb.prepare('SELECT f.*, c.user_message, c.ai_reply, c.tools_used, c.category FROM feedback f LEFT JOIN chat_logs c ON f.log_id = c.id ORDER BY f.created_at DESC').all();
+      const kb_gaps = userDb.prepare('SELECT * FROM kb_gaps ORDER BY created_at DESC').all();
+      const tips = userDb.prepare('SELECT * FROM tips ORDER BY created_at DESC').all();
+      const users = userDb.prepare('SELECT id, username, role, display_name, created_at, last_login FROM users').all();
+
+      // Login log if table exists
+      let login_log = [];
+      try { login_log = userDb.prepare('SELECT * FROM login_log ORDER BY created_at DESC LIMIT 500').all(); } catch(e) {}
+
+      // Saved diagnostics
+      let saved_diagnostics = [];
+      try { saved_diagnostics = userDb.prepare('SELECT * FROM saved_diagnostics ORDER BY created_at DESC').all(); } catch(e) {}
+
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        summary: {
+          total_chats: chat_logs.length,
+          total_feedback: feedback.length,
+          thumbs_up: feedback.filter(f => f.rating === 1).length,
+          thumbs_down: feedback.filter(f => f.rating === -1).length,
+          kb_gaps: kb_gaps.length,
+          tips: tips.length,
+          users: users.length,
+          login_events: login_log.length,
+          saved_diagnostics: saved_diagnostics.length
+        },
+        chat_logs,
+        feedback,
+        kb_gaps,
+        tips,
+        users,
+        login_log,
+        saved_diagnostics
+      };
+
+      const json = JSON.stringify(exportData, null, 2);
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Disposition': `attachment; filename="psupp-export-${new Date().toISOString().slice(0,10)}.json"`
+      });
+      res.end(json);
+      console.log(`[Export] Full data export by ${req.authUser.username} — ${chat_logs.length} chats, ${feedback.length} feedback, ${kb_gaps.length} gaps`);
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
   // ─── GET /api/search ───
   if (url.pathname === '/api/search') {
     const results = searchFTS(url.searchParams.get('q') || '', { brand: url.searchParams.get('brand'), limit: 20 });
