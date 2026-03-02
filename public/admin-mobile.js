@@ -171,4 +171,41 @@
   });
 
   console.log('[Admin] Mobile responsive loaded');
+
+  // ── 8. EXPORT BUTTON — inject into topbar ──
+  const topbarActions = document.getElementById('topbar-actions');
+  if (topbarActions) {
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn btn-ghost';
+    exportBtn.textContent = '⬇ Export Data';
+    exportBtn.style.cssText = 'font-size:12px;';
+    exportBtn.addEventListener('click', async function() {
+      exportBtn.textContent = '⏳ Exporting…';
+      exportBtn.disabled = true;
+      try {
+        const token = localStorage.getItem('authToken');
+        const resp = await fetch('/api/admin/export', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!resp.ok) throw new Error('Export failed: ' + resp.status);
+        const data = await resp.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'psupp-export-' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        exportBtn.textContent = '✅ Downloaded';
+        setTimeout(() => { exportBtn.textContent = '⬇ Export Data'; exportBtn.disabled = false; }, 2000);
+      } catch(e) {
+        exportBtn.textContent = '❌ Failed';
+        console.error('[Export]', e);
+        setTimeout(() => { exportBtn.textContent = '⬇ Export Data'; exportBtn.disabled = false; }, 2000);
+      }
+    });
+    topbarActions.appendChild(exportBtn);
+  }
 })();
