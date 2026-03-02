@@ -172,13 +172,13 @@
 
   console.log('[Admin] Mobile responsive loaded');
 
-  // ── 8. EXPORT BUTTON — inject into topbar ──
-  const topbarActions = document.getElementById('topbar-actions');
-  if (topbarActions) {
+  // ── 8. EXPORT BUTTON — inject into sidebar footer ──
+  const sbFooter = document.querySelector('.sb-footer');
+  if (sbFooter) {
     const exportBtn = document.createElement('button');
-    exportBtn.className = 'btn btn-ghost';
+    exportBtn.className = 'logout-btn';
     exportBtn.textContent = '⬇ Export Data';
-    exportBtn.style.cssText = 'font-size:12px;';
+    exportBtn.style.cssText = 'margin-bottom:8px; color:var(--accent, #2563eb); border-color:var(--accent-bd, #bfdbfe);';
     exportBtn.addEventListener('click', async function() {
       exportBtn.textContent = '⏳ Exporting…';
       exportBtn.disabled = true;
@@ -206,6 +206,7 @@
         setTimeout(() => { exportBtn.textContent = '⬇ Export Data'; exportBtn.disabled = false; }, 2000);
       }
     });
-    topbarActions.appendChild(exportBtn);
+    // Insert before the Back to App link
+    sbFooter.insertBefore(exportBtn, sbFooter.firstChild);
   }
 })();
